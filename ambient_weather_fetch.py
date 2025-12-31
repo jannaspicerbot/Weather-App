@@ -10,6 +10,7 @@ import json
 from datetime import datetime, timedelta
 import time
 import sys
+import os
 
 
 class AmbientWeatherDB:
@@ -184,9 +185,15 @@ class AmbientWeatherAPI:
             'applicationKey': self.application_key
         }
         
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            print(f"\nHTTP Error Details:")
+            print(f"  Status Code: {response.status_code}")
+            print(f"  Response: {response.text}")
+            raise
     
     def get_device_data(self, mac_address, end_date=None, limit=288):
         """
@@ -259,13 +266,22 @@ class AmbientWeatherAPI:
 
 
 def main():
-    # Configuration
-    API_KEY = "YOUR_API_KEY_HERE"
-    APPLICATION_KEY = "YOUR_APPLICATION_KEY_HERE"
+    # Get API credentials from environment variables
+    API_KEY = os.getenv("AMBIENT_API_KEY")
+    APPLICATION_KEY = os.getenv("AMBIENT_APP_KEY")
     
-    if API_KEY == "YOUR_API_KEY_HERE" or APPLICATION_KEY == "YOUR_APPLICATION_KEY_HERE":
-        print("ERROR: Please edit this file and add your API credentials")
-        print("Get your keys from: https://ambientweather.net/account")
+    # Check if environment variables are set
+    if not API_KEY or not APPLICATION_KEY:
+        print("=" * 60)
+        print("ERROR: API credentials not found!")
+        print("=" * 60)
+        print("\nYou need to set environment variables before running this script.")
+        print("\nIn PowerShell, run these commands (with your actual keys):")
+        print("  $env:AMBIENT_API_KEY=\"your_api_key_here\"")
+        print("  $env:AMBIENT_APP_KEY=\"your_application_key_here\"")
+        print("\nThen run this script again:")
+        print("  python ambient_weather_fetch.py")
+        print("\n" + "=" * 60)
         sys.exit(1)
     
     # Initialize database
