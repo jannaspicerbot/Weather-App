@@ -285,6 +285,7 @@ ambient-weather-manager/
 
 ## 🔗 Resources
 
+- [Product Requirements](Product-Requirements.md) - Project specifications and requirements
 - [Ambient Weather API Documentation](https://ambientweather.docs.apiary.io/)
 - [Plotly Documentation](https://plotly.com/python/)
 - [Pandas Documentation](https://pandas.pydata.org/)
