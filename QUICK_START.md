@@ -46,7 +46,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000
 Open a new terminal and run:
 
 ```bash
-python test_api_quick.py
+python test_local_server.py
 ```
 
 Or visit in your browser:
@@ -223,7 +223,8 @@ The script is smart - it only downloads new data, not everything again!
 - `generate_test_data.py` - Generate synthetic weather data
 - `ambient_weather_fetch.py` - Fetch real data from Ambient Weather API
 - `ambient_weather_visualize.py` - Create interactive Plotly charts
-- `test_api_quick.py` - Quick API test script
+- `test_local_server.py` - Tests local FastAPI server endpoints
+- `test_ambient_api.py` - Tests external Ambient Weather API connection
 - `ambient_weather_test.db` - Test database (synthetic data)
 - `ambient_weather.db` - Production database (real data)
 
