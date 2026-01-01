@@ -11,24 +11,22 @@ from typing import Optional, List
 from datetime import datetime
 import sqlite3
 import json
+from config import DB_PATH, API_TITLE, API_DESCRIPTION, API_VERSION, CORS_ORIGINS, get_db_info
 
 app = FastAPI(
-    title="Weather API",
-    description="API for querying Ambient Weather data",
-    version="1.0.0"
+    title=API_TITLE,
+    description=API_DESCRIPTION,
+    version=API_VERSION
 )
 
 # Enable CORS for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific frontend URL
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Database configuration
-DB_PATH = "ambient_weather.db"
 
 
 # Response models
@@ -88,9 +86,14 @@ def row_to_dict(row):
 @app.get("/")
 def read_root():
     """Root endpoint with API information"""
+    db_info = get_db_info()
     return {
         "message": "Weather API",
-        "version": "1.0.0",
+        "version": API_VERSION,
+        "database": {
+            "mode": db_info["mode"],
+            "path": db_info["database_path"]
+        },
         "endpoints": {
             "/weather": "Get weather data with optional filters",
             "/weather/latest": "Get the latest weather reading",
