@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+dist
+build
+*.egg
+venv/
+env/
+ENV/
+
+# Database files
+*.db
+*.db-journal
+*.db.backup
+*.sqlite
+*.sqlite3
+*.duckdb
+*.duckdb.wal
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Tests
+tests/
+*.log
+
+# Frontend (for backend Dockerfile)
+frontend/
+node_modules/
+
+# Local environment
+.env.local
+.env.*.local
+
+# Output
+output/
+*.html
