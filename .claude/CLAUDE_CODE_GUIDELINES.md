@@ -19,32 +19,42 @@
 
 ## 📁 Project Structure
 
-### Backend (FastAPI)
+### Current Structure
 ```
 Weather-App/
-├── backend/
-│   ├── main.py              # FastAPI app, routes
-│   ├── database.py          # Database connection, queries
-│   ├── models.py            # Pydantic models for validation
+├── weather_app/
+│   ├── __init__.py
 │   ├── config.py            # Configuration, environment variables
-│   └── requirements.txt     # Python dependencies
-├── ambient_weather.db       # SQLite database (existing)
-└── .env                     # Environment variables (existing)
-```
-
-### Frontend (React + Vite)
-```
-Weather-App/
-├── frontend/
+│   ├── cli/                 # CLI commands (Click framework)
+│   │   ├── __init__.py
+│   │   ├── __main__.py      # Module execution entry point
+│   │   └── cli.py           # All CLI commands
+│   ├── fetch/               # API and database operations
+│   │   ├── __init__.py
+│   │   ├── api.py           # AmbientWeatherAPI class
+│   │   └── database.py      # AmbientWeatherDB class
+│   └── backend/             # FastAPI app (future)
+│       ├── main.py          # FastAPI app, routes
+│       ├── database.py      # Database queries
+│       └── models.py        # Pydantic models
+├── scripts/                 # Standalone utility scripts
+│   ├── ambient_weather_fetch.py
+│   └── backfill_weather.py
+├── tests/                   # Test scripts
+├── frontend/                # React app (future)
 │   ├── src/
-│   │   ├── App.jsx          # Main application component
-│   │   ├── components/      # Reusable UI components
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── services/        # API calls
-│   │   └── utils/           # Helper functions
-│   ├── public/              # Static assets
-│   ├── package.json         # npm dependencies
-│   └── vite.config.js       # Vite configuration
+│   │   ├── App.jsx
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   └── utils/
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.js
+├── setup.py                 # Package installation config
+├── requirements.txt         # Python dependencies
+├── ambient_weather.db       # SQLite database
+└── .env                     # Environment variables
 ```
 
 ---
@@ -139,6 +149,171 @@ DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
 
 if not AMBIENT_API_KEY:
     raise ValueError("AMBIENT_API_KEY environment variable is required")
+```
+
+---
+
+## 🖥️ CLI Best Practices (Click Framework)
+
+### Command Structure
+- **Group related commands** under a main CLI group
+- **Use clear command names** that describe the action
+- **Provide helpful descriptions** for commands and options
+- **Add --help text** for all commands and options
+
+```python
+# ✅ GOOD - Clear structure with Click
+import click
+from dotenv import load_dotenv
+
+# Load environment variables at module level
+load_dotenv()
+
+# Fix Windows console encoding for emoji support
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
+@click.group()
+@click.version_option(version='1.0.0', prog_name='weather-app')
+def cli():
+    """Weather App - Ambient Weather data collection and visualization"""
+    pass
+
+@cli.command()
+@click.option('--limit', default=1, type=int, help='Number of records to fetch')
+def fetch(limit):
+    """Fetch latest weather data from Ambient Weather API"""
+    click.echo(f"Fetching {limit} latest record(s)...")
+    # Implementation here
+
+@cli.command()
+@click.option('--start', required=True, help='Start date (YYYY-MM-DD)')
+@click.option('--end', required=True, help='End date (YYYY-MM-DD)')
+def backfill(start, end):
+    """Backfill historical weather data for a date range"""
+    # Validate dates
+    try:
+        start_date = datetime.strptime(start, '%Y-%m-%d')
+        end_date = datetime.strptime(end, '%Y-%m-%d')
+    except ValueError as e:
+        click.echo(f"❌ Invalid date format: {e}")
+        sys.exit(1)
+
+    # Implementation here
+```
+
+### User-Friendly Output
+- **Use emoji** for visual feedback (with Windows encoding fix)
+- **Show progress** for long-running operations
+- **Provide clear error messages** with actionable guidance
+- **Use colors** sparingly for emphasis (Click supports this)
+
+```python
+# ✅ GOOD - User-friendly messages
+click.echo("✅ Database initialized successfully")
+click.echo("📡 Fetching from device: Weather Station")
+click.echo("❌ Error: API credentials not found!")
+click.echo("Please set environment variables:")
+click.echo("  AMBIENT_API_KEY - Your API key")
+click.echo("  AMBIENT_APP_KEY - Your Application key")
+
+# Progress indication
+with click.progressbar(data, label='Processing records') as bar:
+    for item in bar:
+        process(item)
+```
+
+### Environment Variables
+- **Load .env at module level** before defining commands
+- **Validate required credentials** before making API calls
+- **Provide helpful error messages** when credentials are missing
+
+```python
+# ✅ GOOD - Load and validate environment variables
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+def fetch(limit):
+    api_key = os.getenv('AMBIENT_API_KEY')
+    app_key = os.getenv('AMBIENT_APP_KEY')
+
+    if not api_key or not app_key:
+        click.echo("❌ Error: API credentials not found!")
+        click.echo("Please set environment variables:")
+        click.echo("  AMBIENT_API_KEY - Your API key")
+        click.echo("  AMBIENT_APP_KEY - Your Application key")
+        click.echo("\nOr create a .env file with these variables.")
+        sys.exit(1)
+```
+
+### Error Handling
+- **Catch specific exceptions** and provide context
+- **Use sys.exit(1)** for error conditions
+- **Clean up resources** in error cases
+- **Save progress** before exiting on long operations
+
+```python
+# ✅ GOOD - Comprehensive error handling
+@cli.command()
+def backfill(start, end):
+    try:
+        # Operations here
+        pass
+    except KeyboardInterrupt:
+        click.echo("\n⚠️  Backfill interrupted by user")
+        click.echo("Progress has been saved. Run again to resume.")
+        sys.exit(1)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            click.echo("❌ Rate limit exceeded. Please wait and try again.")
+        else:
+            click.echo(f"❌ HTTP Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"❌ Unexpected error: {e}")
+        sys.exit(1)
+```
+
+### Package Installation
+- **Create setup.py** with console_scripts entry point
+- **Use meaningful command names** for the CLI
+- **Install in editable mode** during development
+
+```python
+# setup.py
+from setuptools import setup, find_packages
+
+setup(
+    name="weather-app",
+    version="1.0.0",
+    packages=find_packages(),
+    install_requires=[
+        "click>=8.1.0",
+        "requests>=2.31.0",
+        "python-dotenv>=1.0.0",
+        # ... other dependencies
+    ],
+    entry_points={
+        'console_scripts': [
+            'weather-app=weather_app.cli:cli',
+        ],
+    },
+)
+```
+
+```bash
+# Install in editable mode for development
+pip install -e .
+
+# Now you can run:
+weather-app --help
+weather-app fetch --limit 10
+weather-app backfill --start 2024-01-01 --end 2024-12-31
+
+# Or run as module:
+python -m weather_app.cli fetch --limit 10
 ```
 
 ---
@@ -262,6 +437,144 @@ export async function fetchWeatherHistory(startDate, endDate) {
 - Use **useReducer** for complex state logic
 - Consider **Context API** for global state (if needed later)
 - **Don't over-engineer** - keep it simple initially
+
+---
+
+## 📦 Module Organization & Architecture
+
+### When to Create Packages vs Modules
+- **Create a package (directory with __init__.py)** when:
+  - Multiple related modules work together
+  - You want to organize code by functionality
+  - The feature will grow with multiple files
+
+- **Use a single module (.py file)** when:
+  - The functionality is self-contained
+  - The code is small and unlikely to grow much
+
+```python
+# ✅ GOOD - weather_app/fetch/ is a package
+weather_app/
+├── fetch/
+│   ├── __init__.py      # Exports main classes
+│   ├── api.py           # AmbientWeatherAPI class
+│   └── database.py      # AmbientWeatherDB class
+
+# weather_app/fetch/__init__.py
+from weather_app.fetch.api import AmbientWeatherAPI
+from weather_app.fetch.database import AmbientWeatherDB
+
+__all__ = ['AmbientWeatherAPI', 'AmbientWeatherDB']
+```
+
+### Context Managers for Resource Management
+- **Use context managers** for database connections, file handles, API sessions
+- **Implement __enter__ and __exit__** for custom classes
+- **Clean up resources** in __exit__ even if errors occur
+
+```python
+# ✅ GOOD - Context manager for database
+class AmbientWeatherDB:
+    def __init__(self, db_path):
+        self.db_path = Path(db_path)
+        self.conn = None
+        self.cursor = None
+
+    def connect(self):
+        self.conn = sqlite3.connect(str(self.db_path))
+        self.cursor = self.conn.cursor()
+
+    def close(self):
+        if self.conn:
+            self.conn.close()
+            self.conn = None
+            self.cursor = None
+
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+# Usage
+with AmbientWeatherDB(db_path) as db:
+    db.create_tables()
+    inserted, skipped = db.insert_data(data)
+# Connection automatically closed
+```
+
+### Separation of Concerns
+- **Separate API logic from database logic**
+- **Keep business logic out of CLI commands**
+- **Create focused, single-responsibility classes**
+
+```python
+# ✅ GOOD - Separated concerns
+# api.py - Only handles API communication
+class AmbientWeatherAPI:
+    def __init__(self, api_key, application_key):
+        self.api_key = api_key
+        self.application_key = application_key
+
+    def get_devices(self):
+        # API call logic
+        pass
+
+    def get_device_data(self, mac_address, limit=288):
+        # API call logic
+        pass
+
+# database.py - Only handles database operations
+class AmbientWeatherDB:
+    def __init__(self, db_path):
+        self.db_path = db_path
+
+    def create_tables(self):
+        # Database schema creation
+        pass
+
+    def insert_data(self, data):
+        # Database insertion logic
+        pass
+
+# cli.py - Only handles user interaction
+@cli.command()
+def fetch(limit):
+    """Fetch latest weather data"""
+    api = AmbientWeatherAPI(api_key, app_key)
+    data = api.get_device_data(mac, limit)
+
+    with AmbientWeatherDB(db_path) as db:
+        inserted, skipped = db.insert_data(data)
+
+    click.echo(f"✅ Inserted: {inserted}, Skipped: {skipped}")
+```
+
+### Module-Level Initialization
+- **Load environment variables once** at module level
+- **Configure logging** at module level
+- **Platform-specific setup** (like encoding) at module level
+
+```python
+# ✅ GOOD - Module-level initialization
+# cli.py
+import click
+import sys
+from dotenv import load_dotenv
+
+# Load once when module is imported
+load_dotenv()
+
+# Platform-specific configuration
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
+# Now define commands
+@click.group()
+def cli():
+    pass
+```
 
 ---
 
@@ -561,22 +874,48 @@ git commit -m "fix bug"
 git commit -m "changes"
 ```
 
-### Branching
-- **main** - working production code
-- **dev** - development branch
-- **feature/** - new features
-- **bugfix/** - bug fixes
+### Branching Strategy
+Use descriptive branch names with prefixes:
+
+```bash
+# ✅ GOOD - Clear prefix and description
+git checkout -b feature/cli-interface
+git checkout -b feature/env-file-support
+git checkout -b bugfix/emoji-encoding-windows
+git checkout -b bugfix/api-rate-limit-handling
+
+# ❌ BAD - No prefix, unclear
+git checkout -b cli
+git checkout -b env-support
+git checkout -b fix
+```
+
+**Branch Prefixes:**
+- **feature/** - New features or enhancements
+- **bugfix/** - Bug fixes
+- **refactor/** - Code refactoring without changing functionality
+- **docs/** - Documentation updates only
+- **test/** - Adding or updating tests
+
+**Branch Names:**
+- Use lowercase with hyphens
+- Be descriptive but concise
+- Include what, not how (e.g., `feature/csv-export` not `feature/add-csv-library`)
 
 ---
 
 ## 🎯 Development Workflow
 
-### Phase 1: Backend Setup (Current)
-1. ✅ Create FastAPI application structure
-2. ✅ Build database query functions
-3. ✅ Create API endpoints for weather data
-4. ✅ Test endpoints with FastAPI /docs
-5. ✅ Add CORS for frontend access
+### Phase 1: CLI & Data Collection (Completed ✅)
+1. ✅ Create project structure and configuration
+2. ✅ Implement CLI interface with Click framework
+3. ✅ Build API client for Ambient Weather API
+4. ✅ Build database operations with context managers
+5. ✅ Implement fetch command for latest data
+6. ✅ Implement backfill command for historical data
+7. ✅ Add CSV export functionality
+8. ✅ Set up .env file support with python-dotenv
+9. ✅ Create package with setup.py for easy installation
 
 ### Phase 2: Frontend Prototype
 1. ✅ Set up React + Vite project
@@ -625,5 +964,5 @@ When building features:
 
 ---
 
-**Last Updated:** January 1, 2026  
-**Project Status:** Phase 1 (Backend Setup)
+**Last Updated:** January 2, 2026
+**Project Status:** Phase 1 Complete - CLI and data collection implemented
