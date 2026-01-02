@@ -39,10 +39,12 @@ CORS_ORIGINS = [
 HOST = os.getenv("BIND_HOST", "0.0.0.0")
 PORT = int(os.getenv("BIND_PORT", 8000))
 
-# Retention policy (future enhancements)
+# Retention policy
+# Phase 1: Uses FULL_RESOLUTION_YEARS only (no aggregation or purging)
+# Phase 2: Will implement aggregation using AGGREGATION_HOLD_YEARS
 FULL_RESOLUTION_YEARS = 3
-AGGREGATION_HOLD_YEARS = 50
-PURGE_RAW_AFTER_AGGREGATION = True
+AGGREGATION_HOLD_YEARS = 50  # Phase 2 only
+PURGE_RAW_AFTER_AGGREGATION = True  # Phase 2 only
 
 # Logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

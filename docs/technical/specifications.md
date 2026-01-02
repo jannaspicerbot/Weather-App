@@ -3,7 +3,7 @@ Date: 2026-01-02
 Based on finalized PRD for jannaspicerbot/Weather-App
 
 Purpose
-- Provide concrete implementation details for the MVP: local-first Python app that ingests Ambient Weather data at native cadence, supports resumable backfill, stores data in SQLite with hybrid retention (3 years full-resolution, daily aggregates to 50 years), exposes an interactive web dashboard (Flask + Plotly), supports CLI operations, uses OS keyring for secret storage (with encrypted fallback), and is scheduled externally (cron/systemd).
+- Provide concrete implementation details for the MVP: local-first Python app that ingests Ambient Weather data at native cadence, supports resumable backfill, stores data in SQLite (Phase 1: 3 years full-resolution; Phase 2: hybrid retention to 50 years with daily aggregates), exposes an interactive web dashboard (Flask + Plotly), supports CLI operations, uses OS keyring for secret storage (with encrypted fallback), and is scheduled externally (cron/systemd).
 - Serve as the authoritative reference for the upcoming implementation tasks and GitHub issue creation.
 
 Contents
@@ -32,7 +32,7 @@ Contents
 - Components (local-only):
   - Fetcher (CLI script run by external scheduler): contacts Ambient Weather API, writes raw readings to DB.
   - Backfill (CLI script): chunked/resumable retrieval of historical records, writes to DB idempotently.
-  - Aggregator (periodic job or ad-hoc CLI): computes daily aggregates and prunes/archives raw older-than-threshold data.
+  - Aggregator (periodic job or ad-hoc CLI): (Phase 2 only) computes daily aggregates and prunes/archives raw older-than-threshold data.
   - Web app (Flask): renders dashboard pages and serves JSON endpoints used by Plotly charts; provides CSV export.
   - Key store: OS keyring (primary) + encrypted-file fallback.
   - Storage: SQLite DB by default; DB file stored locally (configurable path).
@@ -100,7 +100,7 @@ Contents
 SQL (expressed conceptually)
 - readings
   - id: INTEGER PRIMARY KEY AUTOINCREMENT
-  - station_mac: TEXT NOT NULL
+  - station_mac: TEXT NOT NULL  -- Phase 2: Add for multi-station support
   - timestamp_utc: DATETIME NOT NULL
   - temperature_c: REAL
   - humidity_pct: REAL
@@ -112,9 +112,10 @@ SQL (expressed conceptually)
   - battery_level: REAL
   - raw_payload: JSON  -- stringified JSON
   - created_at: DATETIME DEFAULT CURRENT_TIMESTAMP
-  - UNIQUE(station_mac, timestamp_utc)
+  - UNIQUE(timestamp_utc)  -- Phase 1: Single device
+  - UNIQUE(station_mac, timestamp_utc)  -- Phase 2: Multi-device
 
-- daily_aggregates
+- daily_aggregates  -- Phase 2 Only: Deferred from Phase 1
   - id: INTEGER PRIMARY KEY
   - station_mac: TEXT NOT NULL
   - date: DATE NOT NULL
@@ -126,25 +127,27 @@ SQL (expressed conceptually)
   - created_at: DATETIME
 
 Indexes:
-- readings: index on (station_mac, timestamp_utc)
-- daily_aggregates: index on (station_mac, date)
+- readings: index on (timestamp_utc) -- Phase 1
+- readings: index on (station_mac, timestamp_utc) -- Phase 2
+- daily_aggregates: index on (station_mac, date) -- Phase 2
 
 Retention policy (configurable in config.py):
-- FULL_RESOLUTION_YEARS = 3 (default)
-- AGGREGATION_HOLD_YEARS = 50
-- Aggregator job computes daily_aggregates for range older than FULL_RESOLUTION_YEARS and then optionally removes raw readings older than FULL_RESOLUTION_YEARS (or moves them to an archive file), depending on user preference (config option: PURGE_RAW_AFTER_AGGREGATION=true/false).
+- Phase 1: FULL_RESOLUTION_YEARS = 3 (no aggregation, no purging)
+- Phase 2: AGGREGATION_HOLD_YEARS = 50 (with daily aggregates)
+- Phase 2: Aggregator job computes daily_aggregates for range older than FULL_RESOLUTION_YEARS and then optionally removes raw readings older than FULL_RESOLUTION_YEARS (or moves them to an archive file), depending on user preference (config option: PURGE_RAW_AFTER_AGGREGATION=true/false).
 
 5. Data ingestion and backfill behavior (detailed)
 Fetcher (update workflow)
 - Behavior:
-  - On each run, the fetcher reads the latest timestamp for each configured station from readings table.
+  - On each run, the fetcher reads the latest timestamp from readings table (Phase 1: single station; Phase 2: for each configured station).
   - If no record exists, it requests data for a default fallback window (configurable, e.g., last 24-48 hours) or triggers backfill.
   - Calls Ambient Weather API via ambient_client with exponential backoff and jitter on failures.
   - Parses records and writes them with upsert semantics (INSERT OR IGNORE OR REPLACE pattern in SQLite). Use a transactional bulk insert for performance.
   - Logs metrics: fetched_count, inserted_count, duplicate_count, last_success_timestamp.
 
 Backfill
-- Inputs: start_date, end_date, station_mac (optional), checkpoint_file (optional)
+- Inputs: start_date, end_date, checkpoint_file (optional)
+  - Phase 2: Add station_mac parameter for multi-device support
 - Behavior:
   - Break requested date range to API-safe chunks (e.g., day-by-day if API returns per-day data or use API paging).
   - After each chunk processed successfully, write/update a checkpoint JSON file that contains: { "station_mac": "...", "last_processed": "YYYY-MM-DDTHH:MM:SSZ", "chunks_done": [ ... ] }
@@ -152,12 +155,17 @@ Backfill
   - On errors: retry per-chunk N times (configurable), escalate/log and continue or abort based on --abort-on-error flag.
 
 Idempotency and concurrency
-- Use UNIQUE constraint on (station_mac, timestamp_utc). Inserts that conflict should be ignored or cause UPDATE if the new payload is more complete. Provide both behaviors via config (INSERT_ONLY vs UPSERT).
+- Phase 1: Use UNIQUE constraint on (timestamp_utc). Inserts that conflict should be ignored or cause UPDATE if the new payload is more complete.
+- Phase 2: Use UNIQUE constraint on (station_mac, timestamp_utc) for multi-device support.
+- Provide both behaviors via config (INSERT_ONLY vs UPSERT).
 
 Retry/backoff
 - Use a retry helper (exponential backoff with cap and jitter). Sensitive to Ambient Weather rate-limits. Respect HTTP 429 and Retry-After headers.
 
-6. Aggregation / downsampling pipeline
+6. Aggregation / downsampling pipeline (PHASE 2 ONLY - DEFERRED)
+
+**Note:** This entire section is deferred to Phase 2. Phase 1 MVP stores 3 years of full-resolution data without aggregation.
+
 Method:
 - For each station and for each day older than FULL_RESOLUTION_YEARS:
   - SELECT date(timestamp_utc) as date, COUNT(*) as n, AVG(temperature_c), MIN(temperature_c), MAX(temperature_c), SUM(rainfall_mm) FROM readings WHERE timestamp_utc BETWEEN day_start AND day_end GROUP BY date;
@@ -176,22 +184,22 @@ Pages (templates):
 - / (dashboard) — latest readings summary + charts
 - /history — interactive charts with date-range selector
 - /export — export page allowing CSV downloads
-- /settings — profile, station config, credentials (stores via keyring), schedule instructions
+- /settings — profile, credentials (stores via keyring), schedule instructions (Phase 2: add station config for multi-device)
 - /backfill — run backfill, show progress logs (trigger asynchronous job or spawn sub-process; provide progress through polling endpoint)
 
 API endpoints (JSON)
 - GET /api/health -> { status: "ok", last_fetch: "...", db_size: ... }
-- GET /api/stations -> list station metadata
-- GET /api/readings?station_mac=&start=&end=&agg=raw|hour|day -> paged JSON readings or aggregated buckets (agg param)
-- GET /api/summary?station_mac=&period=last24h|last7d|last30d -> summary stats
-- GET /api/export?station_mac=&start=&end&format=csv -> returns CSV file download
-- POST /api/backfill -> start backfill job (request body: start,end,station_mac) -> returns job_id
+- GET /api/stations -> list station metadata (Phase 2: multiple stations)
+- GET /api/readings?start=&end=&agg=raw|hour|day -> paged JSON readings or aggregated buckets (Phase 2: add station_mac param)
+- GET /api/summary?period=last24h|last7d|last30d -> summary stats (Phase 2: add station_mac param)
+- GET /api/export?start=&end&format=csv -> returns CSV file download (Phase 2: add station_mac param)
+- POST /api/backfill -> start backfill job (request body: start,end) -> returns job_id (Phase 2: add station_mac)
 - GET /api/backfill/<job_id> -> status/progress logs
 
 Web UI behavior
 - Dashboard loads page and uses /api/readings to populate Plotly charts via AJAX.
 - For long-running tasks (backfill), UI polls /api/backfill/<job_id> for progress updates.
-- Provide user setting to enable/disable auto-downsampling/purge.
+- Phase 2: Provide user setting to enable/disable auto-downsampling/purge.
 - Auth: login page if UI auth enabled; session cookies use Flask-Login with secure cookie settings.
 
 Web UI auth specifics
