@@ -18,7 +18,7 @@ Perfect for testing without needing an Ambient Weather account.
 ### Step 1: Generate Test Data
 
 ```bash
-python generate_test_data.py --days 7
+python tests/generate_test_data.py --days 7
 ```
 
 This creates 7 days of realistic weather data (~2,000 records).
@@ -46,7 +46,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000
 Open a new terminal and run:
 
 ```bash
-python test_local_server.py
+python tests/test_local_server.py
 ```
 
 Or visit in your browser:
@@ -82,7 +82,7 @@ AMBIENT_APP_KEY=your_application_key_here
 ### Step 3: Fetch Your Data
 
 ```bash
-python ambient_weather_fetch.py
+python scripts/ambient_weather_fetch.py
 ```
 
 The script will automatically read keys from your `.env` file. Wait for it to complete (may take a few minutes for historical data). The script only downloads new data on subsequent runs!
@@ -93,14 +93,14 @@ The script will automatically read keys from your `.env` file. Wait for it to co
 ```powershell
 $env:AMBIENT_API_KEY="your_api_key"
 $env:AMBIENT_APP_KEY="your_app_key"
-python ambient_weather_fetch.py
+python scripts/ambient_weather_fetch.py
 ```
 
 **Bash/Linux:**
 ```bash
 export AMBIENT_API_KEY="your_api_key"
 export AMBIENT_APP_KEY="your_app_key"
-python ambient_weather_fetch.py
+python scripts/ambient_weather_fetch.py
 ```
 
 ### Step 4: Start the API (Production Mode)
@@ -114,7 +114,7 @@ python main.py
 ### Step 5: Create Visualizations (Optional)
 
 ```bash
-python ambient_weather_visualize.py
+python scripts/ambient_weather_visualize.py
 ```
 
 Open any HTML file in the `output/` directory with your web browser to see interactive charts!
@@ -164,7 +164,7 @@ console.log(`Current temp: ${weather.tempf}°F`);
 
 Run the fetch script regularly (daily or hourly):
 ```bash
-python ambient_weather_fetch.py
+python scripts/ambient_weather_fetch.py
 ```
 
 The script is smart - it only downloads new data, not everything again!
@@ -186,11 +186,11 @@ The script is smart - it only downloads new data, not everything again!
 - Check that port 8000 is not in use
 
 **"No data found"** (Test mode)
-- Generate test data: `python generate_test_data.py`
+- Generate test data: `python tests/generate_test_data.py`
 - Make sure `USE_TEST_DB=true` is set
 
 **"No data found"** (Production mode)
-- Run fetch script first: `python ambient_weather_fetch.py`
+- Run fetch script first: `python scripts/ambient_weather_fetch.py`
 - Check your API keys are correct in `.env` file
 
 **"No devices found"**
@@ -217,16 +217,26 @@ The script is smart - it only downloads new data, not everything again!
 
 ## File Reference
 
+### Core Files
 - `main.py` - FastAPI server entry point
 - `weather_app/` - Refactored package structure
 - `.env` - Your API keys (create this, never commit it!)
-- `generate_test_data.py` - Generate synthetic weather data
-- `ambient_weather_fetch.py` - Fetch real data from Ambient Weather API
-- `ambient_weather_visualize.py` - Create interactive Plotly charts
-- `test_local_server.py` - Tests local FastAPI server endpoints
-- `test_ambient_api.py` - Tests external Ambient Weather API connection
 - `ambient_weather_test.db` - Test database (synthetic data)
 - `ambient_weather.db` - Production database (real data)
+
+### Scripts (Production Tools)
+- `scripts/ambient_weather_fetch.py` - Fetch real data from Ambient Weather API
+- `scripts/ambient_weather_visualize.py` - Create interactive Plotly charts
+- `scripts/backfill_weather.py` - Backfill historical data
+- `scripts/update_weather.py` - Update weather data
+
+### Tests (Development & Testing)
+- `tests/test_local_server.py` - Tests local FastAPI server endpoints
+- `tests/test_ambient_api.py` - Tests external Ambient Weather API connection
+- `tests/generate_test_data.py` - Generate synthetic weather data
+- `tests/test_rate_limit_incremental.py` - Test rate limiting
+- `tests/test_websocket.py` - Test WebSocket connections
+- `tests/check_retry_after.py` - Check retry-after headers
 
 ---
 
