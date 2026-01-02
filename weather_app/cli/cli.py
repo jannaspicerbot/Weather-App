@@ -400,5 +400,59 @@ def info():
     click.echo("=" * 60)
 
 
+@cli.command()
+@click.option(
+    '--sqlite-path',
+    default=DB_PATH,
+    help='Path to SQLite database file (default: ambient_weather.db)'
+)
+@click.option(
+    '--duckdb-path',
+    default=None,
+    help='Path to DuckDB database file (default: replaces .db with .duckdb)'
+)
+@click.option(
+    '--batch-size',
+    default=1000,
+    type=int,
+    help='Number of records to process at a time (default: 1000)'
+)
+@click.option(
+    '--backup',
+    is_flag=True,
+    help='Create a backup of the SQLite database before migration'
+)
+def migrate(sqlite_path, duckdb_path, batch_size, backup):
+    """
+    Migrate weather data from SQLite to DuckDB database.
+
+    DuckDB provides 10-100x faster performance for analytical queries
+    while maintaining compatibility with existing code.
+    """
+    from weather_app.fetch.migrate_to_duckdb import migrate_sqlite_to_duckdb
+    import shutil
+
+    try:
+        if backup:
+            backup_path = f"{sqlite_path}.backup"
+            click.echo(f"💾 Creating backup: {backup_path}")
+            shutil.copy2(sqlite_path, backup_path)
+            click.echo()
+
+        migrate_sqlite_to_duckdb(sqlite_path, duckdb_path, batch_size)
+
+    except FileNotFoundError as e:
+        click.echo(f"❌ Error: {e}")
+        click.echo()
+        click.echo("Make sure the SQLite database exists before running migration.")
+        sys.exit(1)
+
+    except Exception as e:
+        click.echo(f"❌ Migration failed: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
 if __name__ == '__main__':
     cli()

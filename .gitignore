@@ -28,8 +28,11 @@ env/
 # Database
 *.db
 *.db-journal
+*.db.backup
 *.sqlite
 *.sqlite3
+*.duckdb
+*.duckdb.wal
 
 # Output files
 output/
