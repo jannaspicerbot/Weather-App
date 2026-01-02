@@ -19,12 +19,11 @@ Create a `.env` file in the project root with your Ambient Weather API credentia
 AMBIENT_API_KEY=your_api_key_here
 AMBIENT_APP_KEY=your_app_key_here
 
-# Optional: Use DuckDB instead of SQLite (10-100x faster for analytics)
-USE_DUCKDB=true
-
-# Optional: Database path (defaults to /data/ambient_weather.db in container)
-# DB_PATH=/data/ambient_weather.db
+# Optional: Database path (defaults to /data/ambient_weather.duckdb in container)
+# DB_PATH=/data/ambient_weather.duckdb
 ```
+
+**Note:** Weather App uses DuckDB for high-performance analytics (10-100x faster than SQLite).
 
 ### 2. Start the Application
 
@@ -158,23 +157,6 @@ docker cp weather-app-backend:/data/ambient_weather.db ./backup.db
 docker cp ./backup.db weather-app-backend:/data/ambient_weather.db
 ```
 
-### Migrate from SQLite to DuckDB
-
-```bash
-# Access backend container
-docker-compose exec backend bash
-
-# Run migration
-weather-app migrate --backup
-
-# Update .env to use DuckDB
-echo "USE_DUCKDB=true" >> .env
-
-# Restart backend
-exit
-docker-compose restart backend
-```
-
 ## Development Mode
 
 For development with hot-reload:
@@ -289,15 +271,6 @@ docker-compose up -d
 ```
 
 ## Performance Tuning
-
-### Use DuckDB for Better Analytics Performance
-
-Set in `.env`:
-```
-USE_DUCKDB=true
-```
-
-DuckDB provides 10-100x faster performance for analytical queries.
 
 ### Resource Limits
 
