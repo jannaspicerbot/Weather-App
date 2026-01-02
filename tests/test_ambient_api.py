@@ -8,10 +8,24 @@ import requests
 import os
 import sys
 import json
+from pathlib import Path
+
+# Fix Windows console encoding for emoji support
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    # Look for .env in project root (parent of tests directory)
+    env_path = Path(__file__).parent.parent / '.env'
+    load_dotenv(dotenv_path=env_path)
+except ImportError:
+    print("Warning: python-dotenv not installed. Install it with: pip install python-dotenv")
 
 def test_api_connection():
     """Test the Ambient Weather API with minimal requests"""
-    
+
     # Get API credentials from environment variables
     API_KEY = os.getenv("AMBIENT_API_KEY")
     APPLICATION_KEY = os.getenv("AMBIENT_APP_KEY")
