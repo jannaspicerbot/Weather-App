@@ -172,7 +172,7 @@ The script is smart - it only downloads new data, not everything again!
 **Automation Tips:**
 - **Linux/Mac**: Set up a cron job
 - **Windows**: Use Task Scheduler
-- See [SCRIPTS_USAGE_GUIDE.md](SCRIPTS_USAGE_GUIDE.md) for details
+- See [Scripts Usage Guide](guides/scripts-usage.md) for details
 
 ---
 
@@ -203,6 +203,55 @@ The script is smart - it only downloads new data, not everything again!
 **"Charts are empty"**
 - Make sure fetch completed successfully
 - Check that you have data in the database
+
+---
+
+## Advanced: Permanent Environment Variables (Windows)
+
+If you prefer not to create a `.env` file and want to set environment variables permanently on Windows:
+
+### Option A: PowerShell Permanent Setup
+
+```powershell
+[System.Environment]::SetEnvironmentVariable('AMBIENT_API_KEY', 'your_api_key_here', 'User')
+[System.Environment]::SetEnvironmentVariable('AMBIENT_APP_KEY', 'your_app_key_here', 'User')
+```
+
+**After setting, close and reopen PowerShell**, then scripts will automatically use these variables.
+
+### Option B: Windows System Settings (GUI)
+
+1. Press `Windows Key + R`
+2. Type: `sysdm.cpl` and press Enter
+3. Click **"Advanced"** tab → **"Environment Variables"** button
+4. Under **"User variables"**, click **"New"**
+5. Add first variable:
+   - Variable name: `AMBIENT_API_KEY`
+   - Variable value: `your_api_key_here`
+6. Click **"New"** again and add:
+   - Variable name: `AMBIENT_APP_KEY`
+   - Variable value: `your_app_key_here`
+7. Click OK on all windows
+8. **Close and reopen PowerShell**
+
+### Option C: Helper Script (Quick Setup)
+
+Create `set_env.ps1` in project root:
+
+```powershell
+# set_env.ps1 - Quick environment setup
+$env:AMBIENT_API_KEY="your_api_key_here"
+$env:AMBIENT_APP_KEY="your_app_key_here"
+Write-Host "Environment variables set!" -ForegroundColor Green
+```
+
+Run before each session:
+```powershell
+.\set_env.ps1
+python scripts/ambient_weather_fetch.py
+```
+
+**Note:** Don't commit `set_env.ps1` to git!
 
 ---
 
@@ -242,10 +291,10 @@ The script is smart - it only downloads new data, not everything again!
 
 ## Need More Help?
 
-- **Full API documentation**: [API_README.md](API_README.md)
-- **Test data guide**: [TEST_DATA_GUIDE.md](TEST_DATA_GUIDE.md)
-- **Scripts usage**: [SCRIPTS_USAGE_GUIDE.md](SCRIPTS_USAGE_GUIDE.md)
-- **Architecture**: [ARCHITECTURE.md](ARCHITECTURE.md)
+- **Full API documentation**: [API Reference](guides/api-reference.md)
+- **Test data guide**: [Test Data Guide](guides/test-data.md)
+- **Scripts usage**: [Scripts Usage Guide](guides/scripts-usage.md)
+- **Architecture**: [Architecture](technical/architecture.md)
 - **Interactive API docs**: http://localhost:8000/docs
 
 ---
