@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(git mv:*)",
+      "Bash(python tests/generate_test_data.py:*)",
+      "Bash(python tests/test_local_server.py:*)",
+      "Bash(python:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
