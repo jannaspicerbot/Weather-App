@@ -1,7 +1,7 @@
 """
-DuckDB database management for Ambient Weather data
-Provides context manager-based database access with improved analytics performance
-DuckDB is 10-100x faster than SQLite for analytical queries while maintaining compatibility
+DuckDB database engine for Ambient Weather data
+Provides context manager-based database access with high-performance analytics
+DuckDB is 10-100x faster than SQLite for analytical queries
 """
 import duckdb
 from pathlib import Path
@@ -11,7 +11,7 @@ from datetime import datetime
 from weather_app.config import DB_PATH
 
 
-class AmbientWeatherDuckDB:
+class WeatherDatabase:
     """Context manager for DuckDB operations on Ambient Weather data"""
 
     def __init__(self, db_path: str = None):
@@ -19,11 +19,10 @@ class AmbientWeatherDuckDB:
         Initialize the database connection.
 
         Args:
-            db_path: Path to the DuckDB database file (defaults to ambient_weather.duckdb)
+            db_path: Path to the DuckDB database file (defaults to config DB_PATH)
         """
         if db_path is None:
-            # Replace .db extension with .duckdb
-            db_path = DB_PATH.replace('.db', '.duckdb')
+            db_path = DB_PATH
 
         self.db_path = db_path
         self.conn = None
@@ -33,7 +32,7 @@ class AmbientWeatherDuckDB:
         Enter context manager - establish database connection.
 
         Returns:
-            self: The AmbientWeatherDuckDB instance
+            self: The WeatherDatabase instance
         """
         self.conn = duckdb.connect(self.db_path)
         self._create_tables()
@@ -55,7 +54,7 @@ class AmbientWeatherDuckDB:
 
     def _create_tables(self):
         """Create weather_data and backfill_progress tables if they don't exist."""
-        # Create weather_data table with exact schema from SQLite version
+        # Create weather_data table
         # DuckDB uses BIGINT for large integers, DOUBLE for floats, INTEGER for smaller ints
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS weather_data (
@@ -89,8 +88,7 @@ class AmbientWeatherDuckDB:
             )
         ''')
 
-        # DuckDB automatically creates sequence for PRIMARY KEY
-        # Create indexes for common queries - DuckDB uses similar syntax
+        # Create indexes for common queries
         self.conn.execute('CREATE INDEX IF NOT EXISTS idx_dateutc ON weather_data(dateutc)')
         self.conn.execute('CREATE INDEX IF NOT EXISTS idx_date ON weather_data(date)')
 

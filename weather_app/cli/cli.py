@@ -2,7 +2,6 @@
 Command-line interface for Weather App
 """
 import click
-import sqlite3
 from pathlib import Path
 from datetime import datetime
 import csv
@@ -15,7 +14,8 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
 
 from weather_app.config import DB_PATH, get_db_info
-from weather_app.fetch import AmbientWeatherAPI, AmbientWeatherDB
+from weather_app.api import AmbientWeatherAPI
+from weather_app.database import WeatherDatabase
 
 # Load environment variables from .env file
 load_dotenv()
@@ -34,7 +34,7 @@ def init_db(force):
     """Initialize the weather database"""
     db_path = Path(DB_PATH)
 
-    click.echo(f"Initializing database at: {db_path}")
+    click.echo(f"Initializing DuckDB database at: {db_path}")
 
     # Check if database already exists
     if db_path.exists() and not force:
@@ -45,57 +45,20 @@ def init_db(force):
     # Create database directory if it doesn't exist
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Connect and create schema
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
+    # If force, delete existing database
+    if force and db_path.exists():
+        click.echo("Dropping existing database...")
+        db_path.unlink()
 
-    if force:
-        click.echo("Dropping existing tables...")
-        cursor.execute("DROP TABLE IF EXISTS weather_data")
-
-    click.echo("Creating weather_data table...")
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS weather_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            dateutc INTEGER UNIQUE NOT NULL,
-            date TEXT,
-            tempf REAL,
-            humidity INTEGER,
-            baromabsin REAL,
-            baromrelin REAL,
-            windspeedmph REAL,
-            winddir INTEGER,
-            windgustmph REAL,
-            maxdailygust REAL,
-            hourlyrainin REAL,
-            eventrain IN REAL,
-            dailyrainin REAL,
-            weeklyrainin REAL,
-            monthlyrainin REAL,
-            yearlyrainin REAL,
-            totalrainin REAL,
-            solarradiation REAL,
-            uv INTEGER,
-            feelsLike REAL,
-            dewPoint REAL,
-            feelsLikein REAL,
-            dewPointin REAL,
-            lastRain TEXT,
-            tz TEXT,
-            raw_json TEXT
-        )
-    ''')
-
-    # Create indexes for common queries
-    click.echo("Creating indexes...")
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_dateutc ON weather_data(dateutc)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_date ON weather_data(date)')
-
-    conn.commit()
-    conn.close()
+    # Create database and tables using WeatherDatabase context manager
+    click.echo("Creating weather_data and backfill_progress tables...")
+    with WeatherDatabase(str(db_path)) as db:
+        # Tables are created automatically in __enter__
+        pass
 
     click.echo(f"✅ Database initialized successfully at {db_path}")
-    click.echo(f"📊 Database info: {get_db_info()['mode']} mode")
+    click.echo(f"📊 Database engine: {get_db_info()['database_engine']}")
+    click.echo(f"📊 Database mode: {get_db_info()['mode']}")
 
 
 @cli.command()
@@ -145,7 +108,7 @@ def fetch(limit):
             return
 
         # Save to database
-        with AmbientWeatherDB(db_path) as db:
+        with WeatherDatabase(db_path) as db:
             inserted, skipped = db.insert_data(data)
 
         click.echo(f"✅ Fetched {len(data)} record(s)")
@@ -233,7 +196,7 @@ def backfill(start, end, batch_size, delay):
             click.echo(f"Progress: {records_fetched} records fetched, {requests_made} API requests made")
 
         # Fetch all historical data
-        with AmbientWeatherDB(db_path) as db:
+        with WeatherDatabase(db_path) as db:
             # Initialize backfill progress
             db.init_backfill_progress(start, end)
 
@@ -278,7 +241,7 @@ def backfill(start, end, batch_size, delay):
         sys.exit(1)
     except Exception as e:
         click.echo(f"\n❌ Error: {e}")
-        with AmbientWeatherDB(db_path) as db:
+        with WeatherDatabase(db_path) as db:
             db.update_backfill_progress(
                 current_position=0,
                 records_fetched=0,
@@ -398,60 +361,6 @@ def info():
         click.echo("⚠️  Run 'weather-app init-db' to create the database")
 
     click.echo("=" * 60)
-
-
-@cli.command()
-@click.option(
-    '--sqlite-path',
-    default=DB_PATH,
-    help='Path to SQLite database file (default: ambient_weather.db)'
-)
-@click.option(
-    '--duckdb-path',
-    default=None,
-    help='Path to DuckDB database file (default: replaces .db with .duckdb)'
-)
-@click.option(
-    '--batch-size',
-    default=1000,
-    type=int,
-    help='Number of records to process at a time (default: 1000)'
-)
-@click.option(
-    '--backup',
-    is_flag=True,
-    help='Create a backup of the SQLite database before migration'
-)
-def migrate(sqlite_path, duckdb_path, batch_size, backup):
-    """
-    Migrate weather data from SQLite to DuckDB database.
-
-    DuckDB provides 10-100x faster performance for analytical queries
-    while maintaining compatibility with existing code.
-    """
-    from weather_app.fetch.migrate_to_duckdb import migrate_sqlite_to_duckdb
-    import shutil
-
-    try:
-        if backup:
-            backup_path = f"{sqlite_path}.backup"
-            click.echo(f"💾 Creating backup: {backup_path}")
-            shutil.copy2(sqlite_path, backup_path)
-            click.echo()
-
-        migrate_sqlite_to_duckdb(sqlite_path, duckdb_path, batch_size)
-
-    except FileNotFoundError as e:
-        click.echo(f"❌ Error: {e}")
-        click.echo()
-        click.echo("Make sure the SQLite database exists before running migration.")
-        sys.exit(1)
-
-    except Exception as e:
-        click.echo(f"❌ Migration failed: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ from typing import List, Optional
 from datetime import datetime
 
 from weather_app.web.models import WeatherData, DatabaseStats
-from weather_app.storage.repository import WeatherRepository
+from weather_app.database import WeatherRepository
 from weather_app.config import get_db_info
 
 
