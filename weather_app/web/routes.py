@@ -86,7 +86,65 @@ def register_routes(app: FastAPI):
             return WeatherRepository.get_stats()
         except RuntimeError as e:
             raise HTTPException(status_code=500, detail=str(e))
-    
+
+    @app.get("/api/health")
+    def health_check():
+        """
+        Health check endpoint for monitoring
+        """
+        db_info = get_db_info()
+        return {
+            "success": True,
+            "data": {
+                "status": "healthy",
+                "database": db_info["database_engine"],
+                "mode": db_info["mode"]
+            }
+        }
+
+    # Add API prefix routes for frontend compatibility
+    @app.get("/api/weather/latest")
+    def api_get_latest_weather(limit: int = Query(default=100, ge=1, le=10000)):
+        """
+        Get the latest weather readings (API route)
+        """
+        try:
+            results = WeatherRepository.get_all_readings(limit=limit, order="desc")
+            return results
+        except RuntimeError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/weather/range")
+    def api_get_weather_range(
+        start_date: Optional[str] = Query(default=None),
+        end_date: Optional[str] = Query(default=None),
+        limit: int = Query(default=1000, ge=1, le=10000)
+    ):
+        """
+        Get weather data within a date range (API route)
+        """
+        try:
+            return WeatherRepository.get_all_readings(
+                start_date=start_date,
+                end_date=end_date,
+                limit=limit,
+                order="desc"
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except RuntimeError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/weather/stats")
+    def api_get_stats():
+        """
+        Get database statistics (API route)
+        """
+        try:
+            return WeatherRepository.get_stats()
+        except RuntimeError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
     @app.exception_handler(404)
     async def not_found_handler(request, exc):
         """Handle 404 errors"""
@@ -95,7 +153,7 @@ def register_routes(app: FastAPI):
             "detail": "The requested resource was not found",
             "status_code": 404
         }
-    
+
     @app.exception_handler(500)
     async def internal_error_handler(request, exc):
         """Handle 500 errors"""
