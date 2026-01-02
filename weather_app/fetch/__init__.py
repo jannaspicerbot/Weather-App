@@ -4,5 +4,6 @@ Handles API interaction and database operations for weather data
 """
 from weather_app.fetch.api import AmbientWeatherAPI
 from weather_app.fetch.database import AmbientWeatherDB
+from weather_app.fetch.database_duckdb import AmbientWeatherDuckDB
 
-__all__ = ['AmbientWeatherAPI', 'AmbientWeatherDB']
+__all__ = ['AmbientWeatherAPI', 'AmbientWeatherDB', 'AmbientWeatherDuckDB']
