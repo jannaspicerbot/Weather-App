@@ -1,433 +1,580 @@
 # Weather App — Technical Specification
-Date: 2026-01-02  
-Based on finalized PRD for jannaspicerbot/Weather-App
+Date: 2026-01-02
+Based on finalized PRD and current implementation for jannaspicerbot/Weather-App
 
 Purpose
-- Provide concrete implementation details for the MVP: local-first Python app that ingests Ambient Weather data at native cadence, supports resumable backfill, stores data in SQLite (Phase 1: 3 years full-resolution; Phase 2: hybrid retention to 50 years with daily aggregates), exposes an interactive web dashboard (Flask + Plotly), supports CLI operations, uses OS keyring for secret storage (with encrypted fallback), and is scheduled externally (cron/systemd).
-- Serve as the authoritative reference for the upcoming implementation tasks and GitHub issue creation.
+- Document the implemented architecture: local-first Python + TypeScript app that ingests Ambient Weather data at native cadence, supports resumable backfill with checkpoints, stores data in DuckDB with 50-year full-resolution retention, exposes an interactive web dashboard (React + TypeScript + Recharts), provides FastAPI backend with OpenAPI schema, supports CLI operations (Click framework), stores secrets in .env file, and optionally runs via Docker Compose.
+- Serve as the authoritative reference for the current system architecture and future enhancements.
 
 Contents
 1. High-level architecture
-2. Technology choices
+2. Technology stack
 3. Project layout
-4. DB schema and retention strategy
-5. Data ingestion and backfill behavior
-6. Aggregation / downsampling pipeline
-7. Web API and Web UI (endpoints, pages, auth)
-8. CLI commands and examples
-9. Configuration and secrets management
-10. Scheduling, deployment, and run examples
-11. Logging, observability, and health checks
+4. Database schema and retention
+5. Data ingestion and backfill
+6. FastAPI backend endpoints
+7. React frontend application
+8. CLI commands
+9. Configuration and secrets
+10. Deployment options
+11. Observability and health checks
 12. Testing strategy and CI/CD
-13. Backup & restore
-14. Migration path
-15. Security considerations
-16. Acceptance criteria & milestones
-17. Implementation epics and tasks (high level)
-18. Appendix: sample snippets (SQL, systemd, cron, Dockerfile)
+13. Backup and restore
+14. Future enhancements
 
 ---
 
-1. High-level architecture
-- Components (local-only):
-  - Fetcher (CLI script run by external scheduler): contacts Ambient Weather API, writes raw readings to DB.
-  - Backfill (CLI script): chunked/resumable retrieval of historical records, writes to DB idempotently.
-  - Aggregator (periodic job or ad-hoc CLI): (Phase 2 only) computes daily aggregates and prunes/archives raw older-than-threshold data.
-  - Web app (Flask): renders dashboard pages and serves JSON endpoints used by Plotly charts; provides CSV export.
-  - Key store: OS keyring (primary) + encrypted-file fallback.
-  - Storage: SQLite DB by default; DB file stored locally (configurable path).
-- All components share the same DB and run on the user's local machine (development machine: HP Pavilion 16; verified/test on Raspberry Pi 4+).
+## 1. High-level architecture
 
-2. Technology choices (rationale)
-- Python 3.10+ (modern features, widespread support).
-- Web: Flask + Jinja + Plotly.js — fastest route to ship interactive dashboard given existing Plotly usage.
-- DB: SQLite via SQLAlchemy ORM — zero-config and portable for single-user local deployments.
-- Migrations: Alembic for schema versioning.
-- Secrets: python-keyring for OS keyring integration; fallback to encrypted local file (Fernet) using a user passphrase.
-- Testing: pytest + pytest-fixtures; use sqlite in-memory or test DB copies for integration tests.
-- CI: GitHub Actions for tests and linters.
-- Packaging: pip-installable package, optional Dockerfile for local containerized use.
-- Linting: black, isort, flake8.
+**Components:**
+- **CLI (Click)**: Commands for init-db, fetch, backfill, export, info
+- **API Client**: Ambient Weather API wrapper with retry/backoff logic
+- **FastAPI Backend**: REST API with OpenAPI schema, serves weather data and health endpoints
+- **React Frontend**: TypeScript + Vite + Recharts for interactive visualizations
+- **DuckDB Database**: Embedded analytical database with columnar storage and compression
+- **Docker Compose**: Multi-container orchestration for one-command deployment
 
-3. Project layout (recommended repo structure)
-- weather_app/ (package)
-  - __init__.py
-  - config.py               # config loader (env + defaults)
-  - db/
-    - models.py             # SQLAlchemy models
-    - session.py            # DB session factory
-    - migrations/           # Alembic managed
-    - migration_scripts/    # helper scripts (create DB)
-  - fetch/
-    - ambient_client.py     # API client wrappers and rate-limit handling
-    - fetcher.py            # fetch latest records
-    - backfill.py           # backfill logic with checkpointing
-  - storage/
-    - repository.py         # DB interactions (inserts, upserts, aggregates)
-    - retention.py          # downsampling/policy helpers
-  - web/
-    - app.py                # Flask app factory
-    - views.py              # page views
-    - api.py                # JSON endpoints (readings, export, health)
-    - templates/
-    - static/
-    - auth.py               # local auth (user management)
-  - cli/
-    - cli.py                # Click-based CLI entrypoints
-  - utils/
-    - keyring_store.py      # keyring + encrypted fallback
-    - logging_config.py
-    - retry.py              # retry/backoff helpers
-    - metrics.py            # basic metrics counters
-  - tests/
-    - unit/
-    - integration/
-- scripts/
-  - db_init.py
-  - sample_cron_entries/
-  - systemd_units/
-- docs/
-  - QUICKSTART.md
-  - ENV_SETUP_GUIDE.md
-  - SCRIPTS_USAGE_GUIDE.md
-- requirements.txt
-- Dockerfile (optional)
-- .github/workflows/ci.yml
+**Data Flow:**
+1. CLI `fetch` command → Ambient Weather API → Parse response → Upsert to DuckDB
+2. CLI `backfill` command → Chunked API requests with checkpoints → Batch insert to DuckDB
+3. React frontend → Fetch from FastAPI → Query DuckDB → Return JSON → Render Recharts
+4. CLI `export` command → Query DuckDB → Write CSV file
 
-4. DB schema and retention strategy
-- Using SQLAlchemy models. Primary tables:
+**Deployment Options:**
+- Native: Python venv + npm (development)
+- Docker Compose: Backend + Frontend in containers (recommended for users)
 
-SQL (expressed conceptually)
-- readings
-  - id: INTEGER PRIMARY KEY AUTOINCREMENT
-  - station_mac: TEXT NOT NULL  -- Phase 2: Add for multi-station support
-  - timestamp_utc: DATETIME NOT NULL
-  - temperature_c: REAL
-  - humidity_pct: REAL
-  - pressure_hpa: REAL
-  - wind_speed_mps: REAL
-  - wind_dir_deg: INTEGER
-  - rainfall_mm: REAL
-  - solar_lux: REAL
-  - battery_level: REAL
-  - raw_payload: JSON  -- stringified JSON
-  - created_at: DATETIME DEFAULT CURRENT_TIMESTAMP
-  - UNIQUE(timestamp_utc)  -- Phase 1: Single device
-  - UNIQUE(station_mac, timestamp_utc)  -- Phase 2: Multi-device
+## 2. Technology stack
 
-- daily_aggregates  -- Phase 2 Only: Deferred from Phase 1
-  - id: INTEGER PRIMARY KEY
-  - station_mac: TEXT NOT NULL
-  - date: DATE NOT NULL
-  - avg_temp: REAL
-  - min_temp: REAL
-  - max_temp: REAL
-  - total_rain_mm: REAL
-  - measurement_count: INTEGER
-  - created_at: DATETIME
+### Backend
+- **Python 3.11+**: Modern type hints, improved performance
+- **FastAPI**: High-performance async framework with automatic OpenAPI schema
+- **DuckDB**: Embedded analytical database (10-100x faster than SQLite for time-series)
+- **Pydantic**: Data validation and serialization with type safety
+- **Click**: CLI framework for command-line tools
+- **Requests**: HTTP client for Ambient Weather API
+- **Python-dotenv**: .env file support
 
-Indexes:
-- readings: index on (timestamp_utc) -- Phase 1
-- readings: index on (station_mac, timestamp_utc) -- Phase 2
-- daily_aggregates: index on (station_mac, date) -- Phase 2
+### Frontend
+- **TypeScript**: Type-safe JavaScript for compile-time error detection
+- **React 18**: UI framework with hooks and modern patterns
+- **Vite**: Fast build tool and dev server
+- **Recharts**: React charting library built on D3
+- **TailwindCSS**: Utility-first CSS framework
+- **React Query**: Server state management and caching
 
-Retention policy (configurable in config.py):
-- Phase 1: FULL_RESOLUTION_YEARS = 3 (no aggregation, no purging)
-- Phase 2: AGGREGATION_HOLD_YEARS = 50 (with daily aggregates)
-- Phase 2: Aggregator job computes daily_aggregates for range older than FULL_RESOLUTION_YEARS and then optionally removes raw readings older than FULL_RESOLUTION_YEARS (or moves them to an archive file), depending on user preference (config option: PURGE_RAW_AFTER_AGGREGATION=true/false).
+### DevOps
+- **Docker & Docker Compose**: Containerization and orchestration
+- **GitHub Actions**: CI/CD for tests, linting, builds
+- **pytest**: Python testing framework
+- **Vitest**: Fast TypeScript/JavaScript testing
+- **black, mypy, isort**: Python code quality tools
+- **ESLint, Prettier**: TypeScript code quality tools
 
-5. Data ingestion and backfill behavior (detailed)
-Fetcher (update workflow)
-- Behavior:
-  - On each run, the fetcher reads the latest timestamp from readings table (Phase 1: single station; Phase 2: for each configured station).
-  - If no record exists, it requests data for a default fallback window (configurable, e.g., last 24-48 hours) or triggers backfill.
-  - Calls Ambient Weather API via ambient_client with exponential backoff and jitter on failures.
-  - Parses records and writes them with upsert semantics (INSERT OR IGNORE OR REPLACE pattern in SQLite). Use a transactional bulk insert for performance.
-  - Logs metrics: fetched_count, inserted_count, duplicate_count, last_success_timestamp.
+## 3. Project layout
 
-Backfill
-- Inputs: start_date, end_date, checkpoint_file (optional)
-  - Phase 2: Add station_mac parameter for multi-device support
-- Behavior:
-  - Break requested date range to API-safe chunks (e.g., day-by-day if API returns per-day data or use API paging).
-  - After each chunk processed successfully, write/update a checkpoint JSON file that contains: { "station_mac": "...", "last_processed": "YYYY-MM-DDTHH:MM:SSZ", "chunks_done": [ ... ] }
-  - On restart, read checkpoint and continue from last_processed.
-  - On errors: retry per-chunk N times (configurable), escalate/log and continue or abort based on --abort-on-error flag.
+```
+weather-app/
+├── weather_app/                  # Python package
+│   ├── __init__.py
+│   ├── api/                      # FastAPI application
+│   │   ├── __init__.py
+│   │   ├── main.py              # FastAPI app instance
+│   │   ├── routes.py            # API endpoints
+│   │   └── models.py            # Pydantic models
+│   ├── cli/                      # Click CLI
+│   │   ├── __init__.py
+│   │   └── cli.py               # CLI commands
+│   ├── database/                 # DuckDB layer
+│   │   ├── __init__.py
+│   │   ├── connection.py        # Database connection
+│   │   ├── schema.py            # Table schemas
+│   │   └── repository.py        # Data access (pragmatic pattern)
+│   ├── services/                 # Business logic
+│   │   ├── __init__.py
+│   │   ├── ambient_client.py    # API client
+│   │   ├── fetcher.py           # Fetch service
+│   │   └── backfill.py          # Backfill service
+│   └── config.py                 # Configuration
+├── web/                          # React frontend
+│   ├── src/
+│   │   ├── components/          # React components
+│   │   ├── hooks/               # Custom React hooks
+│   │   ├── services/            # API client
+│   │   ├── types/               # TypeScript types
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
+├── tests/                        # Python tests
+│   ├── test_api.py
+│   ├── test_cli.py
+│   └── test_database.py
+├── docs/                         # Documentation
+│   ├── technical/
+│   └── user/
+├── docker-compose.yml           # Docker orchestration
+├── Dockerfile.backend           # Backend container
+├── Dockerfile.frontend          # Frontend container
+├── pyproject.toml               # Python package config
+├── requirements.txt             # Python dependencies
+├── .env.example                 # Environment template
+└── .github/workflows/           # CI/CD
+    └── ci.yml
+```
 
-Idempotency and concurrency
-- Phase 1: Use UNIQUE constraint on (timestamp_utc). Inserts that conflict should be ignored or cause UPDATE if the new payload is more complete.
-- Phase 2: Use UNIQUE constraint on (station_mac, timestamp_utc) for multi-device support.
-- Provide both behaviors via config (INSERT_ONLY vs UPSERT).
+## 4. Database schema and retention
 
-Retry/backoff
-- Use a retry helper (exponential backoff with cap and jitter). Sensitive to Ambient Weather rate-limits. Respect HTTP 429 and Retry-After headers.
+**DuckDB Schema (weather_data table):**
 
-6. Aggregation / downsampling pipeline (PHASE 2 ONLY - DEFERRED)
+```sql
+CREATE TABLE weather_data (
+    timestamp TIMESTAMP PRIMARY KEY,
+    temperature DOUBLE,           -- Fahrenheit
+    feels_like DOUBLE,             -- Fahrenheit
+    humidity DOUBLE,               -- Percentage
+    dew_point DOUBLE,              -- Fahrenheit
+    wind_speed DOUBLE,             -- mph
+    wind_gust DOUBLE,              -- mph
+    wind_direction INTEGER,        -- Degrees
+    pressure DOUBLE,               -- inHg
+    precipitation_rate DOUBLE,     -- in/hr
+    precipitation_total DOUBLE,    -- inches
+    solar_radiation DOUBLE,        -- W/m²
+    uv_index INTEGER,
+    battery_ok BOOLEAN
+);
 
-**Note:** This entire section is deferred to Phase 2. Phase 1 MVP stores 3 years of full-resolution data without aggregation.
+CREATE INDEX idx_timestamp ON weather_data(timestamp);
+```
 
-Method:
-- For each station and for each day older than FULL_RESOLUTION_YEARS:
-  - SELECT date(timestamp_utc) as date, COUNT(*) as n, AVG(temperature_c), MIN(temperature_c), MAX(temperature_c), SUM(rainfall_mm) FROM readings WHERE timestamp_utc BETWEEN day_start AND day_end GROUP BY date;
-  - INSERT into daily_aggregates if not exists (or UPSERT).
-- Optionally prune raw readings older than FULL_RESOLUTION_YEARS after successful aggregate insert (configurable).
-Implementation:
-- Implement aggregator.py that can be run manually or scheduled nightly to compute aggregates for windows (e.g., process last day's aggregates for older chunks).
-- Use efficient SQL queries to avoid loading large amounts of data in Python where possible.
+**Retention Policy:**
+- **50 years full-resolution** (no aggregation)
+- Storage estimate: 5.2M readings @ ~1KB = ~500MB-1GB with DuckDB compression
+- Philosophy: "Storage is cheap" - no need for complex aggregation pipelines
+- Columnar storage + compression makes full-resolution feasible
 
-7. Web API and Web UI
-Design decision: Flask app for MVP
-- Flask app factory pattern: create_app(config_name)
-- Use Blueprints: web.views (pages) and web.api (JSON endpoints)
+**Data Integrity:**
+- PRIMARY KEY on timestamp ensures no duplicates
+- Upsert pattern: `INSERT OR REPLACE` for idempotent writes
+- No foreign keys (single table design for simplicity)
 
-Pages (templates):
-- / (dashboard) — latest readings summary + charts
-- /history — interactive charts with date-range selector
-- /export — export page allowing CSV downloads
-- /settings — profile, credentials (stores via keyring), schedule instructions (Phase 2: add station config for multi-device)
-- /backfill — run backfill, show progress logs (trigger asynchronous job or spawn sub-process; provide progress through polling endpoint)
+## 5. Data ingestion and backfill
 
-API endpoints (JSON)
-- GET /api/health -> { status: "ok", last_fetch: "...", db_size: ... }
-- GET /api/stations -> list station metadata (Phase 2: multiple stations)
-- GET /api/readings?start=&end=&agg=raw|hour|day -> paged JSON readings or aggregated buckets (Phase 2: add station_mac param)
-- GET /api/summary?period=last24h|last7d|last30d -> summary stats (Phase 2: add station_mac param)
-- GET /api/export?start=&end&format=csv -> returns CSV file download (Phase 2: add station_mac param)
-- POST /api/backfill -> start backfill job (request body: start,end) -> returns job_id (Phase 2: add station_mac)
-- GET /api/backfill/<job_id> -> status/progress logs
+### Fetch Command (`weather-app fetch`)
 
-Web UI behavior
-- Dashboard loads page and uses /api/readings to populate Plotly charts via AJAX.
-- For long-running tasks (backfill), UI polls /api/backfill/<job_id> for progress updates.
-- Phase 2: Provide user setting to enable/disable auto-downsampling/purge.
-- Auth: login page if UI auth enabled; session cookies use Flask-Login with secure cookie settings.
+**Behavior:**
+1. Read latest timestamp from DuckDB `weather_data` table
+2. If no records exist, fetch last 24 hours
+3. Call Ambient Weather API: `GET /v1/devices/{macAddress}?limit=288`
+4. Parse response and transform to internal schema
+5. Upsert to DuckDB using `INSERT OR REPLACE`
+6. Log: fetched count, inserted count, duplicates skipped
 
-Web UI auth specifics
-- Optional local username/password:
-  - Use Werkzeug security helpers (generate_password_hash, check_password_hash) or bcrypt (py-bcrypt) for stronger hashing.
-  - Admin user created during setup: CLI command to create user: weather_app-cli user create --username alice
-  - Password hash stored in users table in SQLite.
-  - Use Flask-Login for session management.
-  - Provide option to lock UI to localhost only by default (config: BIND_ADDRESS=127.0.0.1) and allow binding to 0.0.0.0 if user decides.
+**Error Handling:**
+- Exponential backoff: 1s, 2s, 4s, 8s (max 5 retries)
+- Respect HTTP 429 (rate limit) and Retry-After headers
+- Log all API errors with request/response details
 
-Key storage in Web UI
-- On settings page, user enters Ambient Weather API Key & App Key.
-- Store keys in OS keyring via python-keyring:
-  - keyring.set_password('weather-app', username, api_key)
-  - keyring.get_password('weather-app', username)
-- For environments where keyring is unavailable, fallback to encrypted file:
-  - Use cryptography.Fernet with user-provided passphrase to encrypt/decrypt JSON blob saved at $XDG_CONFIG_HOME/weather-app/keys.enc
-  - Provide CLI helper to set/get keys and prompt for passphrase as needed.
+### Backfill Command (`weather-app backfill`)
 
-8. CLI commands and examples
-- CLI implemented with Click (weather_app.cli)
-Commands (examples):
-- weather-app init-db --db /path/to/weather.db
-- weather-app fetch --station MAC --limit 100
-- weather-app update --stations all
-- weather-app backfill --station MAC --start 2024-01-01 --end 2024-01-31 --checkpoint /var/lib/weather/backfill.checkpoint.json
-- weather-app aggregate --since 2023-01-01 --until 2024-01-01
-- weather-app export --station MAC --start ... --end ... --out /tmp/export.csv
-- weather-app user create --username alice
-- weather-app key set --service ambient --username alice   (prompts for key, stores in keyring)
+**Inputs:**
+- `--start DATE`: Start date (YYYY-MM-DD)
+- `--end DATE`: End date (YYYY-MM-DD)
+- `--checkpoint FILE`: Optional checkpoint file path
 
-9. Configuration and secrets management
-Configuration precedence:
-1) Environment variables
-2) .env file loaded by python-dotenv (ignored in Git)
-3) config.py defaults
+**Behavior:**
+1. Break date range into daily chunks
+2. For each chunk:
+   - Call Ambient Weather API with 288 records/day limit
+   - Parse and batch insert to DuckDB (1000 records/batch)
+   - Write checkpoint: `{"last_processed": "2024-05-12", "total_inserted": 51840}`
+3. On restart, read checkpoint and resume from last_processed + 1 day
+4. Final report: total days processed, total records inserted, errors
 
-Example config options (config.py)
-- DB_PATH=/var/lib/weather/weather.db
-- BIND_HOST=127.0.0.1
-- BIND_PORT=8080
-- FULL_RESOLUTION_YEARS=3
-- AGGREGATION_HOLD_YEARS=50
-- PURGE_RAW_AFTER_AGGREGATION=True
-- FETCH_RETRY_MAX=5
-- FETCH_RETRY_BACKOFF_FACTOR=2
-- LOG_LEVEL=INFO
-
-.env.template (example)
-- DB_PATH=./weather.db
-- BIND_HOST=127.0.0.1
-- BIND_PORT=8080
-- AMBIENT_APP_KEY=
-- AMBIENT_API_KEY=
-
-Secrets management
-- Preferred flow for web UI:
-  - User creates local profile (username).
-  - On settings page user enters Ambient keys.
-  - App uses python-keyring to store keys keyed by (service='weather-app', username).
-- CLI flow:
-  - CLI will accept --key via stdin prompt and store to keyring if available, otherwise write to encrypted file if user chooses.
-
-10. Scheduling, deployment, and run examples
-Scheduling (external)
-- Cron example (run update every 5 minutes):
-  - */5 * * * * /usr/bin/env /usr/local/bin/weather-app update --stations all >> /var/log/weather/update.log 2>&1
-- systemd timer example:
-  - Provide unit files in scripts/systemd_units/weather-update.service and weather-update.timer (see appendix).
-
-Deployment
-- Recommended for MVP: run on local machine using Python venv:
-  - python -m venv venv
-  - source venv/bin/activate
-  - pip install -r requirements.txt
-  - weather-app init-db
-  - weather-app web run   # launches Flask dev server (in production use a WSGI server below)
-- Production local run (systemd + gunicorn):
-  - Use gunicorn + systemd service to run Flask app; provide systemd unit skeleton.
-
-Optional Dockerfile (skeleton) included for users preferring containerized local run (document caveats re: keyring access).
-
-11. Logging, observability, and health checks
-Logging
-- Use structured JSON logs via python-json-logger or similar.
-- Log rotation via logging.handlers.RotatingFileHandler + external logrotate examples.
-
-Health endpoint
-- GET /api/health returns:
-  - { status: "ok", db_file_size_bytes, last_fetch_iso, last_fetch_successful: true/false }
-
-Metrics
-- Basic in-process counters (fetch_success, fetch_fail, backfill_jobs_running, last_backfill_status).
-- Expose /metrics (Prometheus format) optional if user wants to run Prometheus locally (deferred MVP).
-
-12. Testing strategy and CI/CD
-Unit tests
-- Parser tests for Ambient API response -> internal model conversion.
-- DB repository tests (insert/upsert behavior).
-- Auth tests (password hashing and login).
-- Keyring fallback tests (mock keyring and encrypted store).
-
-Integration tests
-- Use synthetic test DB with generated 2 years of sample data (tool included to generate synthetic dataset).
-- End-to-end test: run backfill on generated dataset and verify counts, run aggregator and verify daily aggregates, run web app test client and verify endpoints.
-
-CI pipeline (GitHub Actions - skeleton)
-- on: [push, pull_request]
-- jobs:
-  - lint: run black/isort/flake8
-  - test: setup python, install requirements, run pytest
-  - build: optional (prepare wheel / Docker build)
-
-13. Backup & restore
-Backup script (scripts/backup_db.py)
-- Copies DB file to configured backup location (timestamped) and optionally compresses it.
-- Provide restore script to move backup file back to DB path and run alembic downgrade/upgrade if necessary.
-
-Recommendation: daily backup to external drive or NAS; document schedule in docs.
-
-14. Migration path
-- Provide export scripts to dump into CSV/Parquet for import into InfluxDB/TimescaleDB.
-- Provide a migration tool (scripts/migrate_to_influx.py, scripts/migrate_to_timescaledb.py) that reads SQLite and writes to chosen target.
-
-15. Security considerations
-- Secrets never transmitted off-device by default.
-- Use OS keyring where available; fallback to encrypted file (Fernet).
-- Web UI default bind to 127.0.0.1 to avoid exposing to LAN; optional local auth recommended if binding to 0.0.0.0.
-- Use CSRF protection for forms (Flask-WTF) and secure cookie settings.
-- Document that user is responsible for device network security and firewall settings.
-
-16. Acceptance criteria & milestones
-MVP acceptance criteria (repeat for clarity)
-- DB initialization works and schema created by db_init.
-- Backfill inserts expected counts for generated sample dataset and supports resume via checkpoint.
-- Update/fetch script runs idempotently and inserts no duplicates on repeated runs.
-- Web dashboard runs locally, shows interactive charts for last 24h, and supports CSV export.
-- Keys can be stored & retrieved via OS keyring. Fallback encrypted store works.
-- Unit and integration tests pass in CI.
-
-Milestones
-- M1: Repo refactor and package layout + DB init + core fetch/upsert
-- M2: Backfill with checkpointing + aggregator for daily aggregates + retention enforcement
-- M3: Web app skeleton + API endpoints + Plotly charts + export
-- M4: Auth + keyring integration + scheduling docs + backup/restore
-- M5: Tests + CI + docs + release packaging
-
-17. Implementation epics and tasks (high level)
-Epic A — Core library & DB
-- Refactor existing scripts into package modules.
-- Implement DB models + Alembic migrations.
-- Implement repository layer for CRUD/upsert operations.
-Epic B — Fetcher & Backfill
-- ambient_client with retry, fetcher CLI, backfill CLI with checkpoint.
-- Tests for idempotency/resume.
-Epic C — Aggregation & Retention
-- Implement aggregator CLI, downsample logic, purge/archive logic.
-Epic D — Web app (MVP)
-- Flask app factory, templates, API endpoints, Plotly integration, CSV export.
-Epic E — Auth & Key storage
-- Implement user management, keyring storage, encrypted fallback.
-Epic F — Packaging, CI, docs
-- Create requirements, setup.py/pyproject, GitHub Actions, docs and quickstart.
-Epic G — Backup, migration, and optional Dockerfile
-
-18. Appendix: sample snippets
-
-A. SQLite upsert (SQLAlchemy example)
-- Use ON CONFLICT clause for SQLite:
-  - INSERT INTO readings (...) VALUES (...) ON CONFLICT(station_mac, timestamp_utc) DO UPDATE SET raw_payload=excluded.raw_payload;
-
-B. Backfill checkpoint JSON (example)
+**Checkpoint Format (JSON):**
+```json
 {
-  "job_id": "backfill-20260102-001",
-  "station_mac": "00:11:22:33:44:55",
-  "last_processed": "2024-05-12T00:00:00Z",
-  "chunks_done": ["2024-05-12", "2024-05-13"]
+  "start_date": "2024-01-01",
+  "end_date": "2024-12-31",
+  "last_processed": "2024-05-12",
+  "total_inserted": 51840,
+  "errors": []
 }
+```
 
-C. systemd unit (service + timer) skeleton
-- scripts/systemd_units/weather-update.service
-[Unit]
-Description=Weather App periodic update
-After=network.target
+**Idempotency:**
+- PRIMARY KEY constraint on timestamp prevents duplicates
+- `INSERT OR REPLACE` ensures safe re-runs
+- Backfill can be interrupted and resumed without data loss
 
-[Service]
-Type=oneshot
-User=weather
-Group=weather
-ExecStart=/usr/bin/env /usr/local/bin/weather-app update --stations all
-WorkingDirectory=/home/weather
-EnvironmentFile=/etc/weather-app/env
+## 6. FastAPI backend endpoints
 
-- scripts/systemd_units/weather-update.timer
-[Unit]
-Description=Run Weather App update every 5 minutes
+**Base URL:** `http://localhost:8000/api`
 
-[Timer]
-OnCalendar=*:0/5
-Persistent=true
+### Health Endpoint
+```
+GET /api/health
+Response: {
+  "status": "ok",
+  "database": "connected",
+  "total_records": 125432,
+  "latest_reading": "2024-12-31T23:55:00Z",
+  "oldest_reading": "2024-01-01T00:00:00Z"
+}
+```
 
-[Install]
-WantedBy=timers.target
+### Weather Data Endpoints
+```
+GET /api/weather/latest
+Returns: WeatherReading (most recent record)
 
-D. Cron example (5-minute)
-*/5 * * * * /usr/bin/env /usr/local/bin/weather-app update --stations all >> /var/log/weather/update.log 2>&1
+GET /api/weather/range?start=TIMESTAMP&end=TIMESTAMP
+Returns: List[WeatherReading] (paginated, max 10000 records)
 
-E. Dockerfile (skeleton)
-FROM python:3.11-slim
-WORKDIR /app
-COPY pyproject.toml requirements.txt /app/
-RUN pip install -r requirements.txt
-COPY . /app
-ENV FLASK_APP=weather_app.web.app:create_app
-CMD ["gunicorn", "weather_app.web.app:app", "-b", "0.0.0.0:8080", "--workers", "2"]
+GET /api/weather/stats?period=24h|7d|30d|1y
+Returns: WeatherStats (aggregated statistics)
+```
+
+### Export Endpoint
+```
+GET /api/export?start=TIMESTAMP&end=TIMESTAMP&format=csv
+Returns: CSV file download (Content-Type: text/csv)
+```
+
+**Pydantic Models:**
+```python
+class WeatherReading(BaseModel):
+    timestamp: datetime
+    temperature: float
+    feels_like: float | None
+    humidity: float | None
+    # ... other fields
+
+class WeatherStats(BaseModel):
+    period: str
+    avg_temperature: float
+    min_temperature: float
+    max_temperature: float
+    total_precipitation: float
+```
+
+**CORS:** Enabled for http://localhost:3000 (Vite dev server)
+
+## 7. React frontend application
+
+**Tech Stack:**
+- React 18 + TypeScript
+- Vite (build tool + dev server)
+- Recharts (charting library)
+- TailwindCSS (styling)
+- React Query (data fetching + caching)
+
+**Components:**
+- `WeatherDashboard`: Main container component
+- `TemperatureChart`: Line chart for temperature over time
+- `HumidityChart`: Area chart for humidity
+- `WindChart`: Combined speed/direction visualization
+- `PrecipitationChart`: Bar chart for rainfall
+- `CurrentConditions`: Latest reading summary card
+- `DateRangePicker`: Date range selector for historical data
+
+**Features:**
+- Real-time data updates (polling every 5 minutes)
+- Interactive charts with zoom/pan
+- Responsive design (mobile, tablet, desktop)
+- Loading states and error handling
+- CSV export button
+
+**API Client (TypeScript):**
+```typescript
+class WeatherAPI {
+  async getLatest(): Promise<WeatherReading>
+  async getRange(start: Date, end: Date): Promise<WeatherReading[]>
+  async getStats(period: string): Promise<WeatherStats>
+  async exportCSV(start: Date, end: Date): Promise<Blob>
+}
+```
+
+## 8. CLI commands
+
+**Installation:**
+```bash
+pip install -e .
+# or
+pip install weather-app
+```
+
+**Commands:**
+
+### Database Initialization
+```bash
+weather-app init-db
+# Creates DuckDB database with schema at configured path
+```
+
+### Fetch Latest Data
+```bash
+weather-app fetch
+# Fetches latest readings from Ambient Weather API
+# Uses configuration from .env file
+```
+
+### Backfill Historical Data
+```bash
+weather-app backfill --start 2024-01-01 --end 2024-12-31
+# Optional: --checkpoint backfill.json (resume support)
+```
+
+### Export to CSV
+```bash
+weather-app export --start 2024-01-01 --end 2024-12-31 --output data.csv
+```
+
+### Database Info
+```bash
+weather-app info
+# Shows: total records, date range, database size, path
+```
+
+**Future Commands:**
+- `weather-app serve` - Run FastAPI server
+- `weather-app test-connection` - Test Ambient Weather API connection
+
+## 9. Configuration and secrets
+
+**Environment Variables (.env file):**
+```bash
+# Required
+AMBIENT_API_KEY=your_api_key_here
+AMBIENT_APPLICATION_KEY=your_app_key_here
+STATION_MAC_ADDRESS=00:11:22:33:44:55
+
+# Optional
+DATABASE_PATH=./weather.db          # Default: ./weather.db
+LOG_LEVEL=INFO                       # Default: INFO
+API_TIMEOUT=30                       # Default: 30 seconds
+RETRY_MAX_ATTEMPTS=5                 # Default: 5
+```
+
+**.env.example (template in repository):**
+```bash
+AMBIENT_API_KEY=
+AMBIENT_APPLICATION_KEY=
+STATION_MAC_ADDRESS=
+DATABASE_PATH=./weather.db
+LOG_LEVEL=INFO
+```
+
+**Security:**
+- .env file is .gitignored (never committed)
+- Keys stored locally only (never transmitted to external services)
+- File permissions: chmod 600 .env (recommended)
+- Future: Web UI for key management with encrypted storage
+
+## 10. Deployment options
+
+### Docker Compose (Recommended for Users)
+
+**One-command deployment:**
+```bash
+docker-compose up -d
+```
+
+**docker-compose.yml:**
+```yaml
+version: '3.8'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env
+    environment:
+      - DATABASE_PATH=/app/data/weather.db
+
+  frontend:
+    build:
+      context: ./web
+      dockerfile: ../Dockerfile.frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+```
+
+**Access:** http://localhost:3000
+
+### Native Python (Development)
+
+**Backend:**
+```bash
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn weather_app.api.main:app --reload --port 8000
+```
+
+**Frontend:**
+```bash
+cd web
+npm install
+npm run dev  # Vite dev server on port 3000
+```
+
+### Scheduling (Optional)
+
+**Cron (Linux/macOS):**
+```bash
+# Fetch every 5 minutes
+*/5 * * * * /path/to/venv/bin/weather-app fetch >> /var/log/weather.log 2>&1
+```
+
+**Task Scheduler (Windows):**
+- Create scheduled task to run `weather-app fetch` every 5 minutes
+- Future: Built-in APScheduler for automated fetching
+
+## 11. Observability and health checks
+
+**Logging:**
+- Python `logging` module with INFO/DEBUG levels
+- Log format: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`
+- Log location: stdout (Docker) or `./logs/weather-app.log` (native)
+- Future: Structured JSON logging with correlation IDs
+
+**Health Endpoint:**
+```
+GET /api/health
+Response: {
+  "status": "ok",
+  "database": "connected",
+  "total_records": 125432,
+  "latest_reading": "2024-12-31T23:55:00Z",
+  "database_size_mb": 45.2
+}
+```
+
+**Future Monitoring:**
+- Prometheus /metrics endpoint
+- Grafana dashboard templates
+- Sentry error tracking (free tier)
+
+## 12. Testing strategy and CI/CD
+
+**Python Tests (pytest):**
+```bash
+pytest tests/
+# Unit tests: API client, database, CLI commands
+# Integration tests: End-to-end data flow with test DuckDB
+```
+
+**Frontend Tests (Vitest):**
+```bash
+cd web && npm test
+# Component tests, API client tests, type checking
+```
+
+**CI Pipeline (GitHub Actions):**
+```yaml
+name: CI
+on: [push, pull_request]
+jobs:
+  backend-tests:
+    - black --check
+    - mypy weather_app/
+    - pytest tests/
+
+  frontend-tests:
+    - npm run lint
+    - npm run type-check
+    - npm test
+
+  docker-build:
+    - docker-compose build
+    - docker-compose up -d
+    - curl http://localhost:8000/api/health
+```
+
+**Coverage Target:** 70% minimum
+
+## 13. Backup and restore
+
+**Backup (Manual):**
+```bash
+# DuckDB is a single file - just copy it
+cp ./data/weather.db ./backups/weather_$(date +%Y%m%d).db
+
+# Optional: compress
+gzip ./backups/weather_$(date +%Y%m%d).db
+```
+
+**Restore:**
+```bash
+cp ./backups/weather_20241231.db ./data/weather.db
+```
+
+**Automated Backup Script:**
+```bash
+#!/bin/bash
+# backup_weather.sh
+BACKUP_DIR=~/weather-backups
+mkdir -p $BACKUP_DIR
+cp ./data/weather.db $BACKUP_DIR/weather_$(date +%Y%m%d_%H%M%S).db
+find $BACKUP_DIR -name "weather_*.db" -mtime +30 -delete  # Keep 30 days
+```
+
+**Future:** Automated backup to NAS/S3 with retention policies
+
+## 14. Future enhancements
+
+**Phase 3 Planned Features:**
+- Multi-station support (2-5 stations)
+- Built-in scheduler (APScheduler) - no cron needed
+- Web UI configuration interface
+- User authentication for web dashboard
+- Real-time WebSocket updates
+- Mobile app (React Native)
+- Additional export formats (JSON, Parquet)
+- Weather alerts and notifications
+- Historical data analysis tools
+- Machine learning forecasting
+
+**Migration Path:**
+- DuckDB → Parquet export for InfluxDB/TimescaleDB migration
+- CSV export for compatibility with any platform
 
 ---
 
-Questions / confirmation needed from you before I convert this spec into issue drafts:
-1. Confirm web framework choice: Flask + Jinja + Plotly for MVP (approved by PRD earlier). Proceed?
-2. Confirm default DB path and config choices:
-   - Default DB path: ./weather.db (user-local) or /var/lib/weather/weather.db (system-wide)? Recommend ./weather.db for quickstart and allow override.
-3. Decide default behavior for PURGE_RAW_AFTER_AGGREGATION:
-   - Default = True (to limit DB size) or False (preserve raw data but risk larger DB)? Recommend True with a configurable retention window and an option to archive raw data instead of deleting.
-4. Do you want the aggregator to run automatically (via scheduler) by default or triggered manually? Recommendation: manual by default; provide sample scheduled entry for nightly aggregate job.
+## Implementation Status
 
-Next actions once you confirm these:
-- Break the epics and tasks into discrete GitHub issue drafts (title, description, acceptance criteria, estimate) and present them for review.
-- Implement the repo refactor plan and create initial PR drafts (or create issues first per your earlier preference).
+**Phase 1 (Completed):** ✅
+- CLI with Click framework
+- DuckDB database integration
+- Ambient Weather API client
+- Basic fetch and backfill commands
 
-If you want, I can also produce the initial list of GitHub issue drafts now (without creating them in repo) so you can review before I create them. Which would you prefer?
+**Phase 2 (Completed):** ✅
+- FastAPI backend with OpenAPI schema
+- React + TypeScript frontend
+- Recharts visualizations
+- Docker Compose deployment
+- End-to-end type safety
+
+**Phase 3 (Planned):**
+- Multi-station support
+- Built-in scheduler (APScheduler)
+- Web UI configuration
+- User authentication
+- Real-time updates
+
+---
+
+## Document Changelog
+
+- 2026-01-02: Initial specification based on SQLite/Flask architecture
+- 2026-01-02: Updated to reflect implemented DuckDB/FastAPI/React architecture with 50-year full-resolution retention

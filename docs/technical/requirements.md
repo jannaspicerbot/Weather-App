@@ -6,10 +6,10 @@ Author: Drafted from repository jannaspicerbot/Weather-App and conversation with
 Weather App — Ambient Weather data collection, processing, and visualization
 
 ## Summary
-A lightweight, local-first Python application for Ambient Weather station owners who prefer owning their data and avoiding subscription dashboards. The app collects, backfills, stores, visualizes, and exports Ambient Weather station data for personal use (hobbyists). MVP runs locally on devices such as Raspberry Pi / local PC. Phase 1 supports 1 station with 3-year full-resolution retention; Phase 2 expands to 2-5 stations with 50-year hybrid retention (3 years full-resolution + daily aggregates).
+A lightweight, local-first Python application for Ambient Weather station owners who prefer owning their data and avoiding subscription dashboards. The app collects, backfills, stores, visualizes, and exports Ambient Weather station data for personal use (hobbyists). MVP runs locally on devices such as Raspberry Pi / local PC or in Docker containers. Supports single station with 50-year full-resolution retention using DuckDB's columnar storage and compression.
 
 ## Background & Context
-- Language: Python. Repository contains CLI scripts (ambient_weather_fetch.py, update_weather.py, backfill_weather.py), visualization code (ambient_weather_visualize.py using Plotly), docs (README, QUICKSTART, ENV_SETUP_GUIDE), and test fixtures.
+- Language: Python (backend) and TypeScript (frontend). Repository contains CLI (Click framework), FastAPI backend, React+TypeScript frontend with Recharts visualization, DuckDB database, comprehensive docs, and test fixtures.
 - Motivation: Owners dissatisfied with Ambient Weather's dashboard/subscription offering need reliable, local control over accurate weather data for decision-making (agriculture, environmental/industrial controls, research).
 
 ## Problem Statement & JTBD
@@ -21,15 +21,15 @@ A lightweight, local-first Python application for Ambient Weather station owners
 ## Goals & Outcomes
 - Deliver a local-first product that:
   - Fetches and stores native-cadence readings from Ambient Weather.
-  - Performs resumable backfills and supports scheduling via external schedulers.
-  - Provides an interactive web dashboard (Plotly) and CLI tools.
+  - Performs resumable backfills with checkpoint support.
+  - Provides an interactive web dashboard (React+TypeScript+Recharts) and CLI tools.
   - Keeps CSV export as the canonical export format.
-  - Phase 1: Implements 3-year full-resolution retention.
-  - Phase 2: Extends to 50-year hybrid retention (3 years full + daily aggregates for years 4-50).
+  - Implements 50-year full-resolution retention using DuckDB's columnar storage.
+  - One-command deployment via Docker Compose.
 - Measurable outcomes:
-  - Software-level availability target: realistically start at 99.9% (document hardware/network caveats; 99.999% is aspirational and depends on user hardware).
-  - Ingestion success rate (software-level): start target 99.9%.
-  - Visualization responsiveness: small ranges <1s; aggregated multi-year queries <5s (hardware-dependent).
+  - Software-level availability target: 99.9% (document hardware/network caveats).
+  - Ingestion success rate (software-level): 99.9%.
+  - Visualization responsiveness: small ranges <1s; 50-year full dataset queries <5s (DuckDB optimization).
 
 ## User Experience
 
@@ -40,120 +40,134 @@ Interfaces
 
 UX Flows
 1. CLI
-   - Install dependencies
-   - Configure API key and station ID (via .env or OS keyring)
-   - Run initial backfill
-   - Schedule periodic updates (cron/systemd)
-   - Generate visualizations or download CSVs
+   - Install via Docker Compose or pip
+   - Configure API key and station MAC (via .env file)
+   - Initialize database: `weather-app init-db`
+   - Run backfill: `weather-app backfill --start 2024-01-01 --end 2024-12-31`
+   - Fetch latest: `weather-app fetch`
+   - Export data: `weather-app export --start 2024-01-01 --end 2024-12-31 --output data.csv`
+   - View database info: `weather-app info`
 
 2. Web Dashboard
-   - Visit local dashboard URL
-   - Create local profile
-   - Enter Ambient Weather API Key and App Key
-   - Specify date range
-   - Run initial backfill (UI-triggered, uses backfill script)
-   - Schedule periodic updates (UI provides cron/systemd snippets; scheduling remains external)
-   - Generate visualizations (interactive charts)
-   - Save preferences (date range, chart defaults)
-   - Phase 2: Station selection for multi-device support
+   - Visit http://localhost:3000 (Vite dev) or http://localhost:8000 (Docker)
+   - View real-time weather data and interactive charts
+   - Select date ranges for historical analysis
+   - Download CSV exports
+   - Responsive design works on desktop, tablet, and mobile
 
-   Security note: Web UI must provide a secure local method to store keys (see Security & Secrets).
-
-3. iPad
-   - Future flow TBD (dashboard will be responsive; later consider an iPad-optimized UI)
+3. Docker Deployment
+   - Run `docker-compose up -d`
+   - Access dashboard at http://localhost:8000
+   - All data persisted in Docker volumes
 
 ## High-Level Flow
-1. Configure environment (API keys, station MAC, storage location). Keys stored locally and securely.
-2. Run initial backfill to populate historical data.
-3. Schedule periodic updates via external scheduler (cron/systemd).
-4. Store native-cadence data in local DB (Phase 1: 3 years full-resolution; Phase 2: add downsampling/aggregation for long-term retention).
-5. Web dashboard queries DB and renders interactive charts; exports CSV on demand.
+1. Configure environment (API keys, station MAC) via .env file.
+2. Initialize DuckDB database with schema.
+3. Run initial backfill to populate historical data (resumable with checkpoints).
+4. Optionally schedule periodic fetches via cron/systemd (or run manually).
+5. Store native-cadence data in DuckDB with 50-year full-resolution retention.
+6. Web dashboard (React+TypeScript) queries FastAPI backend, renders interactive Recharts visualizations.
+7. Export data to CSV on demand via CLI or web UI.
 
 ## Functional Requirements (final)
 - Fetch latest measurements from Ambient Weather API at native device cadence.
-- Support resumable, chunked backfill by date range.
-- Store data in local DB (SQLite by default).
-- Phase 1: Store 3 years of full-resolution data.
-- Phase 2: Implement hybrid retention with daily aggregates for 50-year storage.
-- Provide interactive web dashboard (Plotly), CLI, and CSV export (CSV only).
-- Provide optional local username/password for Web UI access.
-- Store user API/App keys securely on the local device (OS keyring preferred; optional encrypted store).
-- Scheduling handled by external scheduler; provide sample cron/systemd files.
-- CI/CD: GitHub Actions for tests, linting; publishable release artifacts (PyPI/Docker optional).
+- Support resumable, chunked backfill by date range with checkpoint files.
+- Store data in DuckDB (embedded analytical database, 10-100x faster than SQLite for time-series).
+- Implement 50-year full-resolution retention using DuckDB's columnar compression.
+- Provide interactive web dashboard (React+TypeScript+Recharts), FastAPI backend, CLI (Click), and CSV export.
+- Store API/App keys in .env file (local device only, never transmitted).
+- Scheduling handled by external scheduler (optional); provide sample cron/systemd files.
+- Docker Compose for one-command deployment.
+- CI/CD: GitHub Actions for tests, linting, Docker builds.
 
 ## Non-Functional Requirements
-- Portability: runs on typical Linux/macOS PCs and local devices.
-- Minimum development hardware: HP Pavilion Laptop 16-ag0xxx with 15 GB RAM (development environment). The application will be tested on simpler hardware (e.g., Raspberry Pi 4 / 4GB + SSD) to confirm broader compatibility; any limitations discovered will be documented and addressed.
-- Scalability: Phase 1 supports 1 station; Phase 2 will support 2-5 stations.
-- Reliability: idempotent writes, retries with exponential backoff, resumable backfill.
-- Performance: visualization response targets described above.
-- Observability: structured logging, health endpoint, basic metrics.
-- Security: no secrets leave the local device. Keys are stored in OS keyring or encrypted local store.
+- Portability: runs on Linux/macOS/Windows via Docker Compose or native Python.
+- Minimum development hardware: HP Pavilion Laptop 16-ag0xxx with 15 GB RAM (development environment). Tested on Raspberry Pi 4 / 4GB + SSD for broader compatibility.
+- Scalability: Currently supports 1 station (future: multi-station support).
+- Reliability: idempotent writes (UNIQUE constraint on timestamp), retries with exponential backoff, resumable backfill with checkpoints.
+- Performance: DuckDB provides 10-100x speedup over SQLite for analytical queries; visualization <1s for small ranges, <5s for 50-year dataset.
+- Observability: structured logging (Python logging), health endpoint (/api/health), database metrics.
+- Security: secrets stored in .env file (never transmitted off-device, .env is .gitignored).
 
 ## Storage & Retention (final decisions)
-- Default DB: SQLite (single-file) for simplicity and portability.
-- Retention policy (phased):
-  - Phase 1: Store native device cadence readings for 3 years (full resolution).
-  - Phase 2: Extend with daily aggregates for up to 50 years total retention.
-- Backup: provide scripts for DB backup to local external storage (USB/NAS); document restore procedure.
-- Migration: provide scripts to migrate to InfluxDB or TimescaleDB for advanced users later.
+- Database: DuckDB (single-file, embedded analytical database with columnar storage).
+- Retention policy: 50 years full-resolution storage (no aggregation needed - "storage is cheap").
+- Storage estimate: 5-minute cadence for 50 years = ~5.2M readings = ~500MB-1GB with DuckDB compression.
+- Backup: DuckDB file can be copied directly; provide backup documentation.
+- Future migration: DuckDB supports Parquet export for migration to InfluxDB/TimescaleDB if needed.
 
-## Data Model (suggested)
-- readings: id, timestamp_utc (indexed), temperature_c, humidity_pct, pressure_hpa, wind_speed_mps, wind_dir_deg, rainfall_mm, solar_lux, battery_level, raw_payload (json)
-  - Phase 1: Single device (no station_mac field needed)
-  - Phase 2: Add station_mac field with UNIQUE constraint on (station_mac, timestamp_utc) for multi-device support
-- daily_aggregates: (Phase 2 only) station_mac, date, avg_temp, min_temp, max_temp, total_rain, etc.
+## Data Model
+- weather_data table:
+  - timestamp: TIMESTAMP PRIMARY KEY (indexed for time-series queries)
+  - temperature: DOUBLE (Fahrenheit)
+  - feels_like: DOUBLE (Fahrenheit)
+  - humidity: DOUBLE (percentage)
+  - dew_point: DOUBLE (Fahrenheit)
+  - wind_speed: DOUBLE (mph)
+  - wind_gust: DOUBLE (mph)
+  - wind_direction: INTEGER (degrees)
+  - pressure: DOUBLE (inHg)
+  - precipitation_rate: DOUBLE (in/hr)
+  - precipitation_total: DOUBLE (inches)
+  - solar_radiation: DOUBLE (W/m²)
+  - uv_index: INTEGER
+  - battery_ok: BOOLEAN
+  - No daily_aggregates table (full resolution only)
 
-## Web UI Authentication & Key Storage
-- Web UI auth: optional local username/password (user-managed). Credentials stored hashed in local DB.
-- Keys: use OS keyring (recommended) for storing Ambient API/App keys securely. Provide fallback: encrypted local store protected by user passphrase.
-- Ensure .env is .gitignored and that CLI usage continues to support .env for advanced users.
+## API Keys & Configuration
+- API keys stored in .env file (AMBIENT_API_KEY, AMBIENT_APPLICATION_KEY, STATION_MAC_ADDRESS).
+- .env file is .gitignored to prevent accidental commit.
+- Keys never transmitted off local device.
+- Future: Web UI configuration interface with secure storage.
 
 ## Scheduling
-- External scheduling only (MVP). Provide examples for cron and systemd timers in repo docs.
+- Optional external scheduling via cron/systemd for automated fetches.
+- Manual CLI execution supported.
+- Future: Built-in scheduler with APScheduler.
 
 ## Exports
-- CSV only for MVP. Export endpoint and UI download available.
+- CSV export via CLI: `weather-app export --start DATE --end DATE --output file.csv`
+- Future: Web UI export with date range selector.
 
 ## Observability & Monitoring
-- /api/health endpoint for local checks.
-- Structured logs with rotation.
-- Metrics: last successful fetch timestamp, fetch success/failure counts, backfill progress, DB insert errors.
+- FastAPI /api/health endpoint returns database status and record counts.
+- Python logging with INFO/DEBUG levels.
+- Future: Structured JSON logging, Prometheus metrics endpoint.
 
 ## Testing & CI/CD
-- Unit tests: parser, DB upsert logic, backfill checkpointing.
-- Integration tests: sample dataset (test DB), full backfill run on generated data.
-- GitHub Actions: run tests and linters on PRs; pack releases (PyPI/Docker optional).
+- Python unit tests with pytest for API client, database operations, CLI commands.
+- TypeScript tests with Vitest for frontend components.
+- Integration tests with test DuckDB database.
+- GitHub Actions CI: pytest, black, mypy, frontend build and test.
+- Docker image builds on tags.
 
 ## Acceptance Criteria (MVP)
 - A new user can:
-  - Initialize DB and perform an initial backfill (or load sample dataset).
-  - Run scheduled updates via cron/systemd and avoid duplicate inserts.
-  - Start web dashboard locally, view recent interactive charts, and export CSVs.
-  - Store API keys locally and securely; optional local auth protects the UI.
-- Tests pass on CI; basic integration test available using the test DB.
+  - Run `docker-compose up -d` and access dashboard at http://localhost:8000.
+  - Configure .env file with API keys and station MAC.
+  - Initialize DuckDB database with `weather-app init-db`.
+  - Run backfill with `weather-app backfill --start DATE --end DATE`.
+  - View interactive charts in web dashboard (React+TypeScript+Recharts).
+  - Export data to CSV with `weather-app export`.
+- All tests pass on CI (pytest, frontend tests, Docker build).
 
 ## Risk Assessment & Mitigations
 - Ambient Weather API changes/rate limits → retries, backoff, chunked backfill, and robust error logging.
 - Local hardware failures → recommend SSD, UPS, periodic backups.
 - Uptime expectations → document realistic hardware-bound limits; target software-level 99.9% initially.
 
-## Open Questions (resolved / remaining)
-Resolved from your input:
-- Target users: hobbyists (personal device owners). Local-only for MVP.
-- Storage preference: SQLite (recommended) with migration path.
-- Scale: Phase 1 supports 1 station; Phase 2 will support 2-5 stations.
-- Retention strategy: Phase 1 implements 3 years full-resolution; Phase 2 adds daily aggregates for 50-year retention.
-- Sampling: store native device cadence.
-- Web UI: interactive Plotly-based dashboard; optional local auth; keys stored locally (OS keyring).
-- Export: CSV only.
-- CI/CD: GitHub Actions yes.
-- Stakeholders: you (solo developer) and community; you approve changes.
-
-Remaining small decisions to finalize during implementation:
-- Exact retention durations and thresholds configurable (default: 3 years for full-resolution).
-- Default fetch cadence behavior (follow device cadence by default; allow override via config).
+## Technical Decisions (Resolved)
+- Database: DuckDB (10-100x faster than SQLite for analytics)
+- Frontend: React + TypeScript + Vite + Recharts
+- Backend: FastAPI with OpenAPI schema generation
+- Retention: 50 years full-resolution (no aggregation - "storage is cheap")
+- Deployment: Docker Compose for one-command setup
+- CLI: Click framework with commands: init-db, fetch, backfill, export, info
+- Type Safety: End-to-end with Pydantic (backend) and TypeScript (frontend)
+- Sampling: Native device cadence (typically 5 minutes)
+- Export: CSV only (additional formats possible in future)
+- CI/CD: GitHub Actions for all testing and builds
 
 ## Changelog
-- 2026-01-01: Finalized PRD with confirmed retention, sampling, web UI auth, and hardware minimum updated to reflect developer environment and the need to test on simpler hardware.
-- 2026-01-01: Updated to reflect phased implementation approach - Phase 1: single station, 3-year retention; Phase 2: multi-station (2-5), 50-year hybrid retention.
+- 2026-01-01: Finalized PRD with confirmed retention, sampling, web UI auth, and hardware minimum.
+- 2026-01-02: Updated to reflect implemented architecture - DuckDB, FastAPI, React+TypeScript, 50-year full-resolution retention, Docker Compose deployment.
