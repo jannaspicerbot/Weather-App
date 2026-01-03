@@ -47,7 +47,7 @@ tests/
 *.log
 
 # Frontend (for backend Dockerfile)
-frontend/
+web/
 node_modules/
 
 # Local environment

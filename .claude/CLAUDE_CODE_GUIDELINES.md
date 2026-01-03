@@ -41,19 +41,18 @@ Weather-App/
 │   ├── ambient_weather_fetch.py
 │   └── backfill_weather.py
 ├── tests/                   # Test scripts
-├── frontend/                # React app (future)
+├── web/                     # React + TypeScript + Vite frontend
 │   ├── src/
-│   │   ├── App.jsx
+│   │   ├── App.tsx
 │   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── services/
-│   │   └── utils/
+│   │   ├── api/             # Auto-generated OpenAPI types
+│   │   └── lib/
 │   ├── public/
 │   ├── package.json
-│   └── vite.config.js
+│   └── vite.config.ts
 ├── setup.py                 # Package installation config
 ├── requirements.txt         # Python dependencies
-├── ambient_weather.db       # SQLite database
+├── ambient_weather.duckdb   # DuckDB database
 └── .env                     # Environment variables
 ```
 
