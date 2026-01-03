@@ -7,6 +7,7 @@ from datetime import datetime
 import csv
 import sys
 import os
+import time
 from dotenv import load_dotenv
 
 # Fix Windows console encoding for emoji support
@@ -16,9 +17,13 @@ if sys.platform == 'win32':
 from weather_app.config import DB_PATH, get_db_info
 from weather_app.api import AmbientWeatherAPI
 from weather_app.database import WeatherDatabase
+from weather_app.logging_config import get_logger, log_cli_command
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Initialize logger
+logger = get_logger(__name__)
 
 
 @click.group()
@@ -32,12 +37,15 @@ def cli():
 @click.option('--force', is_flag=True, help='Drop existing tables and recreate')
 def init_db(force):
     """Initialize the weather database"""
+    start_time = time.time()
     db_path = Path(DB_PATH)
 
+    logger.info("init_db_started", db_path=str(db_path), force=force)
     click.echo(f"Initializing DuckDB database at: {db_path}")
 
     # Check if database already exists
     if db_path.exists() and not force:
+        logger.warning("init_db_failed", reason="database_exists", db_path=str(db_path))
         click.echo(f"❌ Database already exists at {db_path}")
         click.echo("Use --force to drop and recreate the database")
         sys.exit(1)
@@ -47,6 +55,7 @@ def init_db(force):
 
     # If force, delete existing database
     if force and db_path.exists():
+        logger.info("dropping_existing_database", db_path=str(db_path))
         click.echo("Dropping existing database...")
         db_path.unlink()
 
@@ -55,6 +64,10 @@ def init_db(force):
     with WeatherDatabase(str(db_path)) as db:
         # Tables are created automatically in __enter__
         pass
+
+    duration_ms = (time.time() - start_time) * 1000
+    log_cli_command(logger, "init_db", {"force": force, "db_path": str(db_path)},
+                   success=True, duration_ms=duration_ms)
 
     click.echo(f"✅ Database initialized successfully at {db_path}")
     click.echo(f"📊 Database engine: {get_db_info()['database_engine']}")
@@ -65,11 +78,14 @@ def init_db(force):
 @click.option('--limit', default=1, type=int, help='Number of latest records to fetch (default: 1)')
 def fetch(limit):
     """Fetch latest weather data from Ambient Weather API"""
+    start_time = time.time()
+
     # Get API credentials from environment
     api_key = os.getenv('AMBIENT_API_KEY')
     app_key = os.getenv('AMBIENT_APP_KEY')
 
     if not api_key or not app_key:
+        logger.error("fetch_failed", reason="missing_credentials")
         click.echo("❌ Error: API credentials not found!")
         click.echo("Please set environment variables:")
         click.echo("  AMBIENT_API_KEY - Your API key")
@@ -79,11 +95,14 @@ def fetch(limit):
 
     db_path = Path(DB_PATH)
     if not db_path.exists():
+        logger.error("fetch_failed", reason="database_not_found", db_path=str(db_path))
         click.echo(f"❌ Database not found at {db_path}")
         click.echo("Run 'weather-app init-db' first")
         sys.exit(1)
 
     try:
+        logger.info("fetch_started", limit=limit)
+
         # Initialize API client
         click.echo(f"Fetching {limit} latest weather record(s)...")
         api = AmbientWeatherAPI(api_key, app_key)
@@ -91,6 +110,7 @@ def fetch(limit):
         # Get devices
         devices = api.get_devices()
         if not devices:
+            logger.warning("fetch_failed", reason="no_devices")
             click.echo("❌ No devices found in your account")
             sys.exit(1)
 
@@ -98,18 +118,24 @@ def fetch(limit):
         mac = device['macAddress']
         device_name = device['info']['name']
 
+        logger.info("device_found", mac=mac, device_name=device_name)
         click.echo(f"📡 Fetching from device: {device_name}")
 
         # Fetch data
         data = api.get_device_data(mac, limit=limit)
 
         if not data:
+            logger.info("fetch_completed", records=0, reason="no_new_data")
             click.echo("⚠️  No new data available")
             return
 
         # Save to database
         with WeatherDatabase(db_path) as db:
             inserted, skipped = db.insert_data(data)
+
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info("fetch_completed", records=len(data), inserted=inserted,
+                   skipped=skipped, duration_ms=round(duration_ms, 2))
 
         click.echo(f"✅ Fetched {len(data)} record(s)")
         click.echo(f"   Inserted: {inserted}")
@@ -125,6 +151,8 @@ def fetch(limit):
             click.echo(f"   Wind: {latest.get('windspeedmph', 'N/A')} mph")
 
     except Exception as e:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.error("fetch_failed", error=str(e), duration_ms=round(duration_ms, 2))
         click.echo(f"❌ Error: {e}")
         sys.exit(1)
 
@@ -136,16 +164,21 @@ def fetch(limit):
 @click.option('--delay', default=1.0, type=float, help='Delay between API calls in seconds (default: 1.0)')
 def backfill(start, end, batch_size, delay):
     """Backfill historical weather data for a date range"""
+    start_time = time.time()
+
     # Validate dates
     try:
         start_date = datetime.strptime(start, '%Y-%m-%d')
         end_date = datetime.strptime(end, '%Y-%m-%d')
     except ValueError as e:
+        logger.error("backfill_failed", reason="invalid_date_format", error=str(e))
         click.echo(f"❌ Invalid date format: {e}")
         click.echo("Use YYYY-MM-DD format (e.g., 2024-01-01)")
         sys.exit(1)
 
     if start_date > end_date:
+        logger.error("backfill_failed", reason="invalid_date_range",
+                    start=start, end=end)
         click.echo("❌ Start date must be before end date")
         sys.exit(1)
 
@@ -154,6 +187,7 @@ def backfill(start, end, batch_size, delay):
     app_key = os.getenv('AMBIENT_APP_KEY')
 
     if not api_key or not app_key:
+        logger.error("backfill_failed", reason="missing_credentials")
         click.echo("❌ Error: API credentials not found!")
         click.echo("Please set environment variables:")
         click.echo("  AMBIENT_API_KEY - Your API key")
@@ -162,9 +196,13 @@ def backfill(start, end, batch_size, delay):
 
     db_path = Path(DB_PATH)
     if not db_path.exists():
+        logger.error("backfill_failed", reason="database_not_found", db_path=str(db_path))
         click.echo(f"❌ Database not found at {db_path}")
         click.echo("Run 'weather-app init-db' first")
         sys.exit(1)
+
+    logger.info("backfill_started", start_date=start, end_date=end,
+               batch_size=batch_size, delay=delay)
 
     click.echo(f"Backfilling data from {start} to {end}")
     click.echo(f"Batch size: {batch_size} records per API call")
@@ -178,6 +216,7 @@ def backfill(start, end, batch_size, delay):
         # Get devices
         devices = api.get_devices()
         if not devices:
+            logger.warning("backfill_failed", reason="no_devices")
             click.echo("❌ No devices found in your account")
             sys.exit(1)
 
@@ -185,6 +224,7 @@ def backfill(start, end, batch_size, delay):
         mac = device['macAddress']
         device_name = device['info']['name']
 
+        logger.info("device_found", mac=mac, device_name=device_name)
         click.echo(f"📡 Fetching from device: {device_name}\n")
 
         # Progress callback
@@ -193,6 +233,8 @@ def backfill(start, end, batch_size, delay):
 
         def progress_callback(records_fetched, requests_made):
             nonlocal total_inserted, total_skipped
+            logger.info("backfill_progress", records_fetched=records_fetched,
+                       requests_made=requests_made)
             click.echo(f"Progress: {records_fetched} records fetched, {requests_made} API requests made")
 
         # Fetch all historical data
@@ -211,6 +253,7 @@ def backfill(start, end, batch_size, delay):
             )
 
             if not all_data:
+                logger.info("backfill_completed", records=0, reason="no_data_found")
                 click.echo("\n⚠️  No data found for the specified date range")
                 db.clear_backfill_progress()
                 return
@@ -230,16 +273,25 @@ def backfill(start, end, batch_size, delay):
                 status='completed'
             )
 
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info("backfill_completed", total_records=len(all_data),
+                   inserted=total_inserted, skipped=total_skipped,
+                   duration_ms=round(duration_ms, 2))
+
         click.echo(f"\n✅ Backfill completed!")
         click.echo(f"   Total records: {len(all_data)}")
         click.echo(f"   Inserted: {total_inserted}")
         click.echo(f"   Skipped (duplicates): {total_skipped}")
 
     except KeyboardInterrupt:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.warning("backfill_interrupted", duration_ms=round(duration_ms, 2))
         click.echo("\n\n⚠️  Backfill interrupted by user")
         click.echo("Progress has been saved. Run the command again to resume.")
         sys.exit(1)
     except Exception as e:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.error("backfill_failed", error=str(e), duration_ms=round(duration_ms, 2))
         click.echo(f"\n❌ Error: {e}")
         with WeatherDatabase(db_path) as db:
             db.update_backfill_progress(
@@ -297,18 +349,17 @@ def export(output, start, end, limit):
     if limit:
         query += f" LIMIT {limit}"
 
-    # Execute query and export
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    # Execute query and export using DuckDB
+    with WeatherDatabase(str(db_path)) as db:
+        result = db.conn.execute(query, params).fetchall()
 
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
+        if not result:
+            click.echo("⚠️  No data found matching criteria")
+            return
 
-    if not rows:
-        click.echo("⚠️  No data found matching criteria")
-        conn.close()
-        return
+        # Convert to list of dictionaries
+        columns = [desc[0] for desc in db.conn.description]
+        rows = [dict(zip(columns, row)) for row in result]
 
     # Write to CSV
     output_path = Path(output)
@@ -318,10 +369,9 @@ def export(output, start, end, limit):
         writer = csv.DictWriter(csvfile, fieldnames=rows[0].keys())
         writer.writeheader()
         for row in rows:
-            writer.writerow(dict(row))
+            writer.writerow(row)
 
-    conn.close()
-
+    logger.info("export_completed", output_path=str(output_path), records=len(rows))
     click.echo(f"✅ Exported {len(rows)} records to {output_path}")
 
 
@@ -331,6 +381,8 @@ def info():
     db_info = get_db_info()
     db_path = Path(DB_PATH)
 
+    logger.info("info_command_started")
+
     click.echo("=" * 60)
     click.echo("Weather App - Configuration Info")
     click.echo("=" * 60)
@@ -339,24 +391,23 @@ def info():
     click.echo(f"Database exists: {db_path.exists()}")
 
     if db_path.exists():
-        # Get record count
-        conn = sqlite3.connect(str(db_path))
-        cursor = conn.cursor()
-
         try:
-            cursor.execute("SELECT COUNT(*) FROM weather_data")
-            count = cursor.fetchone()[0]
-            click.echo(f"Total records: {count:,}")
+            # Use WeatherDatabase to get record count
+            with WeatherDatabase(str(db_path)) as db:
+                result = db.conn.execute("SELECT COUNT(*) FROM weather_data").fetchone()
+                count = result[0]
+                click.echo(f"Total records: {count:,}")
 
-            if count > 0:
-                cursor.execute("SELECT MIN(date), MAX(date) FROM weather_data")
-                min_date, max_date = cursor.fetchone()
-                click.echo(f"Date range: {min_date} to {max_date}")
-        except sqlite3.OperationalError:
+                if count > 0:
+                    result = db.conn.execute("SELECT MIN(date), MAX(date) FROM weather_data").fetchone()
+                    min_date, max_date = result
+                    click.echo(f"Date range: {min_date} to {max_date}")
+
+            logger.info("info_command_completed", total_records=count)
+        except Exception as e:
+            logger.error("info_command_failed", error=str(e))
             click.echo("⚠️  Database exists but weather_data table not found")
             click.echo("Run 'weather-app init-db' to create the schema")
-        finally:
-            conn.close()
     else:
         click.echo("⚠️  Run 'weather-app init-db' to create the database")
 

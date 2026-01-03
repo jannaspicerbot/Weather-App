@@ -4,6 +4,9 @@ Ambient Weather API client
 import requests
 import time
 from datetime import datetime
+from weather_app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class AmbientWeatherAPI:
@@ -24,7 +27,7 @@ class AmbientWeatherAPI:
     def get_devices(self):
         """
         Get list of user's weather devices
-        
+
         Returns:
             List of device dictionaries
         """
@@ -33,20 +36,36 @@ class AmbientWeatherAPI:
             'apiKey': self.api_key,
             'applicationKey': self.application_key
         }
-        
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
+
+        logger.info("api_request", method="GET", endpoint="/devices")
+        start_time = time.time()
+
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            duration_ms = (time.time() - start_time) * 1000
+            logger.info("api_response", method="GET", endpoint="/devices",
+                       status_code=response.status_code, devices=len(data),
+                       duration_ms=round(duration_ms, 2))
+
+            return data
+        except requests.exceptions.RequestException as e:
+            duration_ms = (time.time() - start_time) * 1000
+            logger.error("api_error", method="GET", endpoint="/devices",
+                        error=str(e), duration_ms=round(duration_ms, 2))
+            raise
     
     def get_device_data(self, mac_address, end_date=None, limit=288):
         """
         Get weather data for a specific device
-        
+
         Args:
             mac_address: Device MAC address
             end_date: End date in milliseconds (Unix timestamp * 1000)
             limit: Number of records to fetch (max 288)
-        
+
         Returns:
             List of weather data records
         """
@@ -56,13 +75,30 @@ class AmbientWeatherAPI:
             'applicationKey': self.application_key,
             'limit': limit
         }
-        
+
         if end_date:
             params['endDate'] = end_date
-        
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
+
+        logger.info("api_request", method="GET", endpoint=f"/devices/{mac_address[:8]}...",
+                   limit=limit, end_date=end_date)
+        start_time = time.time()
+
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            duration_ms = (time.time() - start_time) * 1000
+            logger.info("api_response", method="GET", endpoint=f"/devices/{mac_address[:8]}...",
+                       status_code=response.status_code, records=len(data),
+                       duration_ms=round(duration_ms, 2))
+
+            return data
+        except requests.exceptions.RequestException as e:
+            duration_ms = (time.time() - start_time) * 1000
+            logger.error("api_error", method="GET", endpoint=f"/devices/{mac_address[:8]}...",
+                        error=str(e), duration_ms=round(duration_ms, 2))
+            raise
     
     def fetch_all_historical_data(self, mac_address, start_date=None, end_date=None, 
                                    batch_size=288, delay=1.0, progress_callback=None):
@@ -129,7 +165,8 @@ class AmbientWeatherAPI:
                 
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 429:
-                    print(f"Rate limit hit after {requests_made} requests. Waiting 60 seconds...")
+                    logger.warning("rate_limit_hit", requests_made=requests_made,
+                                 wait_seconds=60)
                     time.sleep(60)
                     continue
                 raise
