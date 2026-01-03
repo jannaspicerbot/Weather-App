@@ -16,7 +16,7 @@ services:
       - ./.env:/app/.env:ro
     environment:
       - PYTHONUNBUFFERED=1
-      - DB_PATH=/data/ambient_weather.db
+      - DB_PATH=/data/ambient_weather.duckdb
       # Load from .env file for API keys
     env_file:
       - .env
@@ -33,7 +33,7 @@ services:
   # React Frontend
   frontend:
     build:
-      context: ./frontend
+      context: ./web
       dockerfile: Dockerfile
     container_name: weather-app-frontend
     ports:
