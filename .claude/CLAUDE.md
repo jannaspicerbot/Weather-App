@@ -7,11 +7,66 @@
 
 ---
 
+## 🤖 Model Selection Strategy
+
+Choose the right Claude model to balance performance, speed, and cost:
+
+- **Sonnet 4.5** - Default. Best for most development tasks.
+- **Opus 4.5** - Complex reasoning, architectural planning, large refactoring.
+- **Haiku 4** - Simple tasks, quick fixes, boilerplate generation.
+
+### When to Use Each Model
+
+| Task Type | Model | Why |
+|-----------|-------|-----|
+| Architectural planning & system design | **Opus** | Deep reasoning about trade-offs |
+| Large-scale refactoring (multi-file) | **Opus** | Cross-file dependencies |
+| Database schema design | **Opus** | Long-term performance implications |
+| Performance optimization | **Opus** | Deep bottleneck analysis |
+| Feature implementation | **Sonnet** | Balanced capability |
+| Code reviews & debugging | **Sonnet** | Context understanding |
+| API development | **Sonnet** | Pattern following |
+| Documentation writing | **Sonnet** | Code comprehension |
+| Simple edits & typo fixes | **Haiku** | Fast, straightforward |
+| Boilerplate code generation | **Haiku** | Minimal reasoning |
+| Quick file searches | **Haiku** | Simple operations |
+
+### Quick Decision Tree
+
+```
+Is it a simple, well-defined task? (typo, search, boilerplate)
+├─ YES → Haiku
+└─ NO → Continue
+
+Does it require deep architectural reasoning or cross-system analysis?
+├─ YES → Opus
+└─ NO → Sonnet (default)
+```
+
+### Examples
+
+```bash
+# Opus - Complex architectural decision
+claude --model opus "Evaluate DuckDB vs PostgreSQL for our use case"
+
+# Sonnet - Standard development (default)
+claude "Add CSV export to weather API"
+
+# Haiku - Simple fix
+claude --model haiku "Fix typo in README line 42"
+```
+
+**Cost**: Haiku ~1x | Sonnet ~3-5x | Opus ~15-20x
+
+**Default Rule**: When in doubt, use **Sonnet 4.5**.
+
+---
+
 ## 🎯 Core Principles
 
 1. **Write clean, readable code** - Prioritize clarity over cleverness
 2. **Comment complex logic** - Explain WHY, not just WHAT
-3. **Follow language conventions** - PEP 8 for Python, ESLint standards for JavaScript
+3. **Follow language conventions** - PEP 8 for Python, ESLint standards for TypeScript
 4. **Test as you build** - Verify functionality immediately
 5. **Keep it simple first** - Optimize later if needed
 
@@ -317,7 +372,7 @@ python -m weather_app.cli fetch --limit 10
 
 ---
 
-## ⚛️ React/JavaScript Best Practices
+## ⚛️ React/TypeScript Best Practices
 
 ### Code Style
 - Use **functional components** with hooks (not class components)
@@ -393,9 +448,9 @@ function Weather() {
 - **Show loading states** to users
 - Use **async/await** instead of .then() chains
 
-```javascript
+```typescript
 // ✅ GOOD - Centralized, error handling, clear
-// src/services/api.js
+// src/services/api.ts
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export async function fetchLatestWeather() {
@@ -800,7 +855,7 @@ docs/
 **api-reference.md:**
 - All REST endpoints with request/response schemas
 - Error codes and handling
-- Code examples (JavaScript/TypeScript, Python, curl)
+- Code examples (TypeScript, Python, curl)
 - OpenAPI schema reference
 
 **cli-reference.md:**
@@ -1044,7 +1099,7 @@ python -m venv venv
 source venv/bin/activate  # or: venv\Scripts\activate on Windows
 ```
 
-### JavaScript (Frontend)
+### TypeScript (Frontend)
 ```bash
 # Create React app with Vite
 npm create vite@latest frontend -- --template react
