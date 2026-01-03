@@ -57,6 +57,40 @@ curl http://localhost:8000/api/health
 
 ---
 
+### Get Scheduler Status
+
+Get information about the automated data collection scheduler.
+
+**Request:**
+```http
+GET /api/scheduler/status
+```
+
+**Response:** `200 OK`
+```json
+{
+  "enabled": true,
+  "running": true,
+  "fetch_interval_minutes": 5,
+  "next_run_time": "2026-01-03T09:29:53.720924-08:00",
+  "job_id": "fetch_weather"
+}
+```
+
+**Response Fields:**
+- `enabled`: Whether scheduler is enabled via `SCHEDULER_ENABLED` environment variable
+- `running`: Whether the scheduler is currently running
+- `fetch_interval_minutes`: Interval between automatic data fetches
+- `next_run_time`: ISO 8601 timestamp of next scheduled fetch (null if disabled)
+- `job_id`: Internal job identifier (`fetch_weather`)
+
+**Example:**
+```bash
+curl http://localhost:8000/api/scheduler/status | jq
+```
+
+---
+
 ### Get Latest Reading
 
 Retrieve the most recent weather reading.

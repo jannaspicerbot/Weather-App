@@ -34,6 +34,7 @@ def register_routes(app: FastAPI):
                 "/weather": "Get weather data with optional filters",
                 "/weather/latest": "Get the latest weather reading",
                 "/weather/stats": "Get database statistics",
+                "/api/scheduler/status": "Get scheduler status and configuration"
             }
         }
     
@@ -187,6 +188,17 @@ def register_routes(app: FastAPI):
             return WeatherRepository.get_stats()
         except RuntimeError as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/scheduler/status")
+    def get_scheduler_status():
+        """
+        Get scheduler status and configuration
+
+        Returns information about the automated data collection scheduler
+        including enabled state, fetch interval, and next run time.
+        """
+        from weather_app.web.app import scheduler
+        return scheduler.get_status()
 
     @app.exception_handler(404)
     async def not_found_handler(request, exc):

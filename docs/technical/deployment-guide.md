@@ -185,7 +185,43 @@ services:
 
 ## Automated Data Collection
 
-### Option 1: cron (Linux/macOS)
+### Built-in Scheduler (Recommended)
+
+**APScheduler is integrated into the FastAPI application** and automatically fetches weather data when the server is running.
+
+**Configuration** (via .env):
+```bash
+SCHEDULER_ENABLED=true                  # Enable/disable scheduler (default: true)
+SCHEDULER_FETCH_INTERVAL_MINUTES=5      # Fetch interval (default: 5 minutes)
+```
+
+**How it works:**
+- Scheduler starts automatically when FastAPI application starts
+- Fetches latest data at configured interval (default: every 5 minutes)
+- Handles errors gracefully without crashing the server
+- Logs all fetch attempts and results to application logs
+- Stops gracefully when server shuts down
+
+**Monitor scheduler status:**
+```bash
+# Check if scheduler is running and next fetch time
+curl http://localhost:8000/api/scheduler/status | jq
+```
+
+**When to use:**
+- ✅ Running via Docker Compose
+- ✅ Running via `uvicorn` or `main.py` continuously
+- ✅ Want automatic data collection without external setup
+
+**When NOT to use:**
+- ❌ Running server only for manual queries (set `SCHEDULER_ENABLED=false`)
+- ❌ Already using cron/systemd for scheduled fetching (avoid duplicate fetches)
+
+---
+
+### Option 2: cron (Linux/macOS)
+
+**Use case:** Manual control over scheduling, or when not running FastAPI server continuously.
 
 ```bash
 # Edit crontab
