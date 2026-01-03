@@ -3,13 +3,17 @@ API routes for weather data
 Defines all endpoints for the FastAPI application
 """
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from typing import List, Optional
 from datetime import datetime
+import time
 
 from weather_app.web.models import WeatherData, DatabaseStats
 from weather_app.database import WeatherRepository
 from weather_app.config import get_db_info
+from weather_app.logging_config import get_logger, log_api_request
+
+logger = get_logger(__name__)
 
 
 def register_routes(app: FastAPI):
@@ -35,6 +39,7 @@ def register_routes(app: FastAPI):
     
     @app.get("/weather", response_model=List[WeatherData])
     def get_weather_data(
+        request: Request,
         limit: int = Query(default=100, ge=1, le=1000, description="Maximum number of records to return"),
         offset: int = Query(default=0, ge=0, description="Number of records to skip"),
         start_date: Optional[str] = Query(default=None, description="Start date (ISO format: YYYY-MM-DD)"),
@@ -51,40 +56,78 @@ def register_routes(app: FastAPI):
         - end_date: Filter by end date (YYYY-MM-DD format)
         - order: Sort order - 'asc' or 'desc' (default: desc)
         """
+        start_time = time.time()
         try:
-            return WeatherRepository.get_all_readings(
+            result = WeatherRepository.get_all_readings(
                 limit=limit,
                 offset=offset,
                 start_date=start_date,
                 end_date=end_date,
                 order=order
             )
+
+            duration_ms = (time.time() - start_time) * 1000
+            log_api_request(logger, "GET", "/weather",
+                          params={"limit": limit, "offset": offset},
+                          status_code=200, duration_ms=duration_ms)
+
+            return result
         except ValueError as e:
+            duration_ms = (time.time() - start_time) * 1000
+            log_api_request(logger, "GET", "/weather",
+                          params={"limit": limit, "offset": offset},
+                          status_code=400, duration_ms=duration_ms)
             raise HTTPException(status_code=400, detail=str(e))
         except RuntimeError as e:
+            duration_ms = (time.time() - start_time) * 1000
+            log_api_request(logger, "GET", "/weather",
+                          params={"limit": limit, "offset": offset},
+                          status_code=500, duration_ms=duration_ms)
             raise HTTPException(status_code=500, detail=str(e))
     
     @app.get("/weather/latest", response_model=WeatherData)
-    def get_latest_weather():
+    def get_latest_weather(request: Request):
         """
         Get the most recent weather data reading
         """
+        start_time = time.time()
         try:
             result = WeatherRepository.get_latest_reading()
             if result is None:
+                duration_ms = (time.time() - start_time) * 1000
+                log_api_request(logger, "GET", "/weather/latest",
+                              status_code=404, duration_ms=duration_ms)
                 raise HTTPException(status_code=404, detail="No weather data found in database")
+
+            duration_ms = (time.time() - start_time) * 1000
+            log_api_request(logger, "GET", "/weather/latest",
+                          status_code=200, duration_ms=duration_ms)
+
             return result
         except RuntimeError as e:
+            duration_ms = (time.time() - start_time) * 1000
+            log_api_request(logger, "GET", "/weather/latest",
+                          status_code=500, duration_ms=duration_ms)
             raise HTTPException(status_code=500, detail=str(e))
     
     @app.get("/weather/stats", response_model=DatabaseStats)
-    def get_database_stats():
+    def get_database_stats(request: Request):
         """
         Get statistics about the weather database
         """
+        start_time = time.time()
         try:
-            return WeatherRepository.get_stats()
+            result = WeatherRepository.get_stats()
+
+            duration_ms = (time.time() - start_time) * 1000
+            log_api_request(logger, "GET", "/weather/stats",
+                          status_code=200, duration_ms=duration_ms)
+
+            return result
         except RuntimeError as e:
+            duration_ms = (time.time() - start_time) * 1000
+            log_api_request(logger, "GET", "/weather/stats",
+                          status_code=500, duration_ms=duration_ms)
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/api/health")
