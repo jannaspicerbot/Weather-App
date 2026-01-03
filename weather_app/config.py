@@ -49,6 +49,13 @@ FULL_RESOLUTION_YEARS = 3
 AGGREGATION_HOLD_YEARS = 50  # Phase 2 only
 PURGE_RAW_AFTER_AGGREGATION = True  # Phase 2 only
 
+# Scheduler Configuration
+# Enable/disable automatic data collection (default: true)
+SCHEDULER_ENABLED = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
+
+# Fetch interval in minutes (default: 5 minutes)
+SCHEDULER_FETCH_INTERVAL_MINUTES = int(os.getenv("SCHEDULER_FETCH_INTERVAL_MINUTES", 5))
+
 # Logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 

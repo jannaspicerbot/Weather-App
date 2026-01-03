@@ -1196,19 +1196,19 @@ git checkout -b fix
 5. ✅ Add basic charts with Recharts
 6. ✅ Style with Tailwind CSS
 
-### Phase 3: Polish & Features
-1. Add more chart types
-2. Implement date range filtering
-3. Add export functionality (CSV, PDF)
-4. Improve error handling and loading states
-5. Add dark mode support
-6. Make responsive for mobile
+### Phase 3: Polish & Features (In Progress 🔄)
+1. ✅ **Set up automated data collection** - APScheduler integrated for periodic fetch
+2. Add more chart types
+3. Implement date range filtering
+4. Add export functionality (CSV, PDF)
+5. Improve error handling and loading states
+6. Add dark mode support
+7. Make responsive for mobile
 
 ### Phase 4: Automation & Deployment (Future)
-1. Set up automated data collection
-2. Add authentication (if needed)
-3. Deploy to cloud (Render, Vercel, etc.)
-4. Set up CI/CD pipeline
+1. Add authentication (if needed)
+2. Deploy to cloud (Render, Vercel, etc.)
+3. Set up CI/CD pipeline
 
 ---
 
