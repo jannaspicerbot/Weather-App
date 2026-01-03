@@ -5,8 +5,12 @@ Provides clean interface for querying weather data using DuckDB
 
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+import time
 from weather_app.database.engine import WeatherDatabase
 from weather_app.config import DB_PATH
+from weather_app.logging_config import get_logger, log_database_operation
+
+logger = get_logger(__name__)
 
 
 class WeatherRepository:
@@ -33,6 +37,7 @@ class WeatherRepository:
         Returns:
             List of weather data records as dictionaries
         """
+        start_time = time.time()
         try:
             with WeatherDatabase(DB_PATH) as db:
                 # Build query
@@ -66,12 +71,21 @@ class WeatherRepository:
                 result = db.conn.execute(query, params).fetchall()
 
                 # Convert to list of dictionaries
+                records = []
                 if result:
                     columns = [desc[0] for desc in db.conn.description]
-                    return [dict(zip(columns, row)) for row in result]
-                return []
+                    records = [dict(zip(columns, row)) for row in result]
+
+                duration_ms = (time.time() - start_time) * 1000
+                log_database_operation(logger, "SELECT", "weather_data",
+                                     records=len(records), duration_ms=duration_ms)
+
+                return records
 
         except Exception as e:
+            duration_ms = (time.time() - start_time) * 1000
+            log_database_operation(logger, "SELECT", "weather_data",
+                                 duration_ms=duration_ms, error=str(e))
             raise RuntimeError(f"Database error: {str(e)}")
 
     @staticmethod
@@ -82,6 +96,7 @@ class WeatherRepository:
         Returns:
             Latest weather data record as dictionary, or None if no data exists
         """
+        start_time = time.time()
         try:
             with WeatherDatabase(DB_PATH) as db:
                 result = db.conn.execute("""
@@ -90,12 +105,21 @@ class WeatherRepository:
                     LIMIT 1
                 """).fetchone()
 
+                record = None
                 if result:
                     columns = [desc[0] for desc in db.conn.description]
-                    return dict(zip(columns, result))
-                return None
+                    record = dict(zip(columns, result))
+
+                duration_ms = (time.time() - start_time) * 1000
+                log_database_operation(logger, "SELECT", "weather_data",
+                                     records=1 if record else 0, duration_ms=duration_ms)
+
+                return record
 
         except Exception as e:
+            duration_ms = (time.time() - start_time) * 1000
+            log_database_operation(logger, "SELECT", "weather_data",
+                                 duration_ms=duration_ms, error=str(e))
             raise RuntimeError(f"Database error: {str(e)}")
 
     @staticmethod
@@ -106,6 +130,7 @@ class WeatherRepository:
         Returns:
             Dictionary with total_records, min_date, max_date, and date_range_days
         """
+        start_time = time.time()
         try:
             with WeatherDatabase(DB_PATH) as db:
                 # Get total count
@@ -113,6 +138,9 @@ class WeatherRepository:
                 total_records = count_result[0]
 
                 if total_records == 0:
+                    duration_ms = (time.time() - start_time) * 1000
+                    log_database_operation(logger, "SELECT", "weather_data",
+                                         records=0, duration_ms=duration_ms)
                     return {
                         "total_records": 0,
                         "min_date": None,
@@ -136,6 +164,10 @@ class WeatherRepository:
                     except:
                         pass
 
+                duration_ms = (time.time() - start_time) * 1000
+                log_database_operation(logger, "SELECT", "weather_data",
+                                     records=total_records, duration_ms=duration_ms)
+
                 return {
                     "total_records": total_records,
                     "min_date": min_date,
@@ -144,4 +176,7 @@ class WeatherRepository:
                 }
 
         except Exception as e:
+            duration_ms = (time.time() - start_time) * 1000
+            log_database_operation(logger, "SELECT", "weather_data",
+                                 duration_ms=duration_ms, error=str(e))
             raise RuntimeError(f"Database error: {str(e)}")
