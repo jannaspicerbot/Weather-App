@@ -122,6 +122,7 @@ def compare_request_details():
 
     try:
         import requests
+
         from weather_app.api.ambient_client import AmbientWeatherClient
 
         # Get our client's session details
