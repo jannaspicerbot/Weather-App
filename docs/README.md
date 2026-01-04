@@ -19,6 +19,8 @@ docs/
 │       ├── 003-typescript-frontend.md
 │       ├── 004-docker-deployment.md
 │       └── 005-retention-strategy.md
+├── design/                            # UI/UX & accessibility standards
+│   └── inclusive-design.md            # Accessibility & WCAG 2.2 AA compliance
 ├── technical/                         # Implementation guides
 │   ├── api-reference.md               # REST API documentation
 │   ├── cli-reference.md               # CLI command reference
@@ -91,7 +93,23 @@ docs/
 
 ---
 
-### 3. Technical Documentation
+### 3. Design Documentation
+
+**Purpose:** UI/UX standards, accessibility, inclusive design
+
+**[Inclusive Design Standards](design/inclusive-design.md)**
+- WCAG 2.2 Level AA compliance
+- HCD × WCAG strategic approach (POUR principles)
+- Component accessibility guidelines
+- Testing strategy (automated + manual)
+- Recommended libraries and tools
+- Plain language standards
+
+**When to read:** You want to build accessible, inclusive user interfaces
+
+---
+
+### 4. Technical Documentation
 
 **Purpose:** Implementation details, usage guides, reference material
 
@@ -346,6 +364,7 @@ Historical documentation from Phase 1-2 is available in [archive/](archive/) for
 
 ## Document Changelog
 
+- **2026-01-03:** Added design/ folder with Inclusive Design standards (WCAG 2.2 AA)
 - **2026-01-03:** Added Learning Resources section with framework documentation links
 - **2026-01-02:** Initial documentation index created during reorganization
 - **2026-01-02:** Adopted ADR pattern for architecture decisions
