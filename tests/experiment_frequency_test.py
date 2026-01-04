@@ -13,6 +13,10 @@ from datetime import datetime
 import requests
 from dotenv import load_dotenv
 
+# Fix Windows console encoding
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
 # Load environment variables
 load_dotenv()
 
@@ -190,8 +194,11 @@ def main():
         print("❌ ERROR: AMBIENT_MAC_ADDRESS not set in .env")
         return False
 
-    # Quick pre-check
-    print("Running quick connectivity check first...")
+    # Quick pre-check with 30-second cooldown wait
+    print("Waiting 30 seconds for API cooldown...")
+    time.sleep(30)
+
+    print("Running quick connectivity check...")
     url = f"{BASE_URL}/devices/{MAC_ADDRESS}"
     params = {"apiKey": API_KEY, "applicationKey": APP_KEY, "limit": 1}
 
@@ -199,8 +206,13 @@ def main():
         response = requests.get(url, params=params, timeout=10)
         if response.status_code != 200:
             print(f"❌ Pre-check failed: {response.status_code}")
-            print("   Run experiment_basic_connectivity.py first")
-            return False
+            print("   Waiting another 30 seconds and retrying...")
+            time.sleep(30)
+            response = requests.get(url, params=params, timeout=10)
+            if response.status_code != 200:
+                print(f"❌ Still failing: {response.status_code}")
+                print("   Run experiment_basic_connectivity.py first")
+                return False
         print("✅ Pre-check passed\n")
     except Exception as e:
         print(f"❌ Pre-check error: {str(e)}")
@@ -214,27 +226,19 @@ def main():
 
     # If Test 2.1 passed, optionally run longer test
     if test_2_1:
-        print("\n✅ Test 2.1 passed! Want to run 60-minute test? (Test 2.2)")
-        print("   This will take 1 hour. Press Ctrl+C to skip.")
-        try:
-            input("   Press Enter to continue or Ctrl+C to skip...")
-            print("\n" + "=" * 70)
-            print("TEST 2.2: 60 Requests at 1-Minute Intervals (1 Hour)")
-            print("=" * 70)
-            test_one_minute_intervals(iterations=60, interval_seconds=60)
-        except KeyboardInterrupt:
-            print("\n⏭️  Skipping 60-minute test")
+        print("\n✅ Test 2.1 passed! Skipping 60-minute test (Test 2.2) for now.")
+        # Uncomment to run the longer test:
+        # print("\n" + "=" * 70)
+        # print("TEST 2.2: 60 Requests at 1-Minute Intervals (1 Hour)")
+        # print("=" * 70)
+        # test_one_minute_intervals(iterations=60, interval_seconds=60)
 
     # Test 2.3: Sliding window burst test
     print("\n" + "=" * 70)
     print("TEST 2.3: Sliding Window Burst Test")
     print("=" * 70)
-    print("WARNING: This may trigger rate limits. Continue?")
-    try:
-        input("Press Enter to continue or Ctrl+C to skip...")
-        test_burst_sliding_window()
-    except KeyboardInterrupt:
-        print("\n⏭️  Skipping burst test")
+    print("Running burst test to test sliding window behavior...")
+    test_burst_sliding_window()
 
     # Summary
     print("\n" + "=" * 70)

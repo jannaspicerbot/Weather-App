@@ -188,10 +188,10 @@ Based on their feedback:
 4. Cannot test our client code (Phase 3)
 
 ### ❓ Unknown
-1. How long is the lockout period?
-2. What triggers the rate limit?
-3. Is this account-level or endpoint-level?
-4. Can we ever access device data with these credentials?
+1. ✅ **RESOLVED:** Lockout period is 30 seconds (see [cooldown-test-results.md](cooldown-test-results.md))
+2. What triggers the rate limit? (appears to be 2 calls in quick succession)
+3. Is this account-level or endpoint-level? (likely account-level)
+4. ✅ **RESOLVED:** Yes, we can access after 30-second cooldown
 
 ---
 

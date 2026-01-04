@@ -180,19 +180,12 @@ def main():
     print()
 
     # Choose test strategy
-    print("Select test strategy:")
+    print("Test strategy: Running option 3 (both tests)")
     print("  1. Quick test (30s, 1m, 2m, 5m, 10m, 30m, 1h intervals)")
     print("  2. Progressive test (every 1 minute for 10 minutes)")
-    print("  3. Both (recommended)")
     print()
 
-    try:
-        choice = input("Enter choice (1/2/3) or press Enter for option 3: ").strip() or "3"
-    except KeyboardInterrupt:
-        print("\n\nTest cancelled")
-        return False
-
-    print()
+    choice = "3"
 
     if choice in ["1", "3"]:
         cooldown = test_cooldown_intervals()
