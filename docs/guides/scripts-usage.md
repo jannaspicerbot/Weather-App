@@ -67,7 +67,7 @@ Configuration:
   Max requests: 20
 
 Fetching devices...
-Using device: Default (XX:XX:XX:XX:XX:XX)
+Using device: Default ([DEVICE_MAC_ADDRESS])
 
 Most recent data in database:
   Date: 2025-12-31T14:30:00.000Z
@@ -169,7 +169,7 @@ Configuration:
   Resume from last position: True
 
 Fetching devices...
-Using device: Default (XX:XX:XX:XX:XX:XX)
+Using device: Default ([DEVICE_MAC_ADDRESS])
 
 Backfill Status:
   Target start: 2024-03-13
