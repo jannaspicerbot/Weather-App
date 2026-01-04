@@ -418,10 +418,32 @@ button {
 
 ### Charts & Data Visualization
 
-Weather charts need special attention for accessibility:
+Weather charts need special attention for accessibility.
+
+**This project uses Victory Charts** as the official charting library (see [ADR-007](../architecture/decisions/007-victory-charts.md)).
+
+**Why Victory Charts?**
+- Built-in ARIA support via `VictoryAccessibleSVG`
+- Keyboard navigation via `VictoryVoronoiContainer` (Tab to enter, arrow keys to navigate data points)
+- Screen reader announcements for data points automatically
+- Touch-optimized for iPad (larger hit areas, smooth interactions)
+- Cross-platform (works on web and React Native if needed later)
+
+**Key accessibility features:**
+- `VictoryVoronoiContainer` - Provides keyboard navigation and tooltips
+- Automatic ARIA labels for chart elements
+- Customizable color palettes (support color-blind friendly schemes)
 
 ```typescript
-// ✅ GOOD - Accessible chart
+// ✅ GOOD - Accessible Victory Chart with keyboard navigation
+import {
+  VictoryChart,
+  VictoryLine,
+  VictoryAxis,
+  VictoryVoronoiContainer,
+  VictoryTooltip
+} from 'victory';
+
 <figure>
   <figcaption>
     <h2 id="temp-chart-title">Temperature Trends - Last 24 Hours</h2>
@@ -436,25 +458,53 @@ Weather charts need special attention for accessibility:
     aria-labelledby="temp-chart-title"
     aria-describedby="temp-chart-desc"
   >
-    <TemperatureChart data={data} />
+    <VictoryChart
+      width={600}
+      height={400}
+      containerComponent={
+        <VictoryVoronoiContainer
+          voronoiDimension="x"
+          labels={({ datum }) => `${datum.time}: ${datum.temperature}°F`}
+          labelComponent={
+            <VictoryTooltip
+              flyoutStyle={{ fill: "white", stroke: "#64748b" }}
+              style={{ fill: "#1e293b", fontSize: 14 }}
+            />
+          }
+        />
+      }
+    >
+      <VictoryAxis
+        tickFormat={(t) => new Date(t).toLocaleTimeString()}
+      />
+      <VictoryAxis dependentAxis tickFormat={(t) => `${t}°F`} />
+      <VictoryLine
+        data={data}
+        x="time"
+        y="temperature"
+        style={{ data: { stroke: "#3b82f6", strokeWidth: 2 } }}
+      />
+    </VictoryChart>
   </div>
 
-  {/* Provide data table alternative */}
-  <details>
-    <summary>View data table</summary>
-    <table>
-      <caption>Temperature readings by hour</caption>
+  {/* REQUIRED: Provide data table alternative for screen readers */}
+  <details className="mt-4">
+    <summary className="cursor-pointer text-blue-600">
+      View data as table
+    </summary>
+    <table className="mt-2 min-w-full divide-y divide-gray-200">
+      <caption className="sr-only">Temperature readings by hour</caption>
       <thead>
         <tr>
-          <th scope="col">Time</th>
-          <th scope="col">Temperature (°F)</th>
+          <th scope="col" className="px-4 py-2 text-left">Time</th>
+          <th scope="col" className="px-4 py-2 text-left">Temperature (°F)</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className="divide-y divide-gray-200">
         {data.map(point => (
           <tr key={point.time}>
-            <th scope="row">{point.time}</th>
-            <td>{point.temp}°F</td>
+            <th scope="row" className="px-4 py-2">{point.time}</th>
+            <td className="px-4 py-2">{point.temperature}°F</td>
           </tr>
         ))}
       </tbody>
@@ -462,6 +512,14 @@ Weather charts need special attention for accessibility:
   </details>
 </figure>
 ```
+
+**Chart Accessibility Checklist:**
+- ✅ Victory chart wrapped in `<figure>` with `<figcaption>`
+- ✅ `VictoryVoronoiContainer` enables keyboard navigation
+- ✅ ARIA labels (`aria-labelledby`, `aria-describedby`)
+- ✅ Data table alternative in `<details>` for screen reader users
+- ✅ Color contrast meets WCAG AA (4.5:1 minimum)
+- ✅ Color-blind friendly palette (don't rely on color alone)
 
 ---
 
@@ -557,14 +615,25 @@ Automation misses many issues. **Every feature must be manually tested:**
 
 #### For Web (React/TypeScript)
 
-**Component Libraries (use these for complex widgets):**
-- **React Aria (Adobe)** - Recommended. Headless hooks with perfect ARIA implementation
-- **Radix UI** - Unstyled, accessible primitives
-- **Headless UI** - Tailwind's accessible component library
-- **Chakra UI** - Full component library with accessibility built-in
+**Component Libraries:**
 
-**Why use these?**
-Focus management, keyboard navigation, and ARIA attributes are **hard to get right**. These libraries solve 80% of accessibility problems for free.
+This project uses **React Aria (Adobe)** as the official component library (see [ADR-006](../architecture/decisions/006-react-aria-components.md)).
+
+**Why React Aria?**
+- Industry gold standard for accessibility (WCAG 2.2 Level AA compliant)
+- Headless hooks-based architecture - maximum flexibility with TailwindCSS
+- All WAI-ARIA 1.2 design patterns implemented correctly
+- Focus management, keyboard navigation, and screen reader support built-in
+- Touch, mouse, keyboard, and pen input handled automatically (iPad optimized)
+- Future-proof: React Native support in development
+
+**Alternatives considered:**
+- **Radix UI** - Excellent accessibility, component-based (easier API)
+- **Headless UI** - Tailwind-focused, limited component set
+- **Chakra UI** - Pre-styled components, WCAG 2.0 baseline
+
+**Why use accessible component libraries?**
+Focus management, keyboard navigation, and ARIA attributes are **hard to get right**. React Aria solves 80%+ of accessibility problems with battle-tested patterns from Adobe products.
 
 ```typescript
 // ✅ GOOD - Using React Aria for accessible dialog
@@ -724,10 +793,14 @@ Reviewers must verify:
 
 ## Document Changelog
 
+- **2026-01-03:** Updated with official library decisions (React Aria, Victory Charts)
+  - Added links to ADR-006 (React Aria) and ADR-007 (Victory Charts)
+  - Updated component library section with React Aria as official choice
+  - Updated charts section with Victory Charts implementation examples
 - **2026-01-03:** Initial inclusive design standards document created
-- Integrated HCD × WCAG strategic approach
-- Defined WCAG 2.2 Level AA compliance target
-- Established testing strategy and tooling recommendations
+  - Integrated HCD × WCAG strategic approach
+  - Defined WCAG 2.2 Level AA compliance target
+  - Established testing strategy and tooling recommendations
 
 ---
 

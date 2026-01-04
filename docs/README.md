@@ -18,7 +18,9 @@ docs/
 │       ├── 002-duckdb-migration.md
 │       ├── 003-typescript-frontend.md
 │       ├── 004-docker-deployment.md
-│       └── 005-retention-strategy.md
+│       ├── 005-retention-strategy.md
+│       ├── 006-react-aria-components.md
+│       └── 007-victory-charts.md
 ├── design/                            # UI/UX & accessibility standards
 │   └── inclusive-design.md            # Accessibility & WCAG 2.2 AA compliance
 ├── technical/                         # Implementation guides
@@ -88,6 +90,8 @@ docs/
 - [ADR-003: TypeScript Frontend](architecture/decisions/003-typescript-frontend.md) - Why TypeScript over JavaScript
 - [ADR-004: Docker Deployment](architecture/decisions/004-docker-deployment.md) - Why Docker Compose
 - [ADR-005: Retention Strategy](architecture/decisions/005-retention-strategy.md) - Why 50-year full-resolution
+- [ADR-006: React Aria Components](architecture/decisions/006-react-aria-components.md) - Why React Aria for accessibility
+- [ADR-007: Victory Charts](architecture/decisions/007-victory-charts.md) - Why Victory over Recharts
 
 **When to read:** You want to understand the "how" and "why" of technical decisions
 
@@ -352,7 +356,8 @@ Historical documentation from Phase 1-2 is available in [archive/](archive/) for
 - [React Documentation](https://react.dev/) - UI framework
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/) - Type-safe JavaScript
 - [Vite Documentation](https://vitejs.dev/) - Build tool and dev server
-- [Recharts Documentation](https://recharts.org/) - Charting library
+- [React Aria Documentation](https://react-spectrum.adobe.com/react-aria/) - Accessible component hooks (Adobe)
+- [Victory Charts Documentation](https://commerce.nearform.com/open-source/victory/) - Accessible charting library
 - [TailwindCSS Documentation](https://tailwindcss.com/docs) - CSS framework
 
 **DevOps & Tools**
@@ -364,6 +369,8 @@ Historical documentation from Phase 1-2 is available in [archive/](archive/) for
 
 ## Document Changelog
 
+- **2026-01-03:** Added ADR-006 (React Aria) and ADR-007 (Victory Charts) for Phase 3 Web UI
+- **2026-01-03:** Updated Learning Resources with React Aria and Victory Charts documentation
 - **2026-01-03:** Added design/ folder with Inclusive Design standards (WCAG 2.2 AA)
 - **2026-01-03:** Added Learning Resources section with framework documentation links
 - **2026-01-02:** Initial documentation index created during reorganization
