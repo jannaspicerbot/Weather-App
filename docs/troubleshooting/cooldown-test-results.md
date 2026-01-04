@@ -131,7 +131,7 @@ Now that we know the cooldown period, we can:
 - Python 3.x on Windows
 - `requests` library
 - API endpoint: `https://api.ambientweather.net/v1`
-- Device MAC: `C8:C9:A3:10:36:F4`
+- Device MAC: [Configured in .env]
 
 **Test Parameters:**
 ```python

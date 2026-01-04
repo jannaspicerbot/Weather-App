@@ -310,7 +310,7 @@ If paid account too expensive:
 Python: 3.13
 Platform: Windows 11
 API Endpoint: https://api.ambientweather.net/v1
-Device MAC: C8:C9:A3:10:36:F4
+Device MAC: [Configured in .env]
 Test Time: 2026-01-04 13:15-13:18 PST
 ```
 

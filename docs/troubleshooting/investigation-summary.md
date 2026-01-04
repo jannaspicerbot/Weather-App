@@ -231,7 +231,7 @@ We conducted a systematic investigation into why our Ambient Weather API experie
 - [`tests/experiment_diagnostics.py`](../../tests/experiment_diagnostics.py) - Phase 5 & 6 tests (not run)
 
 ### Configuration
-- Modified [`.env`](../../.env) - Added `AMBIENT_MAC_ADDRESS=C8:C9:A3:10:36:F4`
+- Modified [`.env`](../../.env) - Added `AMBIENT_MAC_ADDRESS` from device list API response
 
 ---
 
@@ -296,9 +296,8 @@ We conducted a systematic investigation into why our Ambient Weather API experie
    - Pattern typical of sliding window
 
 4. **Device MAC Address**
-   - Discovered: `C8:C9:A3:10:36:F4`
-   - From device list API call
-   - Now stored in `.env`
+   - Retrieved from device list API call
+   - Now stored in `.env` file
 
 ### Test Scripts Improvements
 

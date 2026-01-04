@@ -31,7 +31,7 @@ Time: 2026-01-04T09:56:04.311428
 Status: 200 OK
 Response Time: 0.31s
 Body: 1 device found
-  - MAC: C8:C9:A3:10:36:F4
+  - MAC: [DEVICE_MAC_ADDRESS]
   - Name: Default
 ```
 
@@ -52,7 +52,7 @@ Body: 1 device found
 
 **Request:**
 ```
-URL: https://api.ambientweather.net/v1/devices/C8:C9:A3:10:36:F4
+URL: https://api.ambientweather.net/v1/devices/[DEVICE_MAC_ADDRESS]
 Params: limit=1, apiKey=...d579, applicationKey=...1364
 Time: 2026-01-04T09:56:04.628738
 ```
@@ -266,7 +266,7 @@ RESPONSE:
 
   Body: [
     {
-      "macAddress": "C8:C9:A3:10:36:F4",
+      "macAddress": "[DEVICE_MAC_ADDRESS]",
       "info": {
         "name": "Default",
         ...
@@ -279,7 +279,7 @@ RESPONSE:
 #### Test 1.2: Device Data (RATE LIMITED)
 ```
 REQUEST:
-  GET https://api.ambientweather.net/v1/devices/C8:C9:A3:10:36:F4
+  GET https://api.ambientweather.net/v1/devices/[DEVICE_MAC_ADDRESS]
   Params: limit=1, apiKey=dfa...d579, applicationKey=914...1364
 
 RESPONSE:
