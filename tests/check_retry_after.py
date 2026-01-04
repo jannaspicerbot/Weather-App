@@ -5,7 +5,6 @@ check_retry_after.py - Check the 429 response for Retry-After header
 
 import os
 import sys
-from datetime import datetime
 
 import requests
 
@@ -34,12 +33,12 @@ params = {"apiKey": API_KEY, "applicationKey": APPLICATION_KEY, "limit": 1}
 response = requests.get(url, params=params)
 
 print(f"Status Code: {response.status_code}")
-print(f"\nAll Response Headers:")
+print("\nAll Response Headers:")
 print("-" * 50)
 for header, value in response.headers.items():
     print(f"{header}: {value}")
 
-print(f"\nResponse Body:")
+print("\nResponse Body:")
 print("-" * 50)
 print(response.text[:200])
 

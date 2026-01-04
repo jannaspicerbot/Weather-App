@@ -5,7 +5,6 @@ DuckDB is 10-100x faster than SQLite for analytical queries
 """
 
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import duckdb
@@ -208,7 +207,7 @@ class WeatherDatabase:
                 else:
                     skipped_count += 1
 
-            except Exception as e:
+            except Exception:
                 skipped_count += 1
                 continue
 

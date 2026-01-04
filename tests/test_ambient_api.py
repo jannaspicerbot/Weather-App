@@ -4,7 +4,6 @@ Simple test script to fetch just a few recent weather records
 This helps diagnose API issues without hitting rate limits
 """
 
-import json
 import os
 import sys
 from pathlib import Path
@@ -115,13 +114,13 @@ def test_api_connection():
 
         if data:
             latest = data[0]
-            print(f"\n  Latest reading:")
+            print("\n  Latest reading:")
             print(f"    Date: {latest.get('date', 'N/A')}")
             print(f"    Temp: {latest.get('tempf', 'N/A')}°F")
             print(f"    Humidity: {latest.get('humidity', 'N/A')}%")
             print(f"    Wind: {latest.get('windspeedmph', 'N/A')} mph")
 
-            print(f"\n  All fields available:")
+            print("\n  All fields available:")
             for key in sorted(latest.keys()):
                 if key not in ["dateutc", "date"]:
                     print(f"    - {key}")

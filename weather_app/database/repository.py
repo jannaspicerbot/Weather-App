@@ -185,7 +185,7 @@ class WeatherRepository:
                         min_dt = datetime.fromisoformat(min_date)
                         max_dt = datetime.fromisoformat(max_date)
                         date_range_days = (max_dt - min_dt).days
-                    except:
+                    except Exception:
                         pass
 
                 duration_ms = (time.time() - start_time) * 1000

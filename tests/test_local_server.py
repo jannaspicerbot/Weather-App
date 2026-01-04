@@ -4,7 +4,6 @@ Quick API Tester
 Tests the Weather API endpoints with the current database configuration
 """
 
-import json
 from datetime import datetime
 
 import requests
@@ -26,7 +25,7 @@ def test_root():
         response.raise_for_status()
         data = response.json()
 
-        print(f"✓ API is running")
+        print("✓ API is running")
         print(f"  Version: {data.get('version')}")
         print(f"  Database Mode: {data.get('database', {}).get('mode')}")
         print(f"  Database Path: {data.get('database', {}).get('path')}")
@@ -48,7 +47,7 @@ def test_stats():
         response.raise_for_status()
         data = response.json()
 
-        print(f"✓ Stats endpoint working")
+        print("✓ Stats endpoint working")
         print(f"  Total Records: {data.get('total_records'):,}")
         print(f"  Date Range: {data.get('min_date')} to {data.get('max_date')}")
         if data.get("date_range_days") is not None:
@@ -68,7 +67,7 @@ def test_latest():
         response.raise_for_status()
         data = response.json()
 
-        print(f"✓ Latest weather endpoint working")
+        print("✓ Latest weather endpoint working")
         print(f"  Date: {data.get('date')}")
         print(f"  Temperature: {data.get('tempf')}°F")
         print(f"  Feels Like: {data.get('feelsLike')}°F")
@@ -90,7 +89,7 @@ def test_weather_query():
         response.raise_for_status()
         data = response.json()
 
-        print(f"✓ Weather query endpoint working")
+        print("✓ Weather query endpoint working")
         print(f"  Records returned: {len(data)}")
 
         if data:
@@ -127,7 +126,7 @@ def test_pagination():
         response2.raise_for_status()
         page2 = response2.json()
 
-        print(f"✓ Pagination working")
+        print("✓ Pagination working")
         print(f"  Page 1 records: {len(page1)}")
         print(f"  Page 2 records: {len(page2)}")
 
@@ -137,9 +136,9 @@ def test_pagination():
 
             # Verify they're different
             if page1[0].get("id") != page2[0].get("id"):
-                print(f"  ✓ Pages are different (correct)")
+                print("  ✓ Pages are different (correct)")
             else:
-                print(f"  ✗ Pages are the same (incorrect)")
+                print("  ✗ Pages are the same (incorrect)")
 
         return True
     except Exception as e:

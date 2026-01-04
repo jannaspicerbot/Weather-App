@@ -4,7 +4,6 @@ Defines all endpoints for the FastAPI application
 """
 
 import time
-from datetime import datetime
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request

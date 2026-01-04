@@ -63,7 +63,7 @@ def init_db(force):
 
     # Create database and tables using WeatherDatabase context manager
     click.echo("Creating weather_data and backfill_progress tables...")
-    with WeatherDatabase(str(db_path)) as db:
+    with WeatherDatabase(str(db_path)):
         # Tables are created automatically in __enter__
         pass
 
@@ -161,7 +161,7 @@ def fetch(limit):
         # Show latest record
         if data:
             latest = data[0]
-            click.echo(f"\n📊 Latest reading:")
+            click.echo("\n📊 Latest reading:")
             click.echo(f"   Date: {latest.get('date', 'N/A')}")
             click.echo(f"   Temp: {latest.get('tempf', 'N/A')}°F")
             click.echo(f"   Humidity: {latest.get('humidity', 'N/A')}%")
@@ -319,7 +319,7 @@ def backfill(start, end, batch_size, delay):
             duration_ms=round(duration_ms, 2),
         )
 
-        click.echo(f"\n✅ Backfill completed!")
+        click.echo("\n✅ Backfill completed!")
         click.echo(f"   Total records: {len(all_data)}")
         click.echo(f"   Inserted: {total_inserted}")
         click.echo(f"   Skipped (duplicates): {total_skipped}")

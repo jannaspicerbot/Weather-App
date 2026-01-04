@@ -7,7 +7,6 @@ Tests one configuration at a time to understand exact behavior
 import os
 import sys
 import time
-from datetime import datetime
 
 import requests
 
@@ -86,7 +85,7 @@ def main():
 
     # Get device
     print("Step 0: Fetching device info...")
-    url = f"https://api.ambientweather.net/v1/devices"
+    url = "https://api.ambientweather.net/v1/devices"
     params = {"apiKey": API_KEY, "applicationKey": APPLICATION_KEY}
 
     try:

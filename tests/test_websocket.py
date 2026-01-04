@@ -115,7 +115,7 @@ class AmbientWeatherWebSocket:
             print("=" * 70)
             print("Ambient Weather WebSocket Test")
             print("=" * 70)
-            print(f"Connecting to: https://rt2.ambientweather.net")
+            print("Connecting to: https://rt2.ambientweather.net")
             print(f"Using API Key: {self.api_key[:20]}...")
             print()
 
