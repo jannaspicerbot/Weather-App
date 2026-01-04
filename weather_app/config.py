@@ -6,6 +6,11 @@ DuckDB-based high-performance analytics database
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 # Base paths
 BASE_DIR = Path(__file__).parent.parent
 DATA_DIR = BASE_DIR / "data"
