@@ -1,5 +1,10 @@
 # Ambient Weather Data Manager
 
+![Backend CI](https://github.com/jannaspicerbot/Weather-App/workflows/Backend%20CI/badge.svg)
+![Frontend CI](https://github.com/jannaspicerbot/Weather-App/workflows/Frontend%20CI%20%26%20Accessibility/badge.svg)
+![Documentation CI](https://github.com/jannaspicerbot/Weather-App/workflows/Documentation%20CI/badge.svg)
+[![codecov](https://codecov.io/gh/jannaspicerbot/Weather-App/branch/main/graph/badge.svg)](https://codecov.io/gh/jannaspicerbot/Weather-App)
+
 A complete solution for retrieving, storing, and visualizing data from your Ambient Weather Network device.
 
 ## 🌟 Features

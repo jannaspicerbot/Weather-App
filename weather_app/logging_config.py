@@ -11,10 +11,11 @@ Usage:
     logger.info("user_action", action="fetch_weather", device_id="12345")
 """
 
-import structlog
 import logging
 import sys
 from typing import Any, Dict
+
+import structlog
 
 
 def configure_logging(level: str = "INFO", json_logs: bool = True) -> None:
@@ -113,9 +114,14 @@ class LogContext:
 
 
 # Logging utilities
-def log_api_request(logger: structlog.stdlib.BoundLogger, method: str, endpoint: str,
-                   params: Dict[str, Any] = None, status_code: int = None,
-                   duration_ms: float = None) -> None:
+def log_api_request(
+    logger: structlog.stdlib.BoundLogger,
+    method: str,
+    endpoint: str,
+    params: Dict[str, Any] = None,
+    status_code: int = None,
+    duration_ms: float = None,
+) -> None:
     """
     Log an API request with standard fields
 
@@ -152,9 +158,14 @@ def log_api_request(logger: structlog.stdlib.BoundLogger, method: str, endpoint:
         logger.info(**log_data)
 
 
-def log_database_operation(logger: structlog.stdlib.BoundLogger, operation: str,
-                          table: str, records: int = None, duration_ms: float = None,
-                          error: str = None) -> None:
+def log_database_operation(
+    logger: structlog.stdlib.BoundLogger,
+    operation: str,
+    table: str,
+    records: int = None,
+    duration_ms: float = None,
+    error: str = None,
+) -> None:
     """
     Log a database operation with standard fields
 
@@ -183,9 +194,14 @@ def log_database_operation(logger: structlog.stdlib.BoundLogger, operation: str,
         logger.info(**log_data)
 
 
-def log_cli_command(logger: structlog.stdlib.BoundLogger, command: str,
-                   args: Dict[str, Any] = None, success: bool = True,
-                   error: str = None, duration_ms: float = None) -> None:
+def log_cli_command(
+    logger: structlog.stdlib.BoundLogger,
+    command: str,
+    args: Dict[str, Any] = None,
+    success: bool = True,
+    error: str = None,
+    duration_ms: float = None,
+) -> None:
     """
     Log a CLI command execution
 

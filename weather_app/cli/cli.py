@@ -1,21 +1,23 @@
 """
 Command-line interface for Weather App
 """
-import click
-from pathlib import Path
-from datetime import datetime
+
 import csv
-import sys
 import os
+import sys
 import time
+from datetime import datetime
+from pathlib import Path
+
+import click
 from dotenv import load_dotenv
 
 # Fix Windows console encoding for emoji support
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
-from weather_app.config import DB_PATH, get_db_info
 from weather_app.api import AmbientWeatherAPI
+from weather_app.config import DB_PATH, get_db_info
 from weather_app.database import WeatherDatabase
 from weather_app.logging_config import get_logger, log_cli_command
 
@@ -27,14 +29,14 @@ logger = get_logger(__name__)
 
 
 @click.group()
-@click.version_option(version='1.0.0', prog_name='weather-app')
+@click.version_option(version="1.0.0", prog_name="weather-app")
 def cli():
     """Weather App - Ambient Weather data collection and visualization"""
     pass
 
 
 @cli.command()
-@click.option('--force', is_flag=True, help='Drop existing tables and recreate')
+@click.option("--force", is_flag=True, help="Drop existing tables and recreate")
 def init_db(force):
     """Initialize the weather database"""
     start_time = time.time()
@@ -61,13 +63,18 @@ def init_db(force):
 
     # Create database and tables using WeatherDatabase context manager
     click.echo("Creating weather_data and backfill_progress tables...")
-    with WeatherDatabase(str(db_path)) as db:
+    with WeatherDatabase(str(db_path)):
         # Tables are created automatically in __enter__
         pass
 
     duration_ms = (time.time() - start_time) * 1000
-    log_cli_command(logger, "init_db", {"force": force, "db_path": str(db_path)},
-                   success=True, duration_ms=duration_ms)
+    log_cli_command(
+        logger,
+        "init_db",
+        {"force": force, "db_path": str(db_path)},
+        success=True,
+        duration_ms=duration_ms,
+    )
 
     click.echo(f"✅ Database initialized successfully at {db_path}")
     click.echo(f"📊 Database engine: {get_db_info()['database_engine']}")
@@ -75,14 +82,19 @@ def init_db(force):
 
 
 @cli.command()
-@click.option('--limit', default=1, type=int, help='Number of latest records to fetch (default: 1)')
+@click.option(
+    "--limit",
+    default=1,
+    type=int,
+    help="Number of latest records to fetch (default: 1)",
+)
 def fetch(limit):
     """Fetch latest weather data from Ambient Weather API"""
     start_time = time.time()
 
     # Get API credentials from environment
-    api_key = os.getenv('AMBIENT_API_KEY')
-    app_key = os.getenv('AMBIENT_APP_KEY')
+    api_key = os.getenv("AMBIENT_API_KEY")
+    app_key = os.getenv("AMBIENT_APP_KEY")
 
     if not api_key or not app_key:
         logger.error("fetch_failed", reason="missing_credentials")
@@ -115,8 +127,8 @@ def fetch(limit):
             sys.exit(1)
 
         device = devices[0]
-        mac = device['macAddress']
-        device_name = device['info']['name']
+        mac = device["macAddress"]
+        device_name = device["info"]["name"]
 
         logger.info("device_found", mac=mac, device_name=device_name)
         click.echo(f"📡 Fetching from device: {device_name}")
@@ -134,8 +146,13 @@ def fetch(limit):
             inserted, skipped = db.insert_data(data)
 
         duration_ms = (time.time() - start_time) * 1000
-        logger.info("fetch_completed", records=len(data), inserted=inserted,
-                   skipped=skipped, duration_ms=round(duration_ms, 2))
+        logger.info(
+            "fetch_completed",
+            records=len(data),
+            inserted=inserted,
+            skipped=skipped,
+            duration_ms=round(duration_ms, 2),
+        )
 
         click.echo(f"✅ Fetched {len(data)} record(s)")
         click.echo(f"   Inserted: {inserted}")
@@ -144,7 +161,7 @@ def fetch(limit):
         # Show latest record
         if data:
             latest = data[0]
-            click.echo(f"\n📊 Latest reading:")
+            click.echo("\n📊 Latest reading:")
             click.echo(f"   Date: {latest.get('date', 'N/A')}")
             click.echo(f"   Temp: {latest.get('tempf', 'N/A')}°F")
             click.echo(f"   Humidity: {latest.get('humidity', 'N/A')}%")
@@ -158,18 +175,25 @@ def fetch(limit):
 
 
 @cli.command()
-@click.option('--start', required=True, help='Start date (YYYY-MM-DD)')
-@click.option('--end', required=True, help='End date (YYYY-MM-DD)')
-@click.option('--batch-size', default=288, type=int, help='Records per API call (default: 288)')
-@click.option('--delay', default=1.0, type=float, help='Delay between API calls in seconds (default: 1.0)')
+@click.option("--start", required=True, help="Start date (YYYY-MM-DD)")
+@click.option("--end", required=True, help="End date (YYYY-MM-DD)")
+@click.option(
+    "--batch-size", default=288, type=int, help="Records per API call (default: 288)"
+)
+@click.option(
+    "--delay",
+    default=1.0,
+    type=float,
+    help="Delay between API calls in seconds (default: 1.0)",
+)
 def backfill(start, end, batch_size, delay):
     """Backfill historical weather data for a date range"""
     start_time = time.time()
 
     # Validate dates
     try:
-        start_date = datetime.strptime(start, '%Y-%m-%d')
-        end_date = datetime.strptime(end, '%Y-%m-%d')
+        start_date = datetime.strptime(start, "%Y-%m-%d")
+        end_date = datetime.strptime(end, "%Y-%m-%d")
     except ValueError as e:
         logger.error("backfill_failed", reason="invalid_date_format", error=str(e))
         click.echo(f"❌ Invalid date format: {e}")
@@ -177,14 +201,15 @@ def backfill(start, end, batch_size, delay):
         sys.exit(1)
 
     if start_date > end_date:
-        logger.error("backfill_failed", reason="invalid_date_range",
-                    start=start, end=end)
+        logger.error(
+            "backfill_failed", reason="invalid_date_range", start=start, end=end
+        )
         click.echo("❌ Start date must be before end date")
         sys.exit(1)
 
     # Get API credentials
-    api_key = os.getenv('AMBIENT_API_KEY')
-    app_key = os.getenv('AMBIENT_APP_KEY')
+    api_key = os.getenv("AMBIENT_API_KEY")
+    app_key = os.getenv("AMBIENT_APP_KEY")
 
     if not api_key or not app_key:
         logger.error("backfill_failed", reason="missing_credentials")
@@ -196,13 +221,20 @@ def backfill(start, end, batch_size, delay):
 
     db_path = Path(DB_PATH)
     if not db_path.exists():
-        logger.error("backfill_failed", reason="database_not_found", db_path=str(db_path))
+        logger.error(
+            "backfill_failed", reason="database_not_found", db_path=str(db_path)
+        )
         click.echo(f"❌ Database not found at {db_path}")
         click.echo("Run 'weather-app init-db' first")
         sys.exit(1)
 
-    logger.info("backfill_started", start_date=start, end_date=end,
-               batch_size=batch_size, delay=delay)
+    logger.info(
+        "backfill_started",
+        start_date=start,
+        end_date=end,
+        batch_size=batch_size,
+        delay=delay,
+    )
 
     click.echo(f"Backfilling data from {start} to {end}")
     click.echo(f"Batch size: {batch_size} records per API call")
@@ -221,8 +253,8 @@ def backfill(start, end, batch_size, delay):
             sys.exit(1)
 
         device = devices[0]
-        mac = device['macAddress']
-        device_name = device['info']['name']
+        mac = device["macAddress"]
+        device_name = device["info"]["name"]
 
         logger.info("device_found", mac=mac, device_name=device_name)
         click.echo(f"📡 Fetching from device: {device_name}\n")
@@ -233,9 +265,14 @@ def backfill(start, end, batch_size, delay):
 
         def progress_callback(records_fetched, requests_made):
             nonlocal total_inserted, total_skipped
-            logger.info("backfill_progress", records_fetched=records_fetched,
-                       requests_made=requests_made)
-            click.echo(f"Progress: {records_fetched} records fetched, {requests_made} API requests made")
+            logger.info(
+                "backfill_progress",
+                records_fetched=records_fetched,
+                requests_made=requests_made,
+            )
+            click.echo(
+                f"Progress: {records_fetched} records fetched, {requests_made} API requests made"
+            )
 
         # Fetch all historical data
         with WeatherDatabase(db_path) as db:
@@ -249,7 +286,7 @@ def backfill(start, end, batch_size, delay):
                 end_date=end_date,
                 batch_size=batch_size,
                 delay=delay,
-                progress_callback=progress_callback
+                progress_callback=progress_callback,
             )
 
             if not all_data:
@@ -270,15 +307,19 @@ def backfill(start, end, batch_size, delay):
                 current_position=int(start_date.timestamp() * 1000),
                 records_fetched=len(all_data),
                 requests_made=0,  # Tracked in progress_callback
-                status='completed'
+                status="completed",
             )
 
         duration_ms = (time.time() - start_time) * 1000
-        logger.info("backfill_completed", total_records=len(all_data),
-                   inserted=total_inserted, skipped=total_skipped,
-                   duration_ms=round(duration_ms, 2))
+        logger.info(
+            "backfill_completed",
+            total_records=len(all_data),
+            inserted=total_inserted,
+            skipped=total_skipped,
+            duration_ms=round(duration_ms, 2),
+        )
 
-        click.echo(f"\n✅ Backfill completed!")
+        click.echo("\n✅ Backfill completed!")
         click.echo(f"   Total records: {len(all_data)}")
         click.echo(f"   Inserted: {total_inserted}")
         click.echo(f"   Skipped (duplicates): {total_skipped}")
@@ -298,17 +339,19 @@ def backfill(start, end, batch_size, delay):
                 current_position=0,
                 records_fetched=0,
                 requests_made=0,
-                status='failed',
-                error=str(e)
+                status="failed",
+                error=str(e),
             )
         sys.exit(1)
 
 
 @cli.command()
-@click.option('--output', '-o', required=True, type=click.Path(), help='Output CSV file path')
-@click.option('--start', help='Start date (YYYY-MM-DD) - optional')
-@click.option('--end', help='End date (YYYY-MM-DD) - optional')
-@click.option('--limit', type=int, help='Maximum number of records to export')
+@click.option(
+    "--output", "-o", required=True, type=click.Path(), help="Output CSV file path"
+)
+@click.option("--start", help="Start date (YYYY-MM-DD) - optional")
+@click.option("--end", help="End date (YYYY-MM-DD) - optional")
+@click.option("--limit", type=int, help="Maximum number of records to export")
 def export(output, start, end, limit):
     """Export weather data to CSV"""
     db_path = Path(DB_PATH)
@@ -325,7 +368,7 @@ def export(output, start, end, limit):
 
     if start:
         try:
-            datetime.strptime(start, '%Y-%m-%d')
+            datetime.strptime(start, "%Y-%m-%d")
             conditions.append("date >= ?")
             params.append(start)
         except ValueError:
@@ -334,7 +377,7 @@ def export(output, start, end, limit):
 
     if end:
         try:
-            datetime.strptime(end, '%Y-%m-%d')
+            datetime.strptime(end, "%Y-%m-%d")
             conditions.append("date <= ?")
             params.append(end)
         except ValueError:
@@ -365,7 +408,7 @@ def export(output, start, end, limit):
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
+    with open(output_path, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=rows[0].keys())
         writer.writeheader()
         for row in rows:
@@ -399,7 +442,9 @@ def info():
                 click.echo(f"Total records: {count:,}")
 
                 if count > 0:
-                    result = db.conn.execute("SELECT MIN(date), MAX(date) FROM weather_data").fetchone()
+                    result = db.conn.execute(
+                        "SELECT MIN(date), MAX(date) FROM weather_data"
+                    ).fetchone()
                     min_date, max_date = result
                     click.echo(f"Date range: {min_date} to {max_date}")
 
@@ -414,5 +459,5 @@ def info():
     click.echo("=" * 60)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()
