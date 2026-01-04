@@ -72,44 +72,121 @@ claude --model haiku "Fix typo in README line 42"
 
 ---
 
+## 🚨 CRITICAL: Git Workflow & Best Practices
+
+### Always Use Feature Branches - NO EXCEPTIONS
+
+**NEVER work directly on `main`. ALWAYS create a feature branch first.**
+
+```bash
+# ✅ CORRECT WORKFLOW
+git branch --show-current           # Check current branch
+git checkout -b feature/my-feature  # Create feature branch
+# ... make changes ...
+git add .
+git commit -m "Descriptive message"
+git push -u origin feature/my-feature
+# Create PR on GitHub for review
+
+# ❌ WRONG - Never do this!
+git branch --show-current  # Output: main
+# ... make changes on main ... ← STOP! Create branch first!
+```
+
+**Before making ANY code changes:**
+1. **Check current branch**: `git branch --show-current`
+2. **If on main**: IMMEDIATELY create a feature branch: `git checkout -b feature/descriptive-name`
+3. **Make all changes**: Only after you're on a feature branch
+4. **Commit and push**: To the feature branch
+5. **Create PR**: For review before merging to main
+
+**No exceptions. Even for "small" changes, documentation updates, or typo fixes.**
+
+---
+
+### Branch Naming Conventions
+
+Use descriptive branch names with prefixes:
+
+```bash
+# ✅ GOOD - Clear prefix and description
+git checkout -b feature/apscheduler-integration
+git checkout -b feature/env-file-support
+git checkout -b bugfix/emoji-encoding-windows
+git checkout -b bugfix/api-rate-limit-handling
+git checkout -b refactor/database-layer
+git checkout -b docs/update-api-reference
+git checkout -b chore/rename-claude-guidelines
+
+# ❌ BAD - No prefix, unclear
+git checkout -b cli
+git checkout -b env-support
+git checkout -b fix
+```
+
+**Branch Prefixes:**
+- `feature/` - New features or enhancements
+- `bugfix/` - Bug fixes
+- `refactor/` - Code refactoring without changing functionality
+- `docs/` - Documentation updates only
+- `chore/` - Maintenance tasks (dependencies, config, cleanup)
+- `test/` - Adding or updating tests
+
+**Branch Names:**
+- Use lowercase with hyphens
+- Be descriptive but concise
+- Include what, not how (e.g., `feature/csv-export` not `feature/add-csv-library`)
+
+---
+
+### Commit Messages
+
+```bash
+# ✅ GOOD - Clear, descriptive
+git commit -m "Add temperature chart component with Recharts"
+git commit -m "Fix: Handle empty database in API endpoint"
+git commit -m "Update: Improve error messages in weather service"
+
+# ❌ BAD - Vague, unhelpful
+git commit -m "updates"
+git commit -m "fix bug"
+git commit -m "changes"
+```
+
+**Commit Message Guidelines:**
+- Start with a verb (Add, Fix, Update, Remove, Refactor)
+- Be specific about what changed
+- Keep under 72 characters for the first line
+- Add body for complex changes (optional)
+
+---
+
+### Why This Matters
+
+- **Protects main branch** from incomplete or broken code
+- **Enables code review** via pull requests
+- **Allows easy rollback** if something breaks
+- **Follows industry best practices** for professional development
+- **Maintains clean history** for future developers
+
+---
+
 ## 📁 Project Structure
 
-### Current Structure
+High-level organization:
+
 ```
 Weather-App/
-├── weather_app/
-│   ├── __init__.py
-│   ├── config.py            # Configuration, environment variables
-│   ├── cli/                 # CLI commands (Click framework)
-│   │   ├── __init__.py
-│   │   ├── __main__.py      # Module execution entry point
-│   │   └── cli.py           # All CLI commands
-│   ├── fetch/               # API and database operations
-│   │   ├── __init__.py
-│   │   ├── api.py           # AmbientWeatherAPI class
-│   │   └── database.py      # AmbientWeatherDB class
-│   └── backend/             # FastAPI app (future)
-│       ├── main.py          # FastAPI app, routes
-│       ├── database.py      # Database queries
-│       └── models.py        # Pydantic models
-├── scripts/                 # Standalone utility scripts
-│   ├── ambient_weather_fetch.py
-│   └── backfill_weather.py
-├── tests/                   # Test scripts
-├── web/                     # React + TypeScript + Vite frontend
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── components/
-│   │   ├── api/             # Auto-generated OpenAPI types
-│   │   └── lib/
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.ts
-├── setup.py                 # Package installation config
-├── requirements.txt         # Python dependencies
-├── ambient_weather.duckdb   # DuckDB database
-└── .env                     # Environment variables
+├── weather_app/          # Python backend (FastAPI + CLI)
+├── web/                  # React + TypeScript frontend
+├── docs/                 # Documentation (see docs/README.md)
+├── tests/                # Test scripts
+├── .env                  # Environment variables
+├── requirements.txt      # Python dependencies
+└── ambient_weather.duckdb  # DuckDB database
 ```
+
+**Detailed structure:** See [docs/architecture/overview.md](../docs/architecture/overview.md) for complete file-by-file breakdown.
 
 ---
 
@@ -771,270 +848,17 @@ app.add_middleware(
 
 ---
 
-## 📝 Documentation Strategy
+## 📝 Documentation & Contributing
 
-### Documentation Structure
+For complete documentation standards, writing guidelines, ADR templates, and contribution workflows, see:
 
-The project follows a **separation of concerns** approach for documentation:
+**[docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md)**
 
-```
-docs/
-├── README.md                      # Navigation guide
-├── product/                       # Business & user-focused docs
-│   └── requirements.md            # Product Requirements Document (PRD)
-├── architecture/                  # System design & decisions
-│   ├── overview.md                # High-level architecture
-│   └── decisions/                 # Architecture Decision Records (ADRs)
-│       ├── 001-fastapi-backend.md
-│       ├── 002-duckdb-migration.md
-│       ├── 003-typescript-frontend.md
-│       ├── 004-docker-deployment.md
-│       └── 005-retention-strategy.md
-├── technical/                     # Implementation guides
-│   ├── api-reference.md           # REST API documentation
-│   ├── cli-reference.md           # CLI command reference
-│   ├── database-schema.md         # DuckDB schema & queries
-│   └── deployment-guide.md        # Installation & setup
-└── archive/                       # Historical docs
-```
-
-### Documentation Types
-
-#### 1. Product Documentation (docs/product/)
-
-**Purpose:** Business context, user needs, project goals
-
-**Content:**
-- Executive summary
-- Problem statement & Jobs-to-be-Done (JTBD)
-- User personas
-- Functional & non-functional requirements
-- Success metrics & acceptance criteria
-- Out of scope items
-- Risk assessment
-
-**Audience:** Product managers, stakeholders, business users
-
-**When to update:** Per phase (quarterly) or when requirements change
-
-#### 2. Architecture Documentation (docs/architecture/)
-
-**Purpose:** System design, technology choices, trade-offs
-
-**Content:**
-
-**overview.md:**
-- Technology stack with status table
-- System diagrams (C4 model: Context → Container → Component)
-- Data flow diagrams
-- Database schema overview
-- API design patterns
-- Deployment architecture
-- Performance benchmarks
-
-**decisions/ (ADRs - Architecture Decision Records):**
-- Context: Why this decision is needed
-- Decision: What we're choosing
-- Rationale: Why this over alternatives (with comparisons)
-- Consequences: Positive, negative, neutral
-- Alternatives Considered: What else was evaluated
-- Validation: Success criteria & metrics
-
-**Audience:** Architects, senior developers, technical leads
-
-**When to update:**
-- overview.md: Per phase (quarterly)
-- ADRs: When making major technology decisions
-
-#### 3. Technical Documentation (docs/technical/)
-
-**Purpose:** Implementation details, usage guides, reference material
-
-**Content:**
-
-**api-reference.md:**
-- All REST endpoints with request/response schemas
-- Error codes and handling
-- Code examples (TypeScript, Python, curl)
-- OpenAPI schema reference
-
-**cli-reference.md:**
-- All CLI commands with arguments/options
-- Usage examples
-- Scheduling (cron, systemd, Task Scheduler)
-- Troubleshooting common issues
-
-**database-schema.md:**
-- Table structures with column definitions
-- Indexes and constraints
-- Common query patterns
-- Backup & restore procedures
-- Performance characteristics
-
-**deployment-guide.md:**
-- Installation steps (Docker Compose, native)
-- Configuration (environment variables)
-- Automated data collection setup
-- Monitoring & health checks
-- Updates & maintenance
-- Platform-specific notes
-
-**Audience:** Developers, DevOps engineers, end users
-
-**When to update:** Per release (monthly) or when implementation changes
-
-### ADR (Architecture Decision Record) Pattern
-
-**When to create an ADR:**
-- Choosing between major technologies (database, framework, language)
-- Significant architectural changes (data retention, deployment strategy)
-- Decisions that affect multiple teams or future development
-- Trade-offs that need to be documented for future reference
-
-**ADR Template:**
-
-```markdown
-# ADR-XXX: Title
-
-**Status:** 🟡 Proposed | ✅ Accepted | ❌ Rejected | ♻️ Superseded
-**Date:** YYYY-MM-DD
-**Deciders:** Names
-
-## Context
-What is the issue we're seeing that is motivating this decision?
-
-## Decision
-What is the change we're proposing?
-
-## Rationale
-Why this approach over alternatives?
-- Include comparison tables
-- Benchmarks where applicable
-- Peer review feedback
-
-## Consequences
-
-### Positive
-- ✅ Benefits of this decision
-
-### Negative
-- ⚠️ Drawbacks or limitations
-
-### Neutral
-- Other considerations
-
-## Alternatives Considered
-What other options were evaluated and why were they rejected?
-
-## Validation
-Success criteria and metrics to measure if this decision was correct.
-
-## References
-Links to relevant documentation, benchmarks, peer reviews.
-```
-
-**ADR Numbering:** Use sequential numbers (001, 002, 003...) in filename
-
-**ADR Status:**
-- 🟡 **Proposed:** Under discussion
-- ✅ **Accepted:** Implemented and in use
-- ❌ **Rejected:** Decided against
-- ♻️ **Superseded:** Replaced by newer ADR (link to replacement)
-
-### Documentation Best Practices
-
-#### Separation of Concerns
-- **DON'T** mix business requirements with technical implementation
-- **DON'T** duplicate content across multiple docs
-- **DO** link between related documents
-- **DO** keep each document focused on its purpose
-
-#### Writing Style
-- **Product docs:** User-focused, business language, outcomes
-- **Architecture docs:** Design-focused, trade-offs, diagrams
-- **Technical docs:** Implementation-focused, code examples, how-to
-
-#### Maintenance
-- **Add changelog** at bottom of each document
-- **Update version/date** when making changes
-- **Move outdated docs** to archive/ directory
-- **Keep archive/** for historical reference (never delete)
-
-#### Navigation
-- **docs/README.md** is the entry point
-- Organize by **topic** (Installation, API, CLI, Database)
-- Organize by **role** (End User, Developer, Architect)
-- Provide **use case-based paths** ("I want to...")
-
-### Code Comments
-
-In addition to documentation files, write clear code comments:
-
-- **Explain WHY**, not what (code shows what)
-- **Document complex logic**
-- **Add docstrings** to all functions
-- **Keep comments updated** when code changes
-
-```python
-# ✅ GOOD - Explains reasoning
-def calculate_dew_point(temp_f: float, humidity: float) -> float:
-    """
-    Calculate dew point using Magnus formula.
-
-    Uses the simplified Magnus formula which is accurate for
-    typical weather conditions (temp: -40°F to 122°F, RH: 1-100%).
-
-    Args:
-        temp_f: Temperature in Fahrenheit
-        humidity: Relative humidity as percentage (0-100)
-
-    Returns:
-        Dew point temperature in Fahrenheit
-    """
-    # Convert F to C for formula
-    temp_c = (temp_f - 32) * 5/9
-
-    # Magnus formula constants
-    a = 17.27
-    b = 237.7
-
-    # Calculate dew point in Celsius
-    alpha = ((a * temp_c) / (b + temp_c)) + math.log(humidity / 100.0)
-    dew_point_c = (b * alpha) / (a - alpha)
-
-    # Convert back to Fahrenheit
-    return (dew_point_c * 9/5) + 32
-
-# ❌ BAD - Just restates code
-def calc(t, h):
-    # Convert to celsius
-    tc = (t - 32) * 5/9
-    # Do calculation
-    result = some_formula(tc, h)
-    # Return result
-    return result
-```
-
-### Documentation Workflow
-
-#### When Adding New Features
-1. **Update requirements.md** if feature changes business goals
-2. **Create ADR** if making architectural decision
-3. **Update architecture/overview.md** if changing system design
-4. **Update technical guides** (API, CLI, database) with new functionality
-5. **Add examples** showing how to use the new feature
-
-#### When Making Breaking Changes
-1. **Create ADR** documenting the change and rationale
-2. **Update all affected docs** (architecture, technical guides)
-3. **Add migration guide** if users need to take action
-4. **Archive old versions** to archive/ directory
-
-#### When Deprecating Features
-1. **Update docs** with deprecation notices
-2. **Document migration path** to replacement
-3. **Set timeline** for removal
-4. **Keep docs** until feature is fully removed
+Key documentation locations:
+- **Product docs**: `docs/product/` - Requirements, goals, user personas
+- **Architecture docs**: `docs/architecture/` - System design, ADRs, decisions
+- **Technical docs**: `docs/technical/` - API reference, CLI guide, deployment
+- **Navigation**: `docs/README.md` - Documentation index
 
 ---
 
@@ -1130,110 +954,23 @@ npm install --save-dev <package>  # Development dependency
 
 ---
 
-## ✅ Git Best Practices
-
-### Commit Messages
-```bash
-# ✅ GOOD - Clear, descriptive
-git commit -m "Add temperature chart component with Recharts"
-git commit -m "Fix: Handle empty database in API endpoint"
-git commit -m "Update: Improve error messages in weather service"
-
-# ❌ BAD - Vague, unhelpful
-git commit -m "updates"
-git commit -m "fix bug"
-git commit -m "changes"
-```
-
-### Branching Strategy
-Use descriptive branch names with prefixes:
-
-```bash
-# ✅ GOOD - Clear prefix and description
-git checkout -b feature/cli-interface
-git checkout -b feature/env-file-support
-git checkout -b bugfix/emoji-encoding-windows
-git checkout -b bugfix/api-rate-limit-handling
-
-# ❌ BAD - No prefix, unclear
-git checkout -b cli
-git checkout -b env-support
-git checkout -b fix
-```
-
-**Branch Prefixes:**
-- **feature/** - New features or enhancements
-- **bugfix/** - Bug fixes
-- **refactor/** - Code refactoring without changing functionality
-- **docs/** - Documentation updates only
-- **test/** - Adding or updating tests
-
-**Branch Names:**
-- Use lowercase with hyphens
-- Be descriptive but concise
-- Include what, not how (e.g., `feature/csv-export` not `feature/add-csv-library`)
-
----
-
-## 🎯 Development Workflow
-
-### Phase 1: CLI & Data Collection (Completed ✅)
-1. ✅ Create project structure and configuration
-2. ✅ Implement CLI interface with Click framework
-3. ✅ Build API client for Ambient Weather API
-4. ✅ Build database operations with context managers
-5. ✅ Implement fetch command for latest data
-6. ✅ Implement backfill command for historical data
-7. ✅ Add CSV export functionality
-8. ✅ Set up .env file support with python-dotenv
-9. ✅ Create package with setup.py for easy installation
-
-### Phase 2: Frontend Prototype
-1. ✅ Set up React + Vite project
-2. ✅ Create basic layout and navigation
-3. ✅ Build API service layer
-4. ✅ Create weather data components
-5. ✅ Add basic charts with Recharts
-6. ✅ Style with Tailwind CSS
-
-### Phase 3: Polish & Features (In Progress 🔄)
-1. ✅ **Set up automated data collection** - APScheduler integrated for periodic fetch
-2. Add more chart types
-3. Implement date range filtering
-4. Add export functionality (CSV, PDF)
-5. Improve error handling and loading states
-6. Add dark mode support
-7. Make responsive for mobile
-
-### Phase 4: Automation & Deployment (Future)
-1. Add authentication (if needed)
-2. Deploy to cloud (Render, Vercel, etc.)
-3. Set up CI/CD pipeline
-
----
-
 ## 💡 Key Reminders for Claude Code
 
 When building features:
-1. **Ask clarifying questions** if requirements are unclear
-2. **Show code diffs** for review before applying
+
+1. **ALWAYS create a feature branch first** - See [Git Workflow](#-critical-git-workflow--best-practices) ⚠️
+2. **Ask clarifying questions** if requirements are unclear
 3. **Explain your approach** before implementing
 4. **Test immediately** after creating code
 5. **Follow these guidelines** unless user requests otherwise
 6. **Prioritize working code** over perfect code initially
 7. **Iterate and improve** based on feedback
 
----
+**Project Roadmap**: See `docs/product/requirements.md` for development phases and timeline.
 
-## 📚 Learning Resources
-
-- **FastAPI Docs**: https://fastapi.tiangolo.com/
-- **React Docs**: https://react.dev/
-- **Tailwind CSS**: https://tailwindcss.com/docs
-- **Recharts**: https://recharts.org/
-- **SQLite Tutorial**: https://www.sqlitetutorial.net/
+**External Resources**: See `docs/README.md` for links to framework documentation and tutorials.
 
 ---
 
-**Last Updated:** January 2, 2026
-**Project Status:** Phase 2 Complete - FastAPI backend, React+TypeScript frontend, DuckDB migration, Docker deployment
+**Last Updated:** January 3, 2026
+**Project Status:** Phase 3 In Progress - APScheduler integration complete
