@@ -19,24 +19,17 @@ if not API_KEY or not APPLICATION_KEY:
 # Get device
 print("Fetching device...")
 url = "https://api.ambientweather.net/v1/devices"
-params = {
-    'apiKey': API_KEY,
-    'applicationKey': APPLICATION_KEY
-}
+params = {"apiKey": API_KEY, "applicationKey": APPLICATION_KEY}
 
 response = requests.get(url, params=params)
 devices = response.json()
-mac_address = devices[0]['macAddress']
+mac_address = devices[0]["macAddress"]
 print(f"Device: {mac_address}\n")
 
 # Make request that will likely get rate limited
 print("Making data request (expecting 429)...")
 url = f"https://api.ambientweather.net/v1/devices/{mac_address}"
-params = {
-    'apiKey': API_KEY,
-    'applicationKey': APPLICATION_KEY,
-    'limit': 1
-}
+params = {"apiKey": API_KEY, "applicationKey": APPLICATION_KEY, "limit": 1}
 
 response = requests.get(url, params=params)
 
@@ -50,10 +43,10 @@ print(f"\nResponse Body:")
 print("-" * 50)
 print(response.text[:200])
 
-if 'Retry-After' in response.headers:
-    retry_after = response.headers['Retry-After']
+if "Retry-After" in response.headers:
+    retry_after = response.headers["Retry-After"]
     print(f"\n🔑 Retry-After header found: {retry_after}")
-    
+
     try:
         # Try as seconds
         seconds = int(retry_after)

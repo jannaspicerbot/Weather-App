@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 
 def register_routes(app: FastAPI):
     """Register all API routes with the app"""
-    
+
     @app.get("/")
     def read_root():
         """Root endpoint with API information"""
@@ -26,26 +26,36 @@ def register_routes(app: FastAPI):
         return {
             "message": "Weather API",
             "version": "1.0.0",
-            "database": {
-                "mode": db_info["mode"],
-                "path": db_info["database_path"]
-            },
+            "database": {"mode": db_info["mode"], "path": db_info["database_path"]},
             "endpoints": {
                 "/weather": "Get weather data with optional filters",
                 "/weather/latest": "Get the latest weather reading",
                 "/weather/stats": "Get database statistics",
-                "/api/scheduler/status": "Get scheduler status and configuration"
-            }
+                "/api/scheduler/status": "Get scheduler status and configuration",
+            },
         }
-    
+
     @app.get("/weather", response_model=List[WeatherData])
     def get_weather_data(
         request: Request,
-        limit: int = Query(default=100, ge=1, le=1000, description="Maximum number of records to return"),
+        limit: int = Query(
+            default=100,
+            ge=1,
+            le=1000,
+            description="Maximum number of records to return",
+        ),
         offset: int = Query(default=0, ge=0, description="Number of records to skip"),
-        start_date: Optional[str] = Query(default=None, description="Start date (ISO format: YYYY-MM-DD)"),
-        end_date: Optional[str] = Query(default=None, description="End date (ISO format: YYYY-MM-DD)"),
-        order: str = Query(default="desc", pattern="^(asc|desc)$", description="Sort order by date (asc or desc)")
+        start_date: Optional[str] = Query(
+            default=None, description="Start date (ISO format: YYYY-MM-DD)"
+        ),
+        end_date: Optional[str] = Query(
+            default=None, description="End date (ISO format: YYYY-MM-DD)"
+        ),
+        order: str = Query(
+            default="desc",
+            pattern="^(asc|desc)$",
+            description="Sort order by date (asc or desc)",
+        ),
     ):
         """
         Query weather data from the database
@@ -64,28 +74,43 @@ def register_routes(app: FastAPI):
                 offset=offset,
                 start_date=start_date,
                 end_date=end_date,
-                order=order
+                order=order,
             )
 
             duration_ms = (time.time() - start_time) * 1000
-            log_api_request(logger, "GET", "/weather",
-                          params={"limit": limit, "offset": offset},
-                          status_code=200, duration_ms=duration_ms)
+            log_api_request(
+                logger,
+                "GET",
+                "/weather",
+                params={"limit": limit, "offset": offset},
+                status_code=200,
+                duration_ms=duration_ms,
+            )
 
             return result
         except ValueError as e:
             duration_ms = (time.time() - start_time) * 1000
-            log_api_request(logger, "GET", "/weather",
-                          params={"limit": limit, "offset": offset},
-                          status_code=400, duration_ms=duration_ms)
+            log_api_request(
+                logger,
+                "GET",
+                "/weather",
+                params={"limit": limit, "offset": offset},
+                status_code=400,
+                duration_ms=duration_ms,
+            )
             raise HTTPException(status_code=400, detail=str(e))
         except RuntimeError as e:
             duration_ms = (time.time() - start_time) * 1000
-            log_api_request(logger, "GET", "/weather",
-                          params={"limit": limit, "offset": offset},
-                          status_code=500, duration_ms=duration_ms)
+            log_api_request(
+                logger,
+                "GET",
+                "/weather",
+                params={"limit": limit, "offset": offset},
+                status_code=500,
+                duration_ms=duration_ms,
+            )
             raise HTTPException(status_code=500, detail=str(e))
-    
+
     @app.get("/weather/latest", response_model=WeatherData)
     def get_latest_weather(request: Request):
         """
@@ -96,21 +121,38 @@ def register_routes(app: FastAPI):
             result = WeatherRepository.get_latest_reading()
             if result is None:
                 duration_ms = (time.time() - start_time) * 1000
-                log_api_request(logger, "GET", "/weather/latest",
-                              status_code=404, duration_ms=duration_ms)
-                raise HTTPException(status_code=404, detail="No weather data found in database")
+                log_api_request(
+                    logger,
+                    "GET",
+                    "/weather/latest",
+                    status_code=404,
+                    duration_ms=duration_ms,
+                )
+                raise HTTPException(
+                    status_code=404, detail="No weather data found in database"
+                )
 
             duration_ms = (time.time() - start_time) * 1000
-            log_api_request(logger, "GET", "/weather/latest",
-                          status_code=200, duration_ms=duration_ms)
+            log_api_request(
+                logger,
+                "GET",
+                "/weather/latest",
+                status_code=200,
+                duration_ms=duration_ms,
+            )
 
             return result
         except RuntimeError as e:
             duration_ms = (time.time() - start_time) * 1000
-            log_api_request(logger, "GET", "/weather/latest",
-                          status_code=500, duration_ms=duration_ms)
+            log_api_request(
+                logger,
+                "GET",
+                "/weather/latest",
+                status_code=500,
+                duration_ms=duration_ms,
+            )
             raise HTTPException(status_code=500, detail=str(e))
-    
+
     @app.get("/weather/stats", response_model=DatabaseStats)
     def get_database_stats(request: Request):
         """
@@ -121,14 +163,24 @@ def register_routes(app: FastAPI):
             result = WeatherRepository.get_stats()
 
             duration_ms = (time.time() - start_time) * 1000
-            log_api_request(logger, "GET", "/weather/stats",
-                          status_code=200, duration_ms=duration_ms)
+            log_api_request(
+                logger,
+                "GET",
+                "/weather/stats",
+                status_code=200,
+                duration_ms=duration_ms,
+            )
 
             return result
         except RuntimeError as e:
             duration_ms = (time.time() - start_time) * 1000
-            log_api_request(logger, "GET", "/weather/stats",
-                          status_code=500, duration_ms=duration_ms)
+            log_api_request(
+                logger,
+                "GET",
+                "/weather/stats",
+                status_code=500,
+                duration_ms=duration_ms,
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/api/health")
@@ -142,8 +194,8 @@ def register_routes(app: FastAPI):
             "data": {
                 "status": "healthy",
                 "database": db_info["database_engine"],
-                "mode": db_info["mode"]
-            }
+                "mode": db_info["mode"],
+            },
         }
 
     # Add API prefix routes for frontend compatibility
@@ -162,17 +214,14 @@ def register_routes(app: FastAPI):
     def api_get_weather_range(
         start_date: Optional[str] = Query(default=None),
         end_date: Optional[str] = Query(default=None),
-        limit: int = Query(default=1000, ge=1, le=10000)
+        limit: int = Query(default=1000, ge=1, le=10000),
     ):
         """
         Get weather data within a date range (API route)
         """
         try:
             return WeatherRepository.get_all_readings(
-                start_date=start_date,
-                end_date=end_date,
-                limit=limit,
-                order="desc"
+                start_date=start_date, end_date=end_date, limit=limit, order="desc"
             )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
@@ -198,6 +247,7 @@ def register_routes(app: FastAPI):
         including enabled state, fetch interval, and next run time.
         """
         from weather_app.web.app import scheduler
+
         return scheduler.get_status()
 
     @app.exception_handler(404)
@@ -206,7 +256,7 @@ def register_routes(app: FastAPI):
         return {
             "error": "Not Found",
             "detail": "The requested resource was not found",
-            "status_code": 404
+            "status_code": 404,
         }
 
     @app.exception_handler(500)
@@ -215,5 +265,5 @@ def register_routes(app: FastAPI):
         return {
             "error": "Internal Server Error",
             "detail": "An internal server error occurred",
-            "status_code": 500
+            "status_code": 500,
         }

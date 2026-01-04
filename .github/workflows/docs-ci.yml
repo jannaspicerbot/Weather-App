@@ -6,14 +6,14 @@ on:
     paths:
       - 'docs/**'
       - 'README.md'
-      - 'CLAUDE.md'
+      - '.claude/**'
       - '.github/workflows/docs-ci.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
       - 'docs/**'
       - 'README.md'
-      - 'CLAUDE.md'
+      - '.claude/**'
       - '.github/workflows/docs-ci.yml'
 
 jobs:
@@ -111,7 +111,7 @@ jobs:
           "docs/technical/database-schema.md"
           "docs/technical/deployment-guide.md"
           "README.md"
-          "CLAUDE.md"
+          ".claude/CLAUDE.md"
         )
 
         missing=()

@@ -22,7 +22,7 @@ class WeatherRepository:
         offset: int = 0,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        order: str = "desc"
+        order: str = "desc",
     ) -> List[Dict[str, Any]]:
         """
         Query weather data from the database
@@ -77,15 +77,21 @@ class WeatherRepository:
                     records = [dict(zip(columns, row)) for row in result]
 
                 duration_ms = (time.time() - start_time) * 1000
-                log_database_operation(logger, "SELECT", "weather_data",
-                                     records=len(records), duration_ms=duration_ms)
+                log_database_operation(
+                    logger,
+                    "SELECT",
+                    "weather_data",
+                    records=len(records),
+                    duration_ms=duration_ms,
+                )
 
                 return records
 
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
-            log_database_operation(logger, "SELECT", "weather_data",
-                                 duration_ms=duration_ms, error=str(e))
+            log_database_operation(
+                logger, "SELECT", "weather_data", duration_ms=duration_ms, error=str(e)
+            )
             raise RuntimeError(f"Database error: {str(e)}")
 
     @staticmethod
@@ -99,11 +105,13 @@ class WeatherRepository:
         start_time = time.time()
         try:
             with WeatherDatabase(DB_PATH) as db:
-                result = db.conn.execute("""
+                result = db.conn.execute(
+                    """
                     SELECT * FROM weather_data
                     ORDER BY dateutc DESC
                     LIMIT 1
-                """).fetchone()
+                """
+                ).fetchone()
 
                 record = None
                 if result:
@@ -111,15 +119,21 @@ class WeatherRepository:
                     record = dict(zip(columns, result))
 
                 duration_ms = (time.time() - start_time) * 1000
-                log_database_operation(logger, "SELECT", "weather_data",
-                                     records=1 if record else 0, duration_ms=duration_ms)
+                log_database_operation(
+                    logger,
+                    "SELECT",
+                    "weather_data",
+                    records=1 if record else 0,
+                    duration_ms=duration_ms,
+                )
 
                 return record
 
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
-            log_database_operation(logger, "SELECT", "weather_data",
-                                 duration_ms=duration_ms, error=str(e))
+            log_database_operation(
+                logger, "SELECT", "weather_data", duration_ms=duration_ms, error=str(e)
+            )
             raise RuntimeError(f"Database error: {str(e)}")
 
     @staticmethod
@@ -134,22 +148,31 @@ class WeatherRepository:
         try:
             with WeatherDatabase(DB_PATH) as db:
                 # Get total count
-                count_result = db.conn.execute("SELECT COUNT(*) as count FROM weather_data").fetchone()
+                count_result = db.conn.execute(
+                    "SELECT COUNT(*) as count FROM weather_data"
+                ).fetchone()
                 total_records = count_result[0]
 
                 if total_records == 0:
                     duration_ms = (time.time() - start_time) * 1000
-                    log_database_operation(logger, "SELECT", "weather_data",
-                                         records=0, duration_ms=duration_ms)
+                    log_database_operation(
+                        logger,
+                        "SELECT",
+                        "weather_data",
+                        records=0,
+                        duration_ms=duration_ms,
+                    )
                     return {
                         "total_records": 0,
                         "min_date": None,
                         "max_date": None,
-                        "date_range_days": None
+                        "date_range_days": None,
                     }
 
                 # Get date range
-                date_result = db.conn.execute("SELECT MIN(date) as min_date, MAX(date) as max_date FROM weather_data").fetchone()
+                date_result = db.conn.execute(
+                    "SELECT MIN(date) as min_date, MAX(date) as max_date FROM weather_data"
+                ).fetchone()
 
                 min_date = date_result[0]
                 max_date = date_result[1]
@@ -165,18 +188,24 @@ class WeatherRepository:
                         pass
 
                 duration_ms = (time.time() - start_time) * 1000
-                log_database_operation(logger, "SELECT", "weather_data",
-                                     records=total_records, duration_ms=duration_ms)
+                log_database_operation(
+                    logger,
+                    "SELECT",
+                    "weather_data",
+                    records=total_records,
+                    duration_ms=duration_ms,
+                )
 
                 return {
                     "total_records": total_records,
                     "min_date": min_date,
                     "max_date": max_date,
-                    "date_range_days": date_range_days
+                    "date_range_days": date_range_days,
                 }
 
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
-            log_database_operation(logger, "SELECT", "weather_data",
-                                 duration_ms=duration_ms, error=str(e))
+            log_database_operation(
+                logger, "SELECT", "weather_data", duration_ms=duration_ms, error=str(e)
+            )
             raise RuntimeError(f"Database error: {str(e)}")

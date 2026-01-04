@@ -3,6 +3,7 @@ DuckDB database engine for Ambient Weather data
 Provides context manager-based database access with high-performance analytics
 DuckDB is 10-100x faster than SQLite for analytical queries
 """
+
 import duckdb
 from pathlib import Path
 from typing import Dict, List, Tuple, Union, Optional
@@ -56,7 +57,8 @@ class WeatherDatabase:
         """Create weather_data and backfill_progress tables if they don't exist."""
         # Create weather_data table
         # DuckDB uses BIGINT for large integers, DOUBLE for floats, INTEGER for smaller ints
-        self.conn.execute('''
+        self.conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS weather_data (
                 id INTEGER PRIMARY KEY,
                 dateutc BIGINT UNIQUE NOT NULL,
@@ -86,14 +88,18 @@ class WeatherDatabase:
                 tz VARCHAR,
                 raw_json VARCHAR
             )
-        ''')
+        """
+        )
 
         # Create indexes for common queries
-        self.conn.execute('CREATE INDEX IF NOT EXISTS idx_dateutc ON weather_data(dateutc)')
-        self.conn.execute('CREATE INDEX IF NOT EXISTS idx_date ON weather_data(date)')
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_dateutc ON weather_data(dateutc)"
+        )
+        self.conn.execute("CREATE INDEX IF NOT EXISTS idx_date ON weather_data(date)")
 
         # Create backfill_progress table to track backfill operations
-        self.conn.execute('''
+        self.conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS backfill_progress (
                 id INTEGER PRIMARY KEY,
                 start_date VARCHAR NOT NULL,
@@ -105,12 +111,10 @@ class WeatherDatabase:
                 created_at VARCHAR NOT NULL,
                 updated_at VARCHAR NOT NULL
             )
-        ''')
+        """
+        )
 
-    def insert_data(
-        self,
-        data: Union[Dict, List[Dict]]
-    ) -> Tuple[int, int]:
+    def insert_data(self, data: Union[Dict, List[Dict]]) -> Tuple[int, int]:
         """
         Insert weather data into the database with idempotent INSERT OR REPLACE.
 
@@ -137,12 +141,32 @@ class WeatherDatabase:
 
         # Define all possible columns in weather_data table
         all_columns = [
-            'dateutc', 'date', 'tempf', 'humidity', 'baromabsin', 'baromrelin',
-            'windspeedmph', 'winddir', 'windgustmph', 'maxdailygust', 'hourlyrainin',
-            'eventrain', 'dailyrainin', 'weeklyrainin', 'monthlyrainin',
-            'yearlyrainin', 'totalrainin', 'solarradiation', 'uv',
-            'feelsLike', 'dewPoint', 'feelsLikein', 'dewPointin',
-            'lastRain', 'tz', 'raw_json'
+            "dateutc",
+            "date",
+            "tempf",
+            "humidity",
+            "baromabsin",
+            "baromrelin",
+            "windspeedmph",
+            "winddir",
+            "windgustmph",
+            "maxdailygust",
+            "hourlyrainin",
+            "eventrain",
+            "dailyrainin",
+            "weeklyrainin",
+            "monthlyrainin",
+            "yearlyrainin",
+            "totalrainin",
+            "solarradiation",
+            "uv",
+            "feelsLike",
+            "dewPoint",
+            "feelsLikein",
+            "dewPointin",
+            "lastRain",
+            "tz",
+            "raw_json",
         ]
 
         for record in data:
@@ -155,25 +179,28 @@ class WeatherDatabase:
                     continue
 
                 # Check if record already exists
-                dateutc = filtered_record.get('dateutc')
+                dateutc = filtered_record.get("dateutc")
                 if dateutc:
                     existing = self.conn.execute(
-                        'SELECT id FROM weather_data WHERE dateutc = ?',
-                        [dateutc]
+                        "SELECT id FROM weather_data WHERE dateutc = ?", [dateutc]
                     ).fetchone()
 
                     if existing:
                         # Update existing record
-                        set_clause = ', '.join([f'{k} = ?' for k in filtered_record.keys()])
+                        set_clause = ", ".join(
+                            [f"{k} = ?" for k in filtered_record.keys()]
+                        )
                         values = list(filtered_record.values()) + [dateutc]
-                        query = f'UPDATE weather_data SET {set_clause} WHERE dateutc = ?'
+                        query = (
+                            f"UPDATE weather_data SET {set_clause} WHERE dateutc = ?"
+                        )
                         self.conn.execute(query, values)
                     else:
                         # Insert new record
-                        columns = ', '.join(filtered_record.keys())
-                        placeholders = ', '.join(['?' for _ in filtered_record])
+                        columns = ", ".join(filtered_record.keys())
+                        placeholders = ", ".join(["?" for _ in filtered_record])
                         values = list(filtered_record.values())
-                        query = f'INSERT INTO weather_data ({columns}) VALUES ({placeholders})'
+                        query = f"INSERT INTO weather_data ({columns}) VALUES ({placeholders})"
                         self.conn.execute(query, values)
 
                     inserted_count += 1
@@ -191,7 +218,7 @@ class WeatherDatabase:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         limit: Optional[int] = None,
-        order_by: str = 'dateutc DESC'
+        order_by: str = "dateutc DESC",
     ) -> List[Dict]:
         """
         Retrieve weather data from the database.
@@ -243,46 +270,44 @@ class WeatherDatabase:
 
         # Get total record count
         result = self.conn.execute("SELECT COUNT(*) FROM weather_data").fetchone()
-        stats['total_records'] = result[0]
+        stats["total_records"] = result[0]
 
-        if stats['total_records'] > 0:
+        if stats["total_records"] > 0:
             # Get date range
-            result = self.conn.execute("SELECT MIN(date), MAX(date) FROM weather_data").fetchone()
-            stats['min_date'] = result[0]
-            stats['max_date'] = result[1]
+            result = self.conn.execute(
+                "SELECT MIN(date), MAX(date) FROM weather_data"
+            ).fetchone()
+            stats["min_date"] = result[0]
+            stats["max_date"] = result[1]
 
             # Get temperature statistics
             result = self.conn.execute(
                 "SELECT AVG(tempf), MIN(tempf), MAX(tempf) FROM weather_data WHERE tempf IS NOT NULL"
             ).fetchone()
-            stats['avg_temperature'] = result[0]
-            stats['min_temperature'] = result[1]
-            stats['max_temperature'] = result[2]
+            stats["avg_temperature"] = result[0]
+            stats["min_temperature"] = result[1]
+            stats["max_temperature"] = result[2]
 
             # Get humidity statistics
             result = self.conn.execute(
                 "SELECT AVG(humidity), MIN(humidity), MAX(humidity) FROM weather_data WHERE humidity IS NOT NULL"
             ).fetchone()
-            stats['avg_humidity'] = result[0]
-            stats['min_humidity'] = result[1]
-            stats['max_humidity'] = result[2]
+            stats["avg_humidity"] = result[0]
+            stats["min_humidity"] = result[1]
+            stats["max_humidity"] = result[2]
         else:
-            stats['min_date'] = None
-            stats['max_date'] = None
-            stats['avg_temperature'] = None
-            stats['min_temperature'] = None
-            stats['max_temperature'] = None
-            stats['avg_humidity'] = None
-            stats['min_humidity'] = None
-            stats['max_humidity'] = None
+            stats["min_date"] = None
+            stats["max_date"] = None
+            stats["avg_temperature"] = None
+            stats["min_temperature"] = None
+            stats["max_temperature"] = None
+            stats["avg_humidity"] = None
+            stats["min_humidity"] = None
+            stats["max_humidity"] = None
 
         return stats
 
-    def init_backfill_progress(
-        self,
-        start_date: str,
-        end_date: str
-    ) -> int:
+    def init_backfill_progress(self, start_date: str, end_date: str) -> int:
         """
         Initialize a new backfill progress record.
 
@@ -295,13 +320,16 @@ class WeatherDatabase:
         """
         now = datetime.utcnow().isoformat()
 
-        self.conn.execute('''
+        self.conn.execute(
+            """
             INSERT INTO backfill_progress (start_date, end_date, current_date, status, created_at, updated_at)
             VALUES (?, ?, ?, 'in_progress', ?, ?)
-        ''', [start_date, end_date, start_date, now, now])
+        """,
+            [start_date, end_date, start_date, now, now],
+        )
 
         # Get the last inserted row id
-        result = self.conn.execute('SELECT MAX(id) FROM backfill_progress').fetchone()
+        result = self.conn.execute("SELECT MAX(id) FROM backfill_progress").fetchone()
         return result[0]
 
     def get_backfill_progress(self, progress_id: int) -> Optional[Dict]:
@@ -315,8 +343,7 @@ class WeatherDatabase:
             Dictionary containing backfill progress data, or None if not found
         """
         result = self.conn.execute(
-            'SELECT * FROM backfill_progress WHERE id = ?',
-            [progress_id]
+            "SELECT * FROM backfill_progress WHERE id = ?", [progress_id]
         ).fetchone()
 
         if result:
@@ -330,7 +357,7 @@ class WeatherDatabase:
         current_date: str,
         total_records: int = 0,
         skipped_records: int = 0,
-        status: str = 'in_progress'
+        status: str = "in_progress",
     ):
         """
         Update the backfill progress record.
@@ -344,11 +371,14 @@ class WeatherDatabase:
         """
         now = datetime.utcnow().isoformat()
 
-        self.conn.execute('''
+        self.conn.execute(
+            """
             UPDATE backfill_progress
             SET current_date = ?, total_records = ?, skipped_records = ?, status = ?, updated_at = ?
             WHERE id = ?
-        ''', [current_date, total_records, skipped_records, status, now, progress_id])
+        """,
+            [current_date, total_records, skipped_records, status, now, progress_id],
+        )
 
     def clear_backfill_progress(self, progress_id: int):
         """
@@ -357,4 +387,4 @@ class WeatherDatabase:
         Args:
             progress_id: The ID of the backfill_progress record to delete
         """
-        self.conn.execute('DELETE FROM backfill_progress WHERE id = ?', [progress_id])
+        self.conn.execute("DELETE FROM backfill_progress WHERE id = ?", [progress_id])

@@ -47,7 +47,7 @@ def create_app() -> FastAPI:
         title=API_TITLE,
         description=API_DESCRIPTION,
         version=API_VERSION,
-        lifespan=lifespan
+        lifespan=lifespan,
     )
 
     # Enable CORS for React frontend
@@ -61,6 +61,7 @@ def create_app() -> FastAPI:
 
     # Import routes after app creation to avoid circular imports
     from weather_app.web import routes
+
     routes.register_routes(app)
 
     return app

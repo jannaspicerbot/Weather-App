@@ -113,9 +113,14 @@ class LogContext:
 
 
 # Logging utilities
-def log_api_request(logger: structlog.stdlib.BoundLogger, method: str, endpoint: str,
-                   params: Dict[str, Any] = None, status_code: int = None,
-                   duration_ms: float = None) -> None:
+def log_api_request(
+    logger: structlog.stdlib.BoundLogger,
+    method: str,
+    endpoint: str,
+    params: Dict[str, Any] = None,
+    status_code: int = None,
+    duration_ms: float = None,
+) -> None:
     """
     Log an API request with standard fields
 
@@ -152,9 +157,14 @@ def log_api_request(logger: structlog.stdlib.BoundLogger, method: str, endpoint:
         logger.info(**log_data)
 
 
-def log_database_operation(logger: structlog.stdlib.BoundLogger, operation: str,
-                          table: str, records: int = None, duration_ms: float = None,
-                          error: str = None) -> None:
+def log_database_operation(
+    logger: structlog.stdlib.BoundLogger,
+    operation: str,
+    table: str,
+    records: int = None,
+    duration_ms: float = None,
+    error: str = None,
+) -> None:
     """
     Log a database operation with standard fields
 
@@ -183,9 +193,14 @@ def log_database_operation(logger: structlog.stdlib.BoundLogger, operation: str,
         logger.info(**log_data)
 
 
-def log_cli_command(logger: structlog.stdlib.BoundLogger, command: str,
-                   args: Dict[str, Any] = None, success: bool = True,
-                   error: str = None, duration_ms: float = None) -> None:
+def log_cli_command(
+    logger: structlog.stdlib.BoundLogger,
+    command: str,
+    args: Dict[str, Any] = None,
+    success: bool = True,
+    error: str = None,
+    duration_ms: float = None,
+) -> None:
     """
     Log a CLI command execution
 
