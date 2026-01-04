@@ -319,7 +319,33 @@ Historical documentation from Phase 1-2 is available in [archive/](archive/) for
 
 ---
 
+## 📚 Learning Resources
+
+### Framework & Library Documentation
+
+**Backend (Python)**
+- [FastAPI Documentation](https://fastapi.tiangolo.com/) - Modern Python web framework
+- [DuckDB Documentation](https://duckdb.org/docs/) - High-performance analytics database
+- [Pydantic Documentation](https://docs.pydantic.dev/) - Data validation and settings
+- [APScheduler Documentation](https://apscheduler.readthedocs.io/) - Task scheduling library
+- [Click Documentation](https://click.palletsprojects.com/) - CLI framework
+
+**Frontend (TypeScript/React)**
+- [React Documentation](https://react.dev/) - UI framework
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/) - Type-safe JavaScript
+- [Vite Documentation](https://vitejs.dev/) - Build tool and dev server
+- [Recharts Documentation](https://recharts.org/) - Charting library
+- [TailwindCSS Documentation](https://tailwindcss.com/docs) - CSS framework
+
+**DevOps & Tools**
+- [Docker Documentation](https://docs.docker.com/) - Containerization
+- [Docker Compose Documentation](https://docs.docker.com/compose/) - Multi-container apps
+- [Git Documentation](https://git-scm.com/doc) - Version control
+
+---
+
 ## Document Changelog
 
+- **2026-01-03:** Added Learning Resources section with framework documentation links
 - **2026-01-02:** Initial documentation index created during reorganization
 - **2026-01-02:** Adopted ADR pattern for architecture decisions
