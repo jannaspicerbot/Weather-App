@@ -14,8 +14,8 @@ import requests
 from dotenv import load_dotenv
 
 # Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # Load environment variables
 load_dotenv()
@@ -40,14 +40,14 @@ def test_single_call(test_name=""):
             "status_code": response.status_code,
             "response_time": response.elapsed.total_seconds(),
             "retry_after": response.headers.get("Retry-After"),
-            "body": response.text[:100]
+            "body": response.text[:100],
         }
     except Exception as e:
         return {
             "test": test_name,
             "timestamp": datetime.now(),
             "status_code": "ERROR",
-            "error": str(e)
+            "error": str(e),
         }
 
 
@@ -72,8 +72,12 @@ def test_cooldown_intervals():
     print("This will make 1 call, then wait increasing intervals\n")
 
     for i, wait_seconds in enumerate(intervals):
-        print(f"Test {i+1}/{len(intervals)}: Waiting {wait_seconds}s ({wait_seconds/60:.1f} min)...")
-        print(f"  Wait until: {(datetime.now() + timedelta(seconds=wait_seconds)).strftime('%H:%M:%S')}")
+        print(
+            f"Test {i+1}/{len(intervals)}: Waiting {wait_seconds}s ({wait_seconds/60:.1f} min)..."
+        )
+        print(
+            f"  Wait until: {(datetime.now() + timedelta(seconds=wait_seconds)).strftime('%H:%M:%S')}"
+        )
 
         # Wait
         time.sleep(wait_seconds)
@@ -83,11 +87,13 @@ def test_cooldown_intervals():
         results.append(result)
 
         print(f"  Status: {result['status_code']}", end="")
-        if result['status_code'] == 200:
+        if result["status_code"] == 200:
             print(f" ✅ SUCCESS!")
-            print(f"  → Cooldown period: {wait_seconds}s ({wait_seconds/60:.1f} minutes)")
+            print(
+                f"  → Cooldown period: {wait_seconds}s ({wait_seconds/60:.1f} minutes)"
+            )
             break
-        elif result['status_code'] == 429:
+        elif result["status_code"] == 429:
             print(f" ❌ Still rate limited")
             print(f"     Response: {result.get('body', 'N/A')[:50]}")
         else:
@@ -100,11 +106,13 @@ def test_cooldown_intervals():
     print("COOLDOWN TEST RESULTS")
     print("=" * 70)
 
-    successful = next((r for r in results if r['status_code'] == 200), None)
+    successful = next((r for r in results if r["status_code"] == 200), None)
 
     if successful:
         wait_time = intervals[results.index(successful)]
-        print(f"✅ Found cooldown period: {wait_time} seconds ({wait_time/60:.1f} minutes)")
+        print(
+            f"✅ Found cooldown period: {wait_time} seconds ({wait_time/60:.1f} minutes)"
+        )
         print(f"   External user reported: 5 seconds")
         print(f"   Our experience: {wait_time} seconds ({wait_time/5}x longer)")
         return wait_time
@@ -134,10 +142,10 @@ def test_progressive_intervals():
         result = test_single_call(f"Minute {i+1}")
         results.append(result)
 
-        if result['status_code'] == 200:
+        if result["status_code"] == 200:
             print(f"  ✅ SUCCESS! Recovered after ~{i+1} minutes")
             break
-        elif result['status_code'] == 429:
+        elif result["status_code"] == 429:
             print(f"  ❌ Still rate limited")
         else:
             print(f"  ⚠️  Status: {result['status_code']}")
@@ -151,7 +159,7 @@ def test_progressive_intervals():
     print("RESULTS")
     print("=" * 70)
 
-    successful = next((r for r in results if r['status_code'] == 200), None)
+    successful = next((r for r in results if r["status_code"] == 200), None)
     if successful:
         recovery_time = (results.index(successful) + 1) * 60  # minutes * 60
         print(f"✅ Recovered after: ~{recovery_time/60:.0f} minutes")
@@ -190,7 +198,9 @@ def main():
     if choice in ["1", "3"]:
         cooldown = test_cooldown_intervals()
         if cooldown and cooldown <= 600:  # If recovered in ≤10 minutes
-            print("\n✅ Found quick recovery! External user is right about fast cooldown.")
+            print(
+                "\n✅ Found quick recovery! External user is right about fast cooldown."
+            )
         elif cooldown:
             print(f"\n⚠️  Much longer cooldown than user reported (5s vs {cooldown}s)")
 

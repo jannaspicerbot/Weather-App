@@ -29,17 +29,14 @@ except ImportError:
 
 def test_api_connection():
     """Test the Ambient Weather API with minimal requests"""
+    import pytest
 
     # Get API credentials from environment variables
     API_KEY = os.getenv("AMBIENT_API_KEY")
     APPLICATION_KEY = os.getenv("AMBIENT_APP_KEY")
 
     if not API_KEY or not APPLICATION_KEY:
-        print("ERROR: Environment variables not set!")
-        print("Run these first:")
-        print('  $env:AMBIENT_API_KEY="your_key"')
-        print('  $env:AMBIENT_APP_KEY="your_key"')
-        sys.exit(1)
+        pytest.skip("API credentials not set in environment variables")
 
     print("=" * 60)
     print("Ambient Weather API Test")

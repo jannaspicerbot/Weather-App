@@ -12,8 +12,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 # Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -58,6 +58,7 @@ def test_client_get_devices():
         print(f"   Type: {type(e).__name__}")
 
         import traceback
+
         print("\nFull traceback:")
         traceback.print_exc()
 
@@ -104,6 +105,7 @@ def test_client_get_device_data():
             print("   → This is a rate limit error (expected based on Phase 1)")
 
         import traceback
+
         print("\nFull traceback:")
         traceback.print_exc()
 
@@ -138,7 +140,9 @@ def compare_request_details():
 
         # Show what a working curl would be
         print("\nWorking curl equivalent:")
-        print(f'curl "https://api.ambientweather.net/v1/devices?apiKey={API_KEY[:8]}...&applicationKey={APP_KEY[:8]}..."')
+        print(
+            f'curl "https://api.ambientweather.net/v1/devices?apiKey={API_KEY[:8]}...&applicationKey={APP_KEY[:8]}..."'
+        )
 
         print("\nPotential differences to investigate:")
         print("  - Headers (User-Agent, Accept, etc.)")
@@ -182,7 +186,7 @@ def main():
     results = [
         ("Get Devices", test_3_1),
         ("Get Device Data", test_3_2),
-        ("Request Comparison", test_3_3)
+        ("Request Comparison", test_3_3),
     ]
 
     for test_name, passed in results:

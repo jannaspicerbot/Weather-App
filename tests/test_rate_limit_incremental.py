@@ -2,6 +2,9 @@
 """
 test_rate_limit_incremental.py - Systematic Rate Limit Testing
 Tests one configuration at a time to understand exact behavior
+
+This is a manual test script, not a pytest test suite.
+Run directly: python tests/test_rate_limit_incremental.py
 """
 
 import os
@@ -11,7 +14,7 @@ import time
 import requests
 
 
-def test_single_request(api_key, app_key, mac_address, limit, delay_before=0):
+def make_single_request(api_key, app_key, mac_address, limit, delay_before=0):
     """Test a single API call"""
 
     if delay_before > 0:
@@ -103,7 +106,7 @@ def main():
     print("TEST 1: Single record, no delay before request")
     print("=" * 70)
     print("Testing: limit=1, delay_before=0")
-    result = test_single_request(
+    result = make_single_request(
         API_KEY, APPLICATION_KEY, mac_address, limit=1, delay_before=0
     )
     print(f"Result: {result['message']}")
@@ -118,7 +121,7 @@ def main():
     print("TEST 2: Single record, 1s delay before request")
     print("=" * 70)
     print("Testing: limit=1, delay_before=1")
-    result = test_single_request(
+    result = make_single_request(
         API_KEY, APPLICATION_KEY, mac_address, limit=1, delay_before=1
     )
     print(f"Result: {result['message']}")
@@ -132,7 +135,7 @@ def main():
     print("TEST 3: Two records, 1s delay before request")
     print("=" * 70)
     print("Testing: limit=2, delay_before=1")
-    result = test_single_request(
+    result = make_single_request(
         API_KEY, APPLICATION_KEY, mac_address, limit=2, delay_before=1
     )
     print(f"Result: {result['message']}")
@@ -146,7 +149,7 @@ def main():
     print("TEST 4: Three records, 1s delay before request")
     print("=" * 70)
     print("Testing: limit=3, delay_before=1")
-    result = test_single_request(
+    result = make_single_request(
         API_KEY, APPLICATION_KEY, mac_address, limit=3, delay_before=1
     )
     print(f"Result: {result['message']}")
@@ -160,7 +163,7 @@ def main():
     print("TEST 5: Five records, 1s delay before request")
     print("=" * 70)
     print("Testing: limit=5, delay_before=1")
-    result = test_single_request(
+    result = make_single_request(
         API_KEY, APPLICATION_KEY, mac_address, limit=5, delay_before=1
     )
     print(f"Result: {result['message']}")
@@ -174,7 +177,7 @@ def main():
     print("TEST 6: Ten records, 1s delay before request")
     print("=" * 70)
     print("Testing: limit=10, delay_before=1")
-    result = test_single_request(
+    result = make_single_request(
         API_KEY, APPLICATION_KEY, mac_address, limit=10, delay_before=1
     )
     print(f"Result: {result['message']}")

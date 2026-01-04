@@ -14,8 +14,8 @@ import requests
 from dotenv import load_dotenv
 
 # Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # Load environment variables
 load_dotenv()
@@ -40,7 +40,7 @@ def test_small_date_range():
     params = {
         "apiKey": API_KEY,
         "applicationKey": APP_KEY,
-        "limit": 288  # 1 day at 5-minute intervals
+        "limit": 288,  # 1 day at 5-minute intervals
     }
 
     print(f"Requesting: {url}")
@@ -65,16 +65,24 @@ def test_small_date_range():
 
                 # Check time resolution
                 if len(data) >= 2:
-                    time_diff = (first.get('dateutc', 0) - data[1].get('dateutc', 0)) / 1000 / 60
+                    time_diff = (
+                        (first.get("dateutc", 0) - data[1].get("dateutc", 0))
+                        / 1000
+                        / 60
+                    )
                     print(f"  Resolution: {time_diff:.1f} minutes between readings")
-                    print(f"  → External user noted: API gives 5-min data, not real-time")
+                    print(
+                        f"  → External user noted: API gives 5-min data, not real-time"
+                    )
 
             print()
             return True
 
         elif response.status_code == 429:
             print(f"❌ RATE LIMITED")
-            print(f"  Retry-After: {response.headers.get('Retry-After', 'NOT PRESENT')}")
+            print(
+                f"  Retry-After: {response.headers.get('Retry-After', 'NOT PRESENT')}"
+            )
             print(f"  Response: {response.text[:100]}")
             print()
             return False
@@ -103,11 +111,7 @@ def test_multiple_small_vs_one_large():
     print("Strategy A: One large query (1000 readings)")
     print("-" * 70)
 
-    params_large = {
-        "apiKey": API_KEY,
-        "applicationKey": APP_KEY,
-        "limit": 1000
-    }
+    params_large = {"apiKey": API_KEY, "applicationKey": APP_KEY, "limit": 1000}
 
     try:
         response = requests.get(url, params=params_large, timeout=30)
@@ -133,11 +137,7 @@ def test_multiple_small_vs_one_large():
     print("\nStrategy B: Multiple small queries (10x 100 readings)")
     print("-" * 70)
 
-    params_small = {
-        "apiKey": API_KEY,
-        "applicationKey": APP_KEY,
-        "limit": 100
-    }
+    params_small = {"apiKey": API_KEY, "applicationKey": APP_KEY, "limit": 100}
 
     successes = 0
     for i in range(10):
@@ -184,11 +184,7 @@ def test_date_range_variations():
 
     # Test 1: No date parameters (default)
     print("Test 1: No date params (get latest)")
-    params1 = {
-        "apiKey": API_KEY,
-        "applicationKey": APP_KEY,
-        "limit": 1
-    }
+    params1 = {"apiKey": API_KEY, "applicationKey": APP_KEY, "limit": 1}
 
     try:
         response = requests.get(url, params=params1, timeout=10)
@@ -209,7 +205,7 @@ def test_date_range_variations():
         "apiKey": API_KEY,
         "applicationKey": APP_KEY,
         "endDate": int(end_date.timestamp() * 1000),
-        "limit": 1
+        "limit": 1,
     }
 
     print(f"  endDate: {end_date.isoformat()}")
@@ -278,7 +274,7 @@ def main():
     results = [
         ("Small Date Range (1 day)", test_4_1),
         ("Multiple Small vs Large", test_4_2),
-        ("Date Range Variations", test_4_3)
+        ("Date Range Variations", test_4_3),
     ]
 
     for test_name, passed in results:
