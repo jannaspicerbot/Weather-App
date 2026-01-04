@@ -4,14 +4,15 @@ Manages periodic fetching of weather data from Ambient Weather API
 """
 
 import os
+from datetime import datetime
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from datetime import datetime
 from dotenv import load_dotenv
 
 from weather_app.api import AmbientWeatherAPI
-from weather_app.database import WeatherDatabase
 from weather_app.config import DB_PATH
+from weather_app.database import WeatherDatabase
 from weather_app.logging_config import get_logger
 
 # Load environment variables
@@ -31,15 +32,17 @@ class WeatherScheduler:
     def __init__(self):
         """Initialize the scheduler with configuration from environment variables"""
         self.scheduler = BackgroundScheduler()
-        self.api_key = os.getenv('AMBIENT_API_KEY')
-        self.app_key = os.getenv('AMBIENT_APP_KEY')
-        self.fetch_interval_minutes = int(os.getenv('SCHEDULER_FETCH_INTERVAL_MINUTES', 5))
-        self.enabled = os.getenv('SCHEDULER_ENABLED', 'true').lower() == 'true'
+        self.api_key = os.getenv("AMBIENT_API_KEY")
+        self.app_key = os.getenv("AMBIENT_APP_KEY")
+        self.fetch_interval_minutes = int(
+            os.getenv("SCHEDULER_FETCH_INTERVAL_MINUTES", 5)
+        )
+        self.enabled = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
 
         logger.info(
             "scheduler_initialized",
             enabled=self.enabled,
-            fetch_interval_minutes=self.fetch_interval_minutes
+            fetch_interval_minutes=self.fetch_interval_minutes,
         )
 
     def fetch_weather_job(self):
@@ -58,7 +61,7 @@ class WeatherScheduler:
                 logger.error(
                     "scheduled_fetch_failed",
                     reason="missing_credentials",
-                    message="AMBIENT_API_KEY or AMBIENT_APP_KEY not configured"
+                    message="AMBIENT_API_KEY or AMBIENT_APP_KEY not configured",
                 )
                 return
 
@@ -73,13 +76,11 @@ class WeatherScheduler:
 
             # Fetch data from first device (multi-device support is Phase 3)
             device = devices[0]
-            mac_address = device.get('macAddress')
-            device_name = device.get('info', {}).get('name', 'Unknown')
+            mac_address = device.get("macAddress")
+            device_name = device.get("info", {}).get("name", "Unknown")
 
             logger.info(
-                "fetching_from_device",
-                device_name=device_name,
-                mac_address=mac_address
+                "fetching_from_device", device_name=device_name, mac_address=mac_address
             )
 
             # Fetch latest data (limit=1 for most recent reading)
@@ -89,7 +90,7 @@ class WeatherScheduler:
                 logger.warning(
                     "scheduled_fetch_no_data",
                     device_name=device_name,
-                    mac_address=mac_address
+                    mac_address=mac_address,
                 )
                 return
 
@@ -104,7 +105,7 @@ class WeatherScheduler:
                 device_name=device_name,
                 inserted=inserted,
                 skipped=skipped,
-                duration_seconds=round(job_duration, 2)
+                duration_seconds=round(job_duration, 2),
             )
 
         except Exception as e:
@@ -113,7 +114,7 @@ class WeatherScheduler:
                 "scheduled_fetch_error",
                 error=str(e),
                 error_type=type(e).__name__,
-                duration_seconds=round(job_duration, 2)
+                duration_seconds=round(job_duration, 2),
             )
 
     def start(self):
@@ -124,17 +125,20 @@ class WeatherScheduler:
         Does nothing if scheduler is disabled via SCHEDULER_ENABLED=false.
         """
         if not self.enabled:
-            logger.info("scheduler_disabled", message="Scheduler is disabled via SCHEDULER_ENABLED=false")
+            logger.info(
+                "scheduler_disabled",
+                message="Scheduler is disabled via SCHEDULER_ENABLED=false",
+            )
             return
 
         # Add the periodic fetch job
         self.scheduler.add_job(
             func=self.fetch_weather_job,
             trigger=IntervalTrigger(minutes=self.fetch_interval_minutes),
-            id='fetch_weather',
-            name='Fetch latest weather data',
+            id="fetch_weather",
+            name="Fetch latest weather data",
             replace_existing=True,
-            max_instances=1  # Prevent overlapping job executions
+            max_instances=1,  # Prevent overlapping job executions
         )
 
         # Start the scheduler
@@ -143,7 +147,7 @@ class WeatherScheduler:
         logger.info(
             "scheduler_started",
             fetch_interval_minutes=self.fetch_interval_minutes,
-            next_run=self.scheduler.get_job('fetch_weather').next_run_time.isoformat()
+            next_run=self.scheduler.get_job("fetch_weather").next_run_time.isoformat(),
         )
 
     def shutdown(self):
@@ -170,15 +174,15 @@ class WeatherScheduler:
             return {
                 "enabled": False,
                 "running": False,
-                "message": "Scheduler is disabled"
+                "message": "Scheduler is disabled",
             }
 
-        fetch_job = self.scheduler.get_job('fetch_weather')
+        fetch_job = self.scheduler.get_job("fetch_weather")
 
         return {
             "enabled": self.enabled,
             "running": self.scheduler.running,
             "fetch_interval_minutes": self.fetch_interval_minutes,
             "next_run_time": fetch_job.next_run_time.isoformat() if fetch_job else None,
-            "job_id": fetch_job.id if fetch_job else None
+            "job_id": fetch_job.id if fetch_job else None,
         }

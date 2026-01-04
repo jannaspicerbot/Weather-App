@@ -2,12 +2,14 @@
 Pydantic models for API responses
 """
 
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class WeatherData(BaseModel):
     """Response model for weather data records"""
+
     id: int
     dateutc: int
     date: str
@@ -40,6 +42,7 @@ class WeatherData(BaseModel):
 
 class DatabaseStats(BaseModel):
     """Response model for database statistics"""
+
     total_records: int
     min_date: Optional[str] = None
     max_date: Optional[str] = None

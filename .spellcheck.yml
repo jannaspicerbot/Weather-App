@@ -1,0 +1,18 @@
+matrix:
+- name: Markdown
+  sources:
+  - '**/*.md'
+  expect_match: false
+  apsell:
+    lang: en
+  dictionary:
+    encoding: utf-8
+    wordlists:
+    - .wordlist.txt
+  pipeline:
+  - pyspelling.filters.markdown:
+  - pyspelling.filters.html:
+    comments: false
+    ignores:
+    - code
+    - pre
