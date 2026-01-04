@@ -4,11 +4,12 @@ Simple test script to fetch just a few recent weather records
 This helps diagnose API issues without hitting rate limits
 """
 
-import requests
+import json
 import os
 import sys
-import json
 from pathlib import Path
+
+import requests
 
 # Fix Windows console encoding for emoji support
 if sys.platform == "win32":

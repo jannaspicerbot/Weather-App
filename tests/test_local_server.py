@@ -4,9 +4,10 @@ Quick API Tester
 Tests the Weather API endpoints with the current database configuration
 """
 
-import requests
 import json
 from datetime import datetime
+
+import requests
 
 BASE_URL = "http://localhost:8000"
 

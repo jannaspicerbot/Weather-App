@@ -11,10 +11,11 @@ Usage:
     logger.info("user_action", action="fetch_weather", device_id="12345")
 """
 
-import structlog
 import logging
 import sys
 from typing import Any, Dict
+
+import structlog
 
 
 def configure_logging(level: str = "INFO", json_logs: bool = True) -> None:

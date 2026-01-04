@@ -4,11 +4,12 @@ test_websocket.py - Test Ambient Weather Realtime WebSocket API
 This tests if the WebSocket API has different rate limits than REST
 """
 
-import socketio
 import os
 import sys
 import time
 from datetime import datetime
+
+import socketio
 
 
 class AmbientWeatherWebSocket:

@@ -4,14 +4,15 @@ Manages periodic fetching of weather data from Ambient Weather API
 """
 
 import os
+from datetime import datetime
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from datetime import datetime
 from dotenv import load_dotenv
 
 from weather_app.api import AmbientWeatherAPI
-from weather_app.database import WeatherDatabase
 from weather_app.config import DB_PATH
+from weather_app.database import WeatherDatabase
 from weather_app.logging_config import get_logger
 
 # Load environment variables

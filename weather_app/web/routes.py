@@ -3,15 +3,16 @@ API routes for weather data
 Defines all endpoints for the FastAPI application
 """
 
-from fastapi import FastAPI, HTTPException, Query, Request
-from typing import List, Optional
-from datetime import datetime
 import time
+from datetime import datetime
+from typing import List, Optional
 
-from weather_app.web.models import WeatherData, DatabaseStats
-from weather_app.database import WeatherRepository
+from fastapi import FastAPI, HTTPException, Query, Request
+
 from weather_app.config import get_db_info
+from weather_app.database import WeatherRepository
 from weather_app.logging_config import get_logger, log_api_request
+from weather_app.web.models import DatabaseStats, WeatherData
 
 logger = get_logger(__name__)
 

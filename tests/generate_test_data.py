@@ -4,11 +4,11 @@ Generate Test Weather Data
 Creates realistic synthetic weather data for testing the API and frontend
 """
 
-import sqlite3
 import json
-from datetime import datetime, timedelta
-import random
 import math
+import random
+import sqlite3
+from datetime import datetime, timedelta
 
 
 class WeatherDataGenerator:

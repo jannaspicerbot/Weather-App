@@ -2,9 +2,11 @@
 Ambient Weather API client
 """
 
-import requests
 import time
 from datetime import datetime
+
+import requests
+
 from weather_app.logging_config import get_logger
 
 logger = get_logger(__name__)

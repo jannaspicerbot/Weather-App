@@ -3,11 +3,12 @@ Repository pattern for database operations
 Provides clean interface for querying weather data using DuckDB
 """
 
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import time
-from weather_app.database.engine import WeatherDatabase
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from weather_app.config import DB_PATH
+from weather_app.database.engine import WeatherDatabase
 from weather_app.logging_config import get_logger, log_database_operation
 
 logger = get_logger(__name__)

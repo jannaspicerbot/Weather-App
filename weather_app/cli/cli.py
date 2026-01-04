@@ -2,21 +2,22 @@
 Command-line interface for Weather App
 """
 
-import click
-from pathlib import Path
-from datetime import datetime
 import csv
-import sys
 import os
+import sys
 import time
+from datetime import datetime
+from pathlib import Path
+
+import click
 from dotenv import load_dotenv
 
 # Fix Windows console encoding for emoji support
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
-from weather_app.config import DB_PATH, get_db_info
 from weather_app.api import AmbientWeatherAPI
+from weather_app.config import DB_PATH, get_db_info
 from weather_app.database import WeatherDatabase
 from weather_app.logging_config import get_logger, log_cli_command
 

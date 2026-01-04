@@ -4,11 +4,14 @@ Creates and configures the FastAPI app with middleware, routes, and scheduler
 """
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from weather_app.config import API_TITLE, API_DESCRIPTION, API_VERSION, CORS_ORIGINS
-from weather_app.scheduler import WeatherScheduler
+
+from weather_app.config import (API_DESCRIPTION, API_TITLE, API_VERSION,
+                                CORS_ORIGINS)
 from weather_app.logging_config import get_logger
+from weather_app.scheduler import WeatherScheduler
 
 logger = get_logger(__name__)
 

@@ -4,11 +4,12 @@ test_rate_limit_incremental.py - Systematic Rate Limit Testing
 Tests one configuration at a time to understand exact behavior
 """
 
-import requests
-import time
-import sys
 import os
+import sys
+import time
 from datetime import datetime
+
+import requests
 
 
 def test_single_request(api_key, app_key, mac_address, limit, delay_before=0):

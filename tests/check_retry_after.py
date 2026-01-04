@@ -3,11 +3,11 @@
 check_retry_after.py - Check the 429 response for Retry-After header
 """
 
-import requests
 import os
 import sys
 from datetime import datetime
 
+import requests
 
 API_KEY = os.getenv("AMBIENT_API_KEY")
 APPLICATION_KEY = os.getenv("AMBIENT_APP_KEY")

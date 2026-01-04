@@ -4,10 +4,11 @@ Provides context manager-based database access with high-performance analytics
 DuckDB is 10-100x faster than SQLite for analytical queries
 """
 
-import duckdb
-from pathlib import Path
-from typing import Dict, List, Tuple, Union, Optional
 from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
+
+import duckdb
 
 from weather_app.config import DB_PATH
 
