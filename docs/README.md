@@ -27,7 +27,8 @@ docs/
 │   ├── api-reference.md               # REST API documentation
 │   ├── cli-reference.md               # CLI command reference
 │   ├── database-schema.md             # Database schema & queries
-│   └── deployment-guide.md            # Installation & deployment
+│   ├── deployment-guide.md            # Installation & deployment
+│   └── ci-cd.md                       # CI/CD automation & testing
 └── archive/                           # Historical docs (Phase 1-2)
     ├── requirements.md.old
     ├── specifications.md.old
@@ -144,6 +145,13 @@ docs/
 - Monitoring
 - Updates & maintenance
 - Platform-specific notes (Raspberry Pi, Windows, macOS)
+
+**[CI/CD Automation](technical/ci-cd.md)**
+- GitHub Actions workflows
+- Quality gates and testing requirements
+- Accessibility testing (WCAG 2.2 AA compliance)
+- Local development testing
+- Troubleshooting CI failures
 
 **When to read:** You want to install, configure, or use the application
 
@@ -369,6 +377,10 @@ Historical documentation from Phase 1-2 is available in [archive/](archive/) for
 
 ## Document Changelog
 
+- **2026-01-03:** Added CI/CD automation documentation and GitHub Actions workflows
+  - Created comprehensive CI/CD guide (docs/technical/ci-cd.md)
+  - Added Backend CI, Frontend CI & Accessibility, and Documentation CI workflows
+  - Included accessibility testing requirements (axe-core, Lighthouse, ESLint jsx-a11y)
 - **2026-01-03:** Added ADR-006 (React Aria) and ADR-007 (Victory Charts) for Phase 3 Web UI
 - **2026-01-03:** Updated Learning Resources with React Aria and Victory Charts documentation
 - **2026-01-03:** Added design/ folder with Inclusive Design standards (WCAG 2.2 AA)
