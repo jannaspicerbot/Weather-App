@@ -32,6 +32,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchHistoricalData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange]);
 
   const fetchLatestData = async () => {

@@ -4,7 +4,7 @@
  * Displays temperature and feels-like temperature over time using Victory charts
  */
 
-import { VictoryChart, VictoryLine, VictoryAxis, VictoryLegend, VictoryTooltip, VictoryVoronoiContainer } from 'victory';
+import { VictoryChart, VictoryLine, VictoryAxis, VictoryLegend } from 'victory';
 import { type WeatherData } from '../../api';
 
 interface TemperatureChartProps {

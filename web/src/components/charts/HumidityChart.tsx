@@ -4,7 +4,7 @@
  * Displays humidity percentage over time using Victory charts
  */
 
-import { VictoryChart, VictoryLine, VictoryAxis, VictoryTooltip, VictoryVoronoiContainer } from 'victory';
+import { VictoryChart, VictoryLine, VictoryAxis } from 'victory';
 import { type WeatherData } from '../../api';
 
 interface HumidityChartProps {
