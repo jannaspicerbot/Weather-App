@@ -14,8 +14,8 @@ import requests
 from dotenv import load_dotenv
 
 # Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # Load environment variables
 load_dotenv()
@@ -35,19 +35,23 @@ def test_one_minute_intervals(iterations=10, interval_seconds=60):
     print("=" * 70)
     print(f"Test: {iterations} requests at {interval_seconds}s intervals")
     print("=" * 70)
-    print(f"User reported: Can hit API every minute for 24 hours with no 429s")
-    print(f"We're testing: {iterations} requests over {iterations * interval_seconds / 60:.1f} minutes")
+    print("User reported: Can hit API every minute for 24 hours with no 429s")
+    print(
+        f"We're testing: {iterations} requests over {iterations * interval_seconds / 60:.1f} minutes"
+    )
     print()
 
     url = f"{BASE_URL}/devices/{MAC_ADDRESS}"
     params = {"apiKey": API_KEY, "applicationKey": APP_KEY, "limit": 1}
 
     results = []
-    start_time = datetime.now()
+    datetime.now()
 
     for i in range(iterations):
         iteration_start = datetime.now()
-        print(f"[{i+1}/{iterations}] Request at {iteration_start.strftime('%H:%M:%S')}...")
+        print(
+            f"[{i+1}/{iterations}] Request at {iteration_start.strftime('%H:%M:%S')}..."
+        )
 
         try:
             response = requests.get(url, params=params, timeout=30)
@@ -152,7 +156,9 @@ def test_burst_sliding_window():
                 if response.status_code == 200:
                     print(f"  {i+1}. ✅ 200", end="", flush=True)
                 elif response.status_code == 429:
-                    print(f"  {i+1}. ❌ 429 - Burst failed after {i+1} requests ({(i+1)/2:.1f} seconds)")
+                    print(
+                        f"  {i+1}. ❌ 429 - Burst failed after {i+1} requests ({(i+1)/2:.1f} seconds)"
+                    )
                     retry_after = response.headers.get("Retry-After", "NOT PRESENT")
                     print(f"     Retry-After: {retry_after}")
                     break
@@ -169,7 +175,7 @@ def test_burst_sliding_window():
 
         # Cooldown period
         if duration < burst_durations[-1]:
-            print(f"  Cooling down for 10 seconds...")
+            print("  Cooling down for 10 seconds...")
             time.sleep(10)
             print()
 

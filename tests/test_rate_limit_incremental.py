@@ -8,9 +8,11 @@ import os
 import sys
 import time
 
+import pytest
 import requests
 
 
+@pytest.mark.requires_api_key
 def test_single_request(api_key, app_key, mac_address, limit, delay_before=0):
     """Test a single API call"""
 

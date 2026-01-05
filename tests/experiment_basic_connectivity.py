@@ -13,8 +13,8 @@ import requests
 from dotenv import load_dotenv
 
 # Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # Load environment variables
 load_dotenv()
@@ -68,13 +68,15 @@ def test_device_list():
             print()
             return True
         elif response.status_code == 429:
-            print(f"❌ RATE LIMITED (429)")
-            print(f"Retry-After header: {response.headers.get('Retry-After', 'NOT PRESENT')}")
+            print("❌ RATE LIMITED (429)")
+            print(
+                f"Retry-After header: {response.headers.get('Retry-After', 'NOT PRESENT')}"
+            )
             print(f"Response: {response.text[:200]}")
             print()
             return False
         elif response.status_code == 401:
-            print(f"❌ UNAUTHORIZED (401) - Invalid API keys")
+            print("❌ UNAUTHORIZED (401) - Invalid API keys")
             print(f"Response: {response.text[:200]}")
             print()
             return False
@@ -102,7 +104,9 @@ def test_device_data():
 
     print(f"URL: {url}")
     print(f"MAC: {MAC_ADDRESS}")
-    print(f"Params: limit=1, apiKey=...{API_KEY[-4:]}, applicationKey=...{APP_KEY[-4:]}")
+    print(
+        f"Params: limit=1, apiKey=...{API_KEY[-4:]}, applicationKey=...{APP_KEY[-4:]}"
+    )
     print(f"Making request at: {datetime.now().isoformat()}")
     print()
 
@@ -135,13 +139,15 @@ def test_device_data():
             print()
             return True
         elif response.status_code == 429:
-            print(f"❌ RATE LIMITED (429)")
-            print(f"Retry-After header: {response.headers.get('Retry-After', 'NOT PRESENT')}")
+            print("❌ RATE LIMITED (429)")
+            print(
+                f"Retry-After header: {response.headers.get('Retry-After', 'NOT PRESENT')}"
+            )
             print(f"Response: {response.text[:200]}")
             print()
             return False
         elif response.status_code == 401:
-            print(f"❌ UNAUTHORIZED (401) - Invalid API keys")
+            print("❌ UNAUTHORIZED (401) - Invalid API keys")
             print(f"Response: {response.text[:200]}")
             print()
             return False
@@ -177,7 +183,7 @@ def check_credentials():
             issues.append("App Key contains whitespace")
 
     if not MAC_ADDRESS:
-        print(f"MAC Address: (not set - will skip device data test)")
+        print("MAC Address: (not set - will skip device data test)")
     else:
         print(f"MAC Address: {MAC_ADDRESS}")
 
