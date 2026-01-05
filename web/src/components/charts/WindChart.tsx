@@ -4,7 +4,7 @@
  * Displays wind speed and gusts over time using Victory charts
  */
 
-import { VictoryChart, VictoryLine, VictoryAxis, VictoryLegend, VictoryTooltip, VictoryVoronoiContainer } from 'victory';
+import { VictoryChart, VictoryLine, VictoryAxis, VictoryLegend } from 'victory';
 import { type WeatherData } from '../../api';
 
 interface WindChartProps {

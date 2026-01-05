@@ -32,6 +32,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchHistoricalData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange]);
 
   const fetchLatestData = async () => {
@@ -61,15 +62,46 @@ export default function Dashboard() {
       const startDateStr = dateRange.start.toISOString().split('T')[0];
       const endDateStr = dateRange.end.toISOString().split('T')[0];
 
-      const data = await DefaultService.getWeatherDataWeatherGet(
-        1000, // limit
-        undefined, // offset
-        startDateStr,
-        endDateStr,
-        'asc' // order by date ascending for charts
-      );
+      // Calculate number of days in range
+      const daysDiff = Math.ceil((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
 
-      setHistoricalData(data);
+      // Ambient Weather records every 5 minutes = ~288 records/day
+      // Use pagination to fetch data in chunks and sample evenly
+      const recordsPerDay = 288;
+      const estimatedTotal = daysDiff * recordsPerDay;
+      const targetPoints = 1000; // Target number of points for charts
+
+      if (estimatedTotal <= targetPoints) {
+        // Small range - fetch all data
+        const data = await DefaultService.getWeatherDataWeatherGet(
+          1000,
+          undefined,
+          startDateStr,
+          endDateStr,
+          'asc'
+        );
+        setHistoricalData(data);
+      } else {
+        // Large range - fetch data with strategic sampling
+        // Fetch multiple pages with offsets to get evenly distributed samples
+        const pages = Math.min(Math.ceil(targetPoints / 200), 5); // Max 5 API calls
+        const recordsPerPage = Math.floor(targetPoints / pages);
+
+        const allData: typeof historicalData = [];
+        for (let i = 0; i < pages; i++) {
+          const offset = Math.floor((estimatedTotal / pages) * i);
+          const pageData = await DefaultService.getWeatherDataWeatherGet(
+            recordsPerPage,
+            offset,
+            startDateStr,
+            endDateStr,
+            'asc'
+          );
+          allData.push(...pageData);
+        }
+
+        setHistoricalData(allData);
+      }
     } catch (err) {
       console.error('Failed to fetch historical data:', err);
       setHistoricalData([]);

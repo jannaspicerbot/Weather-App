@@ -4,7 +4,7 @@
  * Displays hourly and daily precipitation over time using Victory charts
  */
 
-import { VictoryChart, VictoryLine, VictoryAxis, VictoryLegend, VictoryTooltip, VictoryVoronoiContainer } from 'victory';
+import { VictoryChart, VictoryLine, VictoryAxis, VictoryLegend } from 'victory';
 import { type WeatherData } from '../../api';
 
 interface PrecipitationChartProps {

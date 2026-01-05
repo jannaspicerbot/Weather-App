@@ -16,41 +16,50 @@ interface DateRangeSelectorProps {
 export default function DateRangeSelector({ start, end, onChange, onExport }: DateRangeSelectorProps) {
   const [startDate, setStartDate] = useState(start.toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(end.toISOString().split('T')[0]);
+  const [activePreset, setActivePreset] = useState<'24h' | '7d' | '30d' | '1y' | null>('24h');
 
   const handleApply = () => {
-    const newStart = new Date(startDate);
-    const newEnd = new Date(endDate);
+    // Parse dates in local timezone at start of day
+    const newStart = new Date(startDate + 'T00:00:00');
+    const newEnd = new Date(endDate + 'T23:59:59');
 
     if (newStart > newEnd) {
       alert('Start date must be before end date');
       return;
     }
 
+    setActivePreset(null); // Clear preset when using custom dates
     onChange(newStart, newEnd);
   };
 
   const handlePreset = (preset: '24h' | '7d' | '30d' | '1y') => {
     const now = new Date();
-    const newEnd = now;
+    // Set end to end of current day
+    const newEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
     let newStart: Date;
 
     switch (preset) {
       case '24h':
+        // Start 24 hours ago
         newStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         break;
       case '7d':
-        newStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        // Start at beginning of day 7 days ago (not 8 days)
+        newStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0);
         break;
       case '30d':
-        newStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        // Start at beginning of day 30 days ago (not 31 days)
+        newStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29, 0, 0, 0);
         break;
       case '1y':
-        newStart = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        // Start at beginning of day 365 days ago
+        newStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 364, 0, 0, 0);
         break;
     }
 
     setStartDate(newStart.toISOString().split('T')[0]);
     setEndDate(newEnd.toISOString().split('T')[0]);
+    setActivePreset(preset);
     onChange(newStart, newEnd);
   };
 
@@ -63,25 +72,41 @@ export default function DateRangeSelector({ start, end, onChange, onExport }: Da
         <div className="flex gap-2">
           <button
             onClick={() => handlePreset('24h')}
-            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium transition-colors"
+            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+              activePreset === '24h'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           >
             Last 24h
           </button>
           <button
             onClick={() => handlePreset('7d')}
-            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium transition-colors"
+            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+              activePreset === '7d'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           >
             Last 7 Days
           </button>
           <button
             onClick={() => handlePreset('30d')}
-            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium transition-colors"
+            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+              activePreset === '30d'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           >
             Last 30 Days
           </button>
           <button
             onClick={() => handlePreset('1y')}
-            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium transition-colors"
+            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+              activePreset === '1y'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           >
             Last Year
           </button>
