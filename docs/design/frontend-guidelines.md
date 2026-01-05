@@ -624,11 +624,286 @@ import * as Victory from 'victory';
 
 ---
 
+## Dashboard Layout & Architecture
+
+### Overview
+
+The Weather Dashboard follows a responsive grid layout optimized for desktop and tablet viewports. Each chart is housed in a Card component with clear visual boundaries to provide "subconscious differentiation" between data sections.
+
+### Grid System
+
+The dashboard uses a responsive grid that adapts to different screen sizes:
+
+```css
+/* Dashboard grid layout */
+.dashboard-grid {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+/* Mobile: Single column */
+@media (max-width: 767px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablet (iPad): 2 columns */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop: 2 columns (maintains breathing room) */
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+```
+
+**Design Rationale:**
+- **2-column maximum**: Even on large screens, limiting to 2 columns ensures each chart has enough space for readability
+- **Consistent gaps**: 1.5rem (24px) provides visual separation without wasting space
+- **Single column mobile**: Charts stack vertically on small screens for better readability
+
+### Chart Container (Card) Specifications
+
+Each chart is wrapped in a Card component with these visual properties:
+
+```css
+.chart-card {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+}
+
+.chart-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+.chart-card-title {
+  color: var(--color-text-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.chart-card-content {
+  /* Chart goes here */
+  min-height: 300px;
+}
+```
+
+**Visual Hierarchy:**
+- **Surface Elevation**: `var(--color-bg-secondary)` creates a distinct layer against the `var(--color-bg-primary)` dashboard background
+- **Subtle Borders**: `var(--color-border)` with 1px solid provides clear boundaries without heavy visual weight
+- **Rounded Corners**: 12px radius softens the appearance and creates a modern look
+- **Interactive Feedback**: Hover state with enhanced shadow provides subtle interactivity
+
+### Chart Design Standards
+
+All Victory Charts follow consistent styling for visual coherence:
+
+```typescript
+// src/utils/chartTheme.ts - Extended theme configuration
+export const dashboardChartTheme = {
+  axis: {
+    style: {
+      axis: {
+        stroke: 'var(--color-border)',
+        strokeWidth: 1
+      },
+      grid: {
+        stroke: 'var(--chart-grid)',
+        strokeDasharray: '4,4',
+        strokeWidth: 1
+      },
+      tickLabels: {
+        fill: 'var(--chart-axis)',
+        fontSize: 12,
+        fontFamily: 'Inter, system-ui, sans-serif',
+        padding: 8
+      },
+      axisLabel: {
+        fill: 'var(--color-text-secondary)',
+        fontSize: 13,
+        fontFamily: 'Inter, system-ui, sans-serif',
+        padding: 35
+      }
+    }
+  },
+  line: {
+    style: {
+      data: {
+        stroke: 'var(--chart-line-water)',
+        strokeWidth: 2,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round'
+      }
+    }
+  },
+  area: {
+    style: {
+      data: {
+        fill: 'var(--color-water-15)',
+        stroke: 'var(--chart-line-water)',
+        strokeWidth: 2
+      }
+    }
+  }
+};
+```
+
+**Chart Line Standards:**
+- **Stroke Width**: 2px ensures visibility without overwhelming the grid
+- **Grid Lines**: Dashed pattern (4,4) provides context without competing with data lines
+- **Axes**: Use `var(--color-border)` for main lines and `var(--chart-axis)` for labels
+
+### Data Differentiation (Color Mapping)
+
+To ensure users can clearly distinguish between different metrics, the system maps data to semantic color families:
+
+| Metric Category | Semantic Token | Recommended Use | Example Metrics |
+|----------------|----------------|-----------------|-----------------|
+| **Water/Temp** | `var(--color-water)` | Water-related and temperature data | Temperature, Rainfall, Humidity, Dew Point |
+| **Growth/Wind** | `var(--color-growth)` | Wind and environmental metrics | Wind Speed, Wind Direction, Air Quality |
+| **Interactive** | `var(--color-interactive)` | Highlighted data, selected points | Hovered data points, selected ranges |
+
+**Accessibility Note:** Per WCAG 2.2 standards, color should never be the only way to convey information. When multiple lines exist in one chart:
+- Use different dash patterns (`strokeDasharray`)
+- Use different symbols or markers
+- Include clear legend labels
+- Ensure proper ARIA descriptions
+
+### Area Fill for Depth
+
+Use opacity variants for area fills under line charts to provide visual depth without obscuring grid lines:
+
+```typescript
+// Example: Temperature chart with area fill
+<VictoryArea
+  data={temperatureData}
+  style={{
+    data: {
+      fill: 'var(--color-water-15)',  // 15% opacity
+      stroke: 'var(--chart-line-water)',
+      strokeWidth: 2
+    }
+  }}
+/>
+```
+
+**Available Opacity Variants:**
+- `--color-water-10` (10% opacity)
+- `--color-water-15` (15% opacity - recommended for area fills)
+- `--color-water-25` (25% opacity)
+- `--color-growth-10`, `--color-growth-15`, `--color-growth-25`
+
+### Responsive Chart Sizing
+
+Charts should adapt to their container while maintaining readability:
+
+```tsx
+import { VictoryChart, VictoryLine } from 'victory';
+
+export const ResponsiveChart = ({ data }: Props) => {
+  return (
+    <div className="chart-card">
+      <h3 className="chart-card-title">Temperature Trends</h3>
+      <div className="chart-card-content">
+        <VictoryChart
+          theme={dashboardChartTheme}
+          containerComponent={
+            <VictoryContainer
+              responsive={true}
+              style={{ width: '100%', height: '100%' }}
+            />
+          }
+          height={300}
+          padding={{ top: 20, bottom: 50, left: 60, right: 20 }}
+        >
+          <VictoryLine data={data} />
+        </VictoryChart>
+      </div>
+    </div>
+  );
+};
+```
+
+**Key Points:**
+- Use `responsive={true}` on VictoryContainer
+- Set consistent height (300px recommended for dashboard cards)
+- Adjust padding to ensure labels aren't clipped
+- Container div handles width responsively
+
+### Dashboard Component Example
+
+```tsx
+// src/components/layout/Dashboard.tsx
+import { TemperatureChart } from '@/components/charts/TemperatureChart';
+import { HumidityChart } from '@/components/charts/HumidityChart';
+import { WindChart } from '@/components/charts/WindChart';
+import { useWeatherData } from '@/hooks/useWeatherData';
+
+export const Dashboard = () => {
+  const { data, loading, error } = useWeatherData(startDate, endDate);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  return (
+    <div className="dashboard-container">
+      <header className="dashboard-header">
+        <h1>Weather Dashboard</h1>
+        <DateRangePicker onChange={handleDateChange} />
+      </header>
+
+      <div className="dashboard-grid">
+        <TemperatureChart data={data} />
+        <HumidityChart data={data} />
+        <WindChart data={data} />
+        <RainfallChart data={data} />
+      </div>
+    </div>
+  );
+};
+```
+
+### Implementation Checklist
+
+When implementing dashboard widgets, verify:
+
+- [ ] Card component uses `var(--color-bg-secondary)` background
+- [ ] Border uses `var(--color-border)` (1px solid, 12px radius)
+- [ ] Charts use semantic color tokens (no hard-coded hex values)
+- [ ] Line stroke width is 2px
+- [ ] Grid lines use dashed pattern (`strokeDasharray: '4,4'`)
+- [ ] Area fills use 15% opacity variants
+- [ ] Charts are responsive with `VictoryContainer` responsive mode
+- [ ] ARIA labels present for accessibility
+- [ ] Color is not the only differentiator (use patterns/symbols)
+- [ ] Tested on mobile, tablet, and desktop viewports
+
+**See Also:**
+- [Design Token System](design-tokens.md) - Complete color token architecture
+- [Inclusive Design](inclusive-design.md) - WCAG 2.2 AA compliance and chart accessibility
+
+---
+
 ## Resources
 
 - [Design Token System](design-tokens.md) - Complete token architecture
 - [Color Palette Options](color-palette-options.md) - All available palettes
 - [Color Palette Testing](color-palette-testing.md) - Accessibility validation
+- [Inclusive Design](inclusive-design.md) - WCAG 2.2 AA standards and chart accessibility
 - [ADR-003: TypeScript Frontend](../architecture/decisions/003-typescript-frontend.md) - TypeScript standards
 - [WCAG 2.2 Guidelines](https://www.w3.org/WAI/WCAG22/quickref/) - Accessibility reference
 - [Victory Charts Documentation](https://formidable.com/open-source/victory/) - Charting library
