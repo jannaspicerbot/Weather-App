@@ -21,6 +21,8 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 
 ## Technology Stack
 
+> **Note:** For feature descriptions by phase, see [Product Requirements](../product/requirements.md#timeline--phases)
+
 ### Current State (Phase 2 Complete)
 
 | Component | Technology | Status | Rationale |
@@ -29,7 +31,8 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 | **Database** | DuckDB 0.10+ | ✅ Phase 2 | **10-100x faster** than SQLite for analytics |
 | **Frontend Lang** | TypeScript | ✅ Phase 2 | Type safety, 96% industry adoption |
 | **Frontend Framework** | React 18 + Vite | ✅ Phase 2 | Modern build tools, fast dev server |
-| **Charting** | Recharts | ✅ Phase 2 | React-native charts, D3-based |
+| **Charting** | Victory | ✅ Phase 3 | WCAG 2.2 AA accessible, React-native |
+| **UI Components** | React Aria (Adobe) | ✅ Phase 3 | Accessibility-first, unstyled primitives |
 | **CLI** | Click | ✅ Phase 1 | Elegant command-line interfaces |
 | **Validation** | Pydantic | ✅ Phase 1 | Runtime type validation |
 | **Deployment** | Docker Compose | ✅ Phase 2 | One-command orchestration |
@@ -38,13 +41,14 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 
 ### Migration History
 
-| Component | Phase 1 (Dec 2025) | Phase 2 (Jan 2026) |
-|-----------|-------------------|-------------------|
-| Database | SQLite | **DuckDB** (10-100x faster) |
-| Frontend | None (CLI only) | **React + TypeScript** |
-| Backend | Flask (planned) | **FastAPI** (OpenAPI) |
-| Charts | Plotly (planned) | **Recharts** (React-native) |
-| Deployment | Manual | **Docker Compose** |
+| Component | Phase 1 (Dec 2025) | Phase 2 (Jan 2026) | Phase 3 (Jan 2026) |
+|-----------|-------------------|-------------------|-------------------|
+| Database | SQLite | **DuckDB** (10-100x faster) | DuckDB |
+| Frontend | None (CLI only) | **React + TypeScript** | React + TypeScript |
+| Backend | Flask (planned) | **FastAPI** (OpenAPI) | FastAPI |
+| Charts | Plotly (planned) | Recharts (prototype) | **Victory** (accessible) |
+| UI Components | None | TailwindCSS only | **React Aria** (Adobe) |
+| Deployment | Manual | **Docker Compose** | Docker Compose |
 
 ---
 

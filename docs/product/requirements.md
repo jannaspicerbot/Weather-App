@@ -263,27 +263,43 @@ Ambient Weather station owners are dissatisfied with the vendor's dashboard and 
 
 ## Timeline & Phases
 
+> **Note:** For technology stack details by phase, see [Architecture Overview](../architecture/overview.md#migration-history)
+
 ### Phase 1: MVP Backend & CLI ✅ **COMPLETED**
-- CLI with Click framework
-- DuckDB database integration
-- Ambient Weather API client
-- Basic fetch and backfill commands
+**Goal:** Enable automated weather data collection and storage
+
+- Command-line interface for manual operations
+- Local database with historical data backfill
+- API integration with Ambient Weather service
+- Data fetching and storage capabilities
 - **Completion:** December 2025
 
 ### Phase 2: Web Dashboard & Deployment ✅ **COMPLETED**
-- FastAPI backend with OpenAPI schema
-- React + TypeScript frontend
-- Interactive charts with Recharts
-- Docker Compose deployment
-- End-to-end type safety
+**Goal:** Provide visual access to weather data
+
+- REST API backend for data access
+- Web-based dashboard for visualization
+- One-command Docker deployment
+- Type-safe API contract (backend ↔ frontend)
 - **Completion:** January 2026
 
-### Phase 3: Polish & Advanced Features 🔄 **PLANNED**
-- Multi-station support
-- Built-in scheduler (APScheduler)
-- Web UI configuration
-- User authentication
-- Real-time WebSocket updates
+### Phase 2.5: Accessibility & UI Enhancement 🔄 **IN PROGRESS**
+**Goal:** Meet WCAG 2.2 Level AA accessibility standards
+
+- Accessible data visualization components
+- Keyboard navigation and screen reader support
+- Inclusive design implementation
+- Touch-friendly iPad interface
+- **Target:** January 2026
+
+### Phase 3: Advanced Features & Multi-Station 🔄 **PLANNED**
+**Goal:** Scale to power users and automation
+
+- Support for multiple weather stations (2-5 devices)
+- Built-in scheduling (eliminate cron dependency)
+- Web-based configuration interface
+- User authentication and access control
+- Real-time data updates via WebSocket
 - **Target:** Q1 2026
 
 ---

@@ -34,6 +34,9 @@ env/
 *.duckdb
 *.duckdb.wal
 
+# Data files (CSV downloads, etc.)
+data/
+
 # Output files
 output/
 *.html
