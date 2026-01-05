@@ -12,8 +12,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 # Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -45,7 +45,7 @@ def test_client_get_devices():
 
         if devices:
             device = devices[0]
-            print(f"Device Details:")
+            print("Device Details:")
             print(f"  MAC: {device.get('macAddress', 'N/A')}")
             print(f"  Name: {device.get('info', {}).get('name', 'N/A')}")
             print(f"  Location: {device.get('info', {}).get('location', 'N/A')}")
@@ -58,6 +58,7 @@ def test_client_get_devices():
         print(f"   Type: {type(e).__name__}")
 
         import traceback
+
         print("\nFull traceback:")
         traceback.print_exc()
 
@@ -86,7 +87,7 @@ def test_client_get_device_data():
 
         if data:
             reading = data[0]
-            print(f"Latest Reading:")
+            print("Latest Reading:")
             print(f"  Date: {reading.get('date', 'N/A')}")
             print(f"  Temp: {reading.get('tempf', 'N/A')}°F")
             print(f"  Humidity: {reading.get('humidity', 'N/A')}%")
@@ -104,6 +105,7 @@ def test_client_get_device_data():
             print("   → This is a rate limit error (expected based on Phase 1)")
 
         import traceback
+
         print("\nFull traceback:")
         traceback.print_exc()
 
@@ -119,7 +121,6 @@ def compare_request_details():
     print("Comparing our client's request with known-working curl\n")
 
     try:
-        import requests
         from weather_app.api.ambient_client import AmbientWeatherClient
 
         # Get our client's session details
@@ -138,7 +139,9 @@ def compare_request_details():
 
         # Show what a working curl would be
         print("\nWorking curl equivalent:")
-        print(f'curl "https://api.ambientweather.net/v1/devices?apiKey={API_KEY[:8]}...&applicationKey={APP_KEY[:8]}..."')
+        print(
+            f'curl "https://api.ambientweather.net/v1/devices?apiKey={API_KEY[:8]}...&applicationKey={APP_KEY[:8]}..."'
+        )
 
         print("\nPotential differences to investigate:")
         print("  - Headers (User-Agent, Accept, etc.)")
@@ -182,7 +185,7 @@ def main():
     results = [
         ("Get Devices", test_3_1),
         ("Get Device Data", test_3_2),
-        ("Request Comparison", test_3_3)
+        ("Request Comparison", test_3_3),
     ]
 
     for test_name, passed in results:

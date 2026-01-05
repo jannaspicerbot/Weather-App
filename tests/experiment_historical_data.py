@@ -8,14 +8,14 @@ Test if historical queries have different rate limits than real-time queries
 import os
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import requests
 from dotenv import load_dotenv
 
 # Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # Load environment variables
 load_dotenv()
@@ -40,11 +40,11 @@ def test_small_date_range():
     params = {
         "apiKey": API_KEY,
         "applicationKey": APP_KEY,
-        "limit": 288  # 1 day at 5-minute intervals
+        "limit": 288,  # 1 day at 5-minute intervals
     }
 
     print(f"Requesting: {url}")
-    print(f"Params: limit=288 (1 day of 5-min data)")
+    print("Params: limit=288 (1 day of 5-min data)")
     print(f"Time: {datetime.now().isoformat()}\n")
 
     try:
@@ -65,16 +65,24 @@ def test_small_date_range():
 
                 # Check time resolution
                 if len(data) >= 2:
-                    time_diff = (first.get('dateutc', 0) - data[1].get('dateutc', 0)) / 1000 / 60
+                    time_diff = (
+                        (first.get("dateutc", 0) - data[1].get("dateutc", 0))
+                        / 1000
+                        / 60
+                    )
                     print(f"  Resolution: {time_diff:.1f} minutes between readings")
-                    print(f"  → External user noted: API gives 5-min data, not real-time")
+                    print(
+                        "  → External user noted: API gives 5-min data, not real-time"
+                    )
 
             print()
             return True
 
         elif response.status_code == 429:
-            print(f"❌ RATE LIMITED")
-            print(f"  Retry-After: {response.headers.get('Retry-After', 'NOT PRESENT')}")
+            print("❌ RATE LIMITED")
+            print(
+                f"  Retry-After: {response.headers.get('Retry-After', 'NOT PRESENT')}"
+            )
             print(f"  Response: {response.text[:100]}")
             print()
             return False
@@ -103,11 +111,7 @@ def test_multiple_small_vs_one_large():
     print("Strategy A: One large query (1000 readings)")
     print("-" * 70)
 
-    params_large = {
-        "apiKey": API_KEY,
-        "applicationKey": APP_KEY,
-        "limit": 1000
-    }
+    params_large = {"apiKey": API_KEY, "applicationKey": APP_KEY, "limit": 1000}
 
     try:
         response = requests.get(url, params=params_large, timeout=30)
@@ -117,7 +121,7 @@ def test_multiple_small_vs_one_large():
             data = response.json()
             print(f"✅ SUCCESS: Got {len(data)} readings in one call")
         elif response.status_code == 429:
-            print(f"❌ RATE LIMITED on large query")
+            print("❌ RATE LIMITED on large query")
         else:
             print(f"⚠️  Status: {response.status_code}")
 
@@ -133,11 +137,7 @@ def test_multiple_small_vs_one_large():
     print("\nStrategy B: Multiple small queries (10x 100 readings)")
     print("-" * 70)
 
-    params_small = {
-        "apiKey": API_KEY,
-        "applicationKey": APP_KEY,
-        "limit": 100
-    }
+    params_small = {"apiKey": API_KEY, "applicationKey": APP_KEY, "limit": 100}
 
     successes = 0
     for i in range(10):
@@ -146,7 +146,7 @@ def test_multiple_small_vs_one_large():
             print(f"  Query {i+1}/10: ", end="")
 
             if response.status_code == 200:
-                print(f"✅ OK")
+                print("✅ OK")
                 successes += 1
             elif response.status_code == 429:
                 print(f"❌ 429 - Rate limited at query {i+1}")
@@ -184,19 +184,15 @@ def test_date_range_variations():
 
     # Test 1: No date parameters (default)
     print("Test 1: No date params (get latest)")
-    params1 = {
-        "apiKey": API_KEY,
-        "applicationKey": APP_KEY,
-        "limit": 1
-    }
+    params1 = {"apiKey": API_KEY, "applicationKey": APP_KEY, "limit": 1}
 
     try:
         response = requests.get(url, params=params1, timeout=10)
         print(f"  Status: {response.status_code}")
         if response.status_code == 200:
-            print(f"  ✅ Works")
+            print("  ✅ Works")
         elif response.status_code == 429:
-            print(f"  ❌ Rate limited")
+            print("  ❌ Rate limited")
     except Exception as e:
         print(f"  ❌ ERROR: {str(e)}")
 
@@ -209,7 +205,7 @@ def test_date_range_variations():
         "apiKey": API_KEY,
         "applicationKey": APP_KEY,
         "endDate": int(end_date.timestamp() * 1000),
-        "limit": 1
+        "limit": 1,
     }
 
     print(f"  endDate: {end_date.isoformat()}")
@@ -219,9 +215,9 @@ def test_date_range_variations():
         response = requests.get(url, params=params2, timeout=10)
         print(f"  Status: {response.status_code}")
         if response.status_code == 200:
-            print(f"  ✅ Works")
+            print("  ✅ Works")
         elif response.status_code == 429:
-            print(f"  ❌ Rate limited")
+            print("  ❌ Rate limited")
     except Exception as e:
         print(f"  ❌ ERROR: {str(e)}")
 
@@ -278,7 +274,7 @@ def main():
     results = [
         ("Small Date Range (1 day)", test_4_1),
         ("Multiple Small vs Large", test_4_2),
-        ("Date Range Variations", test_4_3)
+        ("Date Range Variations", test_4_3),
     ]
 
     for test_name, passed in results:
