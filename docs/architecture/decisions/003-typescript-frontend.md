@@ -302,37 +302,47 @@ export const weatherApi = new WeatherAPI();
 
 ```typescript
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { VictoryChart, VictoryLine, VictoryAxis, VictoryTooltip } from 'victory';
 import type { WeatherReading } from '../types/weather';
 
 interface TemperatureChartProps {
   data: WeatherReading[];
-  width?: number;
-  height?: number;
 }
 
-export const TemperatureChart: React.FC<TemperatureChartProps> = ({
-  data,
-  width = 800,
-  height = 400
-}) => {
+export const TemperatureChart: React.FC<TemperatureChartProps> = ({ data }) => {
   // TypeScript knows exact shape of data
   const chartData = data.map(reading => ({
-    timestamp: new Date(reading.timestamp).toLocaleString(),
-    temperature: reading.temperature,
-    feels_like: reading.feels_like,
+    x: new Date(reading.timestamp),
+    y: reading.temperature,
+  }));
+
+  const feelsLikeData = data.map(reading => ({
+    x: new Date(reading.timestamp),
+    y: reading.feels_like,
   }));
 
   return (
-    <LineChart width={width} height={height} data={chartData}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="timestamp" />
-      <YAxis />
-      <Tooltip />
-      <Legend />
-      <Line type="monotone" dataKey="temperature" stroke="#8884d8" name="Temperature (°F)" />
-      <Line type="monotone" dataKey="feels_like" stroke="#82ca9d" name="Feels Like (°F)" />
-    </LineChart>
+    <VictoryChart height={300}>
+      <VictoryAxis
+        tickFormat={(t) => new Date(t).toLocaleDateString()}
+        style={{ tickLabels: { fontSize: 10 } }}
+      />
+      <VictoryAxis
+        dependentAxis
+        label="Temperature (°F)"
+        style={{ axisLabel: { fontSize: 12 } }}
+      />
+      <VictoryLine
+        data={chartData}
+        style={{ data: { stroke: '#ef4444' } }}
+        labels={({ datum }) => `${datum.y.toFixed(1)}°F`}
+        labelComponent={<VictoryTooltip />}
+      />
+      <VictoryLine
+        data={feelsLikeData}
+        style={{ data: { stroke: '#f97316', strokeDasharray: '4,2' } }}
+      />
+    </VictoryChart>
   );
 };
 ```

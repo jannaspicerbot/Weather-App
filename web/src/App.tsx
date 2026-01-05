@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { initializeApiClient } from './lib/api-config';
-import WeatherTest from './components/WeatherTest';
+import Dashboard from './components/Dashboard';
 import './App.css';
 
 function App() {
@@ -10,9 +10,7 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <WeatherTest />
-    </div>
+    <Dashboard />
   );
 }
 
