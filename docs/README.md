@@ -110,6 +110,22 @@ docs/
 - Recommended libraries and tools
 - Plain language standards
 
+**[Frontend Development Guidelines](design/frontend-guidelines.md)**
+- Semantic design tokens (no hard-coded colors)
+- TypeScript type safety requirements
+- Component structure and file organization
+- Data fetching patterns and API client
+- Dashboard layout and chart specifications
+- Responsive design standards
+- Performance optimization
+
+**[Design Token System](design/design-tokens.md)**
+- Color palette architecture
+- Semantic token mapping
+- Victory Charts theme configuration
+- Accessibility validation (WCAG 2.2 AA contrast)
+- Palette testing and selection guide
+
 **When to read:** You want to build accessible, inclusive user interfaces
 
 ---
@@ -229,13 +245,18 @@ docs/
 | **System Design** | [Architecture Overview](architecture/overview.md) |
 | **Technology Choices** | [ADRs](architecture/decisions/) |
 | **Project Goals** | [Product Requirements](product/requirements.md) |
+| **Frontend Development** | [Frontend Guidelines](design/frontend-guidelines.md) |
+| **Dashboard Layout** | [Frontend Guidelines - Dashboard Section](design/frontend-guidelines.md#dashboard-layout--architecture) |
+| **Accessibility** | [Inclusive Design](design/inclusive-design.md) |
+| **Design Tokens** | [Design Token System](design/design-tokens.md) |
 
 ### By Role
 
 | Role | Recommended Reading |
 |------|---------------------|
 | **End User** | [Deployment Guide](technical/deployment-guide.md), [CLI Reference](technical/cli-reference.md) |
-| **Frontend Developer** | [API Reference](technical/api-reference.md), [Architecture Overview](architecture/overview.md) |
+| **Frontend Developer** | [Frontend Guidelines](design/frontend-guidelines.md), [API Reference](technical/api-reference.md), [Design Tokens](design/design-tokens.md) |
+| **UI/UX Designer** | [Inclusive Design](design/inclusive-design.md), [Design Token System](design/design-tokens.md), [Frontend Guidelines](design/frontend-guidelines.md) |
 | **Backend Developer** | [Database Schema](technical/database-schema.md), [ADRs](architecture/decisions/), [Architecture Overview](architecture/overview.md) |
 | **DevOps Engineer** | [Deployment Guide](technical/deployment-guide.md), [ADR-004: Docker Deployment](architecture/decisions/004-docker-deployment.md) |
 | **Product Manager** | [Product Requirements](product/requirements.md) |
