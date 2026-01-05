@@ -12,6 +12,9 @@ import HumidityChart from './charts/HumidityChart';
 import WindChart from './charts/WindChart';
 import PrecipitationChart from './charts/PrecipitationChart';
 import DateRangeSelector from './DateRangeSelector';
+import { DashboardGrid } from './dashboard/DashboardGrid';
+import { SortableChartCard } from './dashboard/SortableChartCard';
+import { useDashboardLayout } from '../hooks/useDashboardLayout';
 
 export default function Dashboard() {
   const [latestWeather, setLatestWeather] = useState<WeatherData | null>(null);
@@ -23,6 +26,7 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { chartOrder, setChartOrder, resetLayout } = useDashboardLayout();
 
   useEffect(() => {
     fetchLatestData();
@@ -169,18 +173,35 @@ export default function Dashboard() {
     );
   }
 
+  // Chart component mapping
+  const chartComponents = {
+    temperature: <TemperatureChart data={historicalData} />,
+    humidity: <HumidityChart data={historicalData} />,
+    wind: <WindChart data={historicalData} />,
+    precipitation: <PrecipitationChart data={historicalData} />,
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-gray-900">Weather Dashboard</h1>
-          {stats && (
-            <p className="text-sm text-gray-600 mt-1">
-              {stats.total_records.toLocaleString()} readings •
-              {stats.date_range_days ? ` ${stats.date_range_days} days` : ' No data'}
-            </p>
-          )}
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Weather Dashboard</h1>
+            {stats && (
+              <p className="text-sm text-gray-600 mt-1">
+                {stats.total_records.toLocaleString()} readings •
+                {stats.date_range_days ? ` ${stats.date_range_days} days` : ' No data'}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={resetLayout}
+            className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px]"
+            aria-label="Reset dashboard layout to default order"
+          >
+            Reset Layout
+          </button>
         </div>
       </header>
 
@@ -214,13 +235,14 @@ export default function Dashboard() {
           onExport={handleExportCSV}
         />
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          <TemperatureChart data={historicalData} />
-          <HumidityChart data={historicalData} />
-          <WindChart data={historicalData} />
-          <PrecipitationChart data={historicalData} />
-        </div>
+        {/* Charts Grid with Drag-and-Drop */}
+        <DashboardGrid chartOrder={chartOrder} onReorder={setChartOrder}>
+          {chartOrder.map((chartId) => (
+            <SortableChartCard key={chartId} id={chartId}>
+              {chartComponents[chartId]}
+            </SortableChartCard>
+          ))}
+        </DashboardGrid>
       </main>
     </div>
   );
