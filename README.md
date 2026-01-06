@@ -1,316 +1,355 @@
-# Ambient Weather Data Manager
+# Weather App - Ambient Weather Data Dashboard
 
 ![Backend CI](https://github.com/jannaspicerbot/Weather-App/workflows/Backend%20CI/badge.svg)
 ![Frontend CI](https://github.com/jannaspicerbot/Weather-App/workflows/Frontend%20CI%20%26%20Accessibility/badge.svg)
 ![Documentation CI](https://github.com/jannaspicerbot/Weather-App/workflows/Documentation%20CI/badge.svg)
 [![codecov](https://codecov.io/gh/jannaspicerbot/Weather-App/branch/main/graph/badge.svg)](https://codecov.io/gh/jannaspicerbot/Weather-App)
 
-A complete solution for retrieving, storing, and visualizing data from your Ambient Weather Network device.
+A modern, full-stack web application for collecting, storing, and visualizing data from your Ambient Weather Network device with automated scheduling and interactive dashboards.
 
 ## 🌟 Features
 
-- **Data Retrieval**: Fetch historical and real-time data via the Ambient Weather API
-- **SQLite Storage**: Store all weather data in a local database
-- **Interactive Visualizations**: Create beautiful, interactive graphs with Plotly
-- **Comprehensive Metrics**: Track temperature, humidity, wind, rain, pressure, solar radiation, and UV
+- **🌡️ Real-Time Monitoring** - Live weather data from your Ambient Weather station
+- **📊 Interactive Charts** - Beautiful, accessible visualizations with Victory Charts
+- **📅 50-Year Retention** - Store decades of full-resolution data with DuckDB
+- **⚙️ Automated Collection** - Built-in scheduler (APScheduler) for hands-free data collection
+- **🖥️ Web Dashboard** - Modern React + TypeScript interface
+- **🐳 Easy Deployment** - Docker Compose for one-command setup
+- **💻 Desktop Installers** - Standalone executables for Windows and macOS
+- **🔌 REST API** - Comprehensive API for integrations and custom dashboards
+- **📱 Responsive Design** - Works on desktop and tablets
+- **♿ Accessible** - WCAG 2.2 Level AA compliance
 
 ## 📋 What You Need
 
 1. An Ambient Weather account with a weather station
-2. API credentials from Ambient Weather
-3. Python 3.8 or higher
+2. API credentials from Ambient Weather ([Get them here](https://ambientweather.net/account))
+3. Docker + Docker Compose (recommended) OR Python 3.10+ and Node.js 18+
 
 ## 🚀 Quick Start
 
-### Step 1: Get Your API Credentials
+### Option 1: Docker Compose (Recommended)
 
-1. Go to https://ambientweather.net/account
-2. Log in to your account
-3. Navigate to the "API Keys" section
-4. Generate an Application Key and note your API Key
-5. You'll need both:
-   - **API Key** (unique to your account)
-   - **Application Key** (you create this)
-
-### Step 2: Install Dependencies
+The fastest way to get started:
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/jannaspicerbot/Weather-App.git
+cd Weather-App
+
+# 2. Create .env file with your API credentials
+cp .env.example .env
+# Edit .env and add your AMBIENT_API_KEY and AMBIENT_APP_KEY
+
+# 3. Start everything with Docker
+docker-compose up -d
+
+# 4. Initialize the database
+docker-compose exec backend weather-app init-db
+
+# 5. Fetch your weather data
+docker-compose exec backend weather-app fetch --limit 288
+
+# 6. Open the dashboard
+# Visit http://localhost:5173 in your browser
+```
+
+**That's it!** The web dashboard is now running and displaying your weather data.
+
+### Option 2: Native Installation
+
+For development or if you prefer not to use Docker:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/jannaspicerbot/Weather-App.git
+cd Weather-App
+
+# 2. Set up Python backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+pip install -e .
+
+# 3. Create .env file with your API credentials
+cp .env.example .env
+# Edit .env and add your AMBIENT_API_KEY and AMBIENT_APP_KEY
+
+# 4. Initialize database and fetch data
+weather-app init-db
+weather-app fetch --limit 288
+
+# 5. Start the backend API
+uvicorn weather_app.web.app:create_app --factory --reload
+
+# 6. In a new terminal, set up the frontend
+cd web
+npm install
+npm run dev
+
+# 7. Open http://localhost:5173 in your browser
 ```
 
-Or install individually:
-```bash
-pip install requests pandas plotly numpy
-```
+### Option 3: Desktop Installer
 
-### Step 3: Configure the Fetcher Script
+Download standalone installers for Windows or macOS:
 
-Edit `ambient_weather_fetcher.py` and replace the placeholder credentials:
+- **Windows**: [WeatherAppSetup.exe](../../releases) (no Python required)
+- **macOS**: [WeatherApp.app](../../releases) (drag-and-drop installation)
 
-```python
-API_KEY = 'your_actual_api_key_here'
-APPLICATION_KEY = 'your_actual_application_key_here'
-```
+See [installer/README.md](installer/README.md) for build instructions.
 
-### Step 4: Fetch Your Data
+## 📖 Documentation
 
-Run the fetcher script to download all your historical data:
+Comprehensive documentation is available in the [docs/](docs/) directory:
 
-```bash
-python ambient_weather_fetcher.py
-```
+### Getting Started
+- **[Deployment Guide](docs/technical/deployment-guide.md)** - Installation, configuration, and setup
+- **[CLI Reference](docs/technical/cli-reference.md)** - Command-line tool usage
+- **[API Reference](docs/technical/api-reference.md)** - REST API endpoints and examples
 
-This will:
-- Connect to the Ambient Weather API
-- Fetch all data since March 2024
-- Store it in a SQLite database (`weather_data.db`)
-- Show you a summary of the data
+### Architecture & Design
+- **[Architecture Overview](docs/architecture/overview.md)** - System design and components
+- **[Architecture Decision Records](docs/architecture/decisions/)** - Technology choices and rationale
+- **[Design System](docs/design/design-tokens.md)** - Color palette and accessibility standards
 
-**Note**: The script is respectful of API rate limits and may take several minutes to fetch all historical data.
+### Navigation
+- **[Documentation Index](docs/README.md)** - Complete documentation navigation guide
 
-### Step 5: Create Visualizations
+## 🏗️ Architecture
 
-Run the visualizer script to generate interactive graphs:
+The Weather App is built with modern, production-ready technologies:
 
-```bash
-python ambient_weather_visualizer.py
-```
+**Backend:**
+- **FastAPI** - High-performance Python web framework with automatic OpenAPI docs
+- **DuckDB** - Analytics database (10-100x faster than SQLite)
+- **APScheduler** - Automated data collection scheduling
+- **Click** - Command-line interface framework
 
-This will:
-- Load data from the database
-- Create interactive HTML graphs for all metrics
-- Save them to the `weather_plots/` directory
-- Generate an `index.html` dashboard
+**Frontend:**
+- **React** - Modern UI framework with hooks
+- **TypeScript** - Type-safe JavaScript
+- **Victory Charts** - Accessible, theme-aware data visualization
+- **React Aria** - WCAG 2.2 AA accessible components
+- **TailwindCSS** - Utility-first styling
+- **Vite** - Fast build tool and dev server
 
-### Step 6: View Your Graphs
+**Deployment:**
+- **Docker Compose** - Multi-container orchestration
+- **PyInstaller** - Standalone desktop executables
 
-Open `weather_plots/index.html` in your web browser to see all your visualizations!
+See [docs/architecture/overview.md](docs/architecture/overview.md) for detailed architecture documentation.
 
-## 📊 Available Visualizations
+## 🖥️ CLI Usage
 
-The system creates these interactive graphs:
-
-1. **Temperature Analysis** - Outdoor temp, feels like, dew point, and indoor temp
-2. **Wind Analysis** - Wind speed and gusts over time
-3. **Wind Direction** - Dominant wind direction scatter plot
-4. **Rainfall** - Daily rainfall and hourly rates
-5. **Barometric Pressure** - Relative pressure trends
-6. **Humidity** - Indoor and outdoor humidity levels
-7. **Solar Radiation** - Solar radiation measurements
-8. **UV Index** - UV index over time
-
-All graphs are interactive - you can:
-- Zoom in/out
-- Pan across time
-- Hover for exact values
-- Toggle data series on/off
-- Download as images
-
-## 🗄️ Database Schema
-
-The SQLite database stores data in the `weather_data` table with these fields:
-
-**Temperature & Feels Like:**
-- `tempf` - Outdoor temperature (°F)
-- `feelsLike` - Feels like temperature (°F)
-- `dewPoint` - Dew point (°F)
-- `tempinf` - Indoor temperature (°F)
-
-**Humidity:**
-- `humidity` - Outdoor humidity (%)
-- `humidityin` - Indoor humidity (%)
-
-**Pressure:**
-- `baromrelin` - Relative barometric pressure (inHg)
-- `baromabsin` - Absolute barometric pressure (inHg)
-
-**Wind:**
-- `windspeedmph` - Wind speed (mph)
-- `windgustmph` - Wind gust speed (mph)
-- `winddir` - Wind direction (degrees)
-- `winddir_avg10m` - 10-minute average wind direction
-
-**Rain:**
-- `hourlyrainin` - Hourly rainfall (inches)
-- `dailyrainin` - Daily rainfall (inches)
-- `weeklyrainin` - Weekly rainfall (inches)
-- `monthlyrainin` - Monthly rainfall (inches)
-- `yearlyrainin` - Yearly rainfall (inches)
-- `totalrainin` - Total rainfall (inches)
-
-**Solar:**
-- `solarradiation` - Solar radiation (W/m²)
-- `uv` - UV index
-
-**Timestamps:**
-- `dateutc` - Unix timestamp (milliseconds)
-- `date_local` - Local datetime string
-
-## 🔧 Advanced Usage
-
-### Fetch Only Recent Data
-
-Modify the script to fetch data from a specific date:
-
-```python
-from datetime import datetime
-
-start_date = datetime(2024, 11, 1)  # November 1, 2024
-fetcher.fetch_all_historical_data(mac_address, start_date)
-```
-
-### Create Graphs for Specific Date Range
-
-```python
-visualizer = WeatherVisualizer()
-figs = visualizer.create_comprehensive_dashboard(
-    start_date='2024-11-01', 
-    end_date='2024-12-30'
-)
-visualizer.save_plots(figs)
-```
-
-### Query the Database Directly
-
-```python
-import sqlite3
-import pandas as pd
-
-conn = sqlite3.connect('weather_data.db')
-df = pd.read_sql_query('''
-    SELECT date_local, tempf, humidity, windspeedmph
-    FROM weather_data
-    WHERE date_local >= '2024-12-01'
-    ORDER BY date_local
-''', conn)
-conn.close()
-
-print(df.head())
-```
-
-### Export Data to CSV
-
-```python
-import sqlite3
-import pandas as pd
-
-conn = sqlite3.connect('weather_data.db')
-df = pd.read_sql_query('SELECT * FROM weather_data ORDER BY dateutc', conn)
-df.to_csv('weather_data_export.csv', index=False)
-conn.close()
-print("✓ Data exported to weather_data_export.csv")
-```
-
-## 🔄 Keeping Data Updated
-
-### Manual Update
-
-Run the fetcher script periodically to get new data:
+The Weather App includes a powerful command-line interface:
 
 ```bash
-python ambient_weather_fetcher.py
+# Initialize the database
+weather-app init-db
+
+# Fetch latest weather data
+weather-app fetch --limit 288
+
+# Backfill historical data
+weather-app backfill --start 2024-01-01 --end 2024-12-31
+
+# Show database info
+weather-app info
+
+# Export data to CSV
+weather-app export --output weather_data.csv --start 2024-01-01
 ```
 
-The script automatically avoids duplicates, so it's safe to run multiple times.
+See [docs/technical/cli-reference.md](docs/technical/cli-reference.md) for complete CLI documentation.
 
-### Automated Updates (Linux/Mac)
+## 🌐 REST API
 
-Set up a cron job to fetch data hourly:
+The FastAPI backend provides a comprehensive REST API:
 
 ```bash
-crontab -e
+# Get latest weather reading
+GET /api/weather/latest
+
+# Get weather history
+GET /api/weather/history?start_date=2024-01-01&end_date=2024-12-31
+
+# Get weather statistics
+GET /api/weather/stats?start_date=2024-01-01&end_date=2024-12-31
+
+# Health check
+GET /health
 ```
 
-Add this line:
-```
-0 * * * * cd /path/to/your/project && python ambient_weather_fetcher.py >> fetch.log 2>&1
-```
+**Interactive API docs** (Swagger UI): http://localhost:8000/docs
 
-### Automated Updates (Windows)
+See [docs/technical/api-reference.md](docs/technical/api-reference.md) for complete API documentation with code examples in JavaScript, Python, and curl.
 
-Use Task Scheduler to run the script on a schedule.
+## ⚙️ Automated Data Collection
 
-## 🎨 Customizing Visualizations
+Set up automated data collection to keep your database up to date:
 
-Edit `ambient_weather_visualizer.py` to customize:
-
-- **Colors**: Modify the `color` parameter in each trace
-- **Date ranges**: Pass `start_date` and `end_date` to functions
-- **Graph types**: Change from line to scatter, bar, etc.
-- **Titles and labels**: Update the layout dictionaries
-
-Example - Change temperature line color:
-```python
-line=dict(color='#FF6B6B', width=2)  # Red instead of blue
+**With Docker Compose:**
+```bash
+# Edit docker-compose.yml and uncomment the scheduler service
+# The scheduler runs fetch every 5 minutes automatically
+docker-compose up -d
 ```
 
-## 📝 API Rate Limits
+**Native Installation:**
 
-The Ambient Weather API has rate limits:
-- 1 request per second
-- 288 records per request maximum
+See [docs/technical/deployment-guide.md](docs/technical/deployment-guide.md) for instructions on setting up:
+- **Linux/macOS**: systemd or cron
+- **Windows**: Task Scheduler
+- **All platforms**: APScheduler built-in scheduler
 
-The fetcher script respects these limits with built-in delays.
+## 📊 Dashboard Features
+
+The web dashboard provides:
+
+- **📈 Temperature Analysis** - Indoor/outdoor temps with trends
+- **💨 Wind Monitoring** - Speed, gusts, and direction
+- **🌧️ Precipitation Tracking** - Rainfall amounts and rates
+- **🔘 Barometric Pressure** - Pressure trends and weather patterns
+- **💧 Humidity Levels** - Indoor and outdoor humidity
+- **☀️ Solar Data** - Solar radiation and UV index
+- **📅 Time Range Selector** - View 24h, week, month, year, or custom ranges
+- **🎨 Theme Support** - Light and dark modes (respects system preference)
+- **📱 Responsive Design** - Works on desktop and tablets
+
+## 🛠️ Development
+
+Contributions are welcome! To set up a development environment:
+
+```bash
+# Clone and install dependencies
+git clone https://github.com/jannaspicerbot/Weather-App.git
+cd Weather-App
+pip install -r requirements.txt
+pip install -e .
+cd web && npm install
+
+# Run code quality checks
+black weather_app/                    # Format Python code
+ruff check --fix weather_app/         # Lint Python code
+mypy weather_app/                     # Type check Python code
+cd web && npm run lint                # Lint TypeScript code
+
+# Run tests
+pytest                                # Backend tests
+pytest -m unit                        # Fast unit tests only
+cd web && npm test                    # Frontend tests
+```
+
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for contribution guidelines.
+
+## 🔒 Security & Privacy
+
+- **Local-First** - All data stored locally in your DuckDB database
+- **No Cloud** - Your weather data never leaves your system
+- **API Keys** - Secure credential storage in `.env` file
+- **CORS** - Properly configured for security
+- **Input Validation** - Pydantic models validate all API inputs
+
+## 🗂️ Project Structure
+
+```
+Weather-App/
+├── weather_app/              # Python backend
+│   ├── cli/                  # CLI commands
+│   ├── fetch/                # Ambient Weather API client
+│   ├── database/             # DuckDB repository layer
+│   └── web/                  # FastAPI application
+├── web/                      # React + TypeScript frontend
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── services/         # API client
+│   │   └── types/            # TypeScript types
+│   └── dist/                 # Built frontend (generated)
+├── docs/                     # Documentation
+│   ├── architecture/         # System design & ADRs
+│   ├── design/               # UI/UX & accessibility
+│   ├── product/              # Requirements & specs
+│   └── technical/            # API, CLI, deployment guides
+├── installer/                # Desktop app installers
+│   ├── windows/              # Windows .exe installer
+│   └── macos/                # macOS .app installer
+├── tests/                    # Test suite
+├── docker-compose.yml        # Docker orchestration
+├── requirements.txt          # Python dependencies
+├── pyproject.toml            # Python project config
+└── .env                      # API credentials (create from .env.example)
+```
 
 ## 🐛 Troubleshooting
 
 **"No devices found"**
-- Check your API credentials are correct
-- Ensure your device is online and reporting to Ambient Weather
+- Verify your API credentials are correct in `.env`
+- Ensure your weather station is online at ambientweather.net
 
-**"No data in database"**
-- Run the fetcher script first before the visualizer
-- Check the database file exists: `weather_data.db`
+**"Database error"**
+- Run `weather-app init-db` to initialize the database
+- Check that the database file has write permissions
 
-**"Import errors"**
-- Install all requirements: `pip install -r requirements.txt`
-- Use a virtual environment if you have dependency conflicts
+**"API rate limit exceeded"**
+- Ambient Weather API allows 1 request/second
+- Reduce fetch frequency or use smaller `--limit` values
 
-**"API errors"**
-- Check your internet connection
-- Verify your API keys haven't expired
-- Check Ambient Weather's API status
+**Docker issues**
+- Ensure Docker Desktop is running
+- Try `docker-compose down && docker-compose up -d` to restart
 
-## 📚 File Structure
-
-```
-ambient-weather-manager/
-├── ambient_weather_fetcher.py      # Main data fetching script
-├── ambient_weather_visualizer.py   # Visualization script
-├── requirements.txt                # Python dependencies
-├── README.md                       # This file
-├── weather_data.db                 # SQLite database (created on first run)
-└── weather_plots/                  # Generated graphs (created on first run)
-    ├── index.html                  # Dashboard index
-    ├── temperature.html
-    ├── wind.html
-    ├── rain.html
-    └── ...
-```
-
-## 🔗 Resources
-
-- [Product Requirements](docs/technical/requirements.md) - Project specifications and requirements
-- [Ambient Weather API Documentation](https://ambientweather.docs.apiary.io/)
-- [Plotly Documentation](https://plotly.com/python/)
-- [Pandas Documentation](https://pandas.pydata.org/)
+See [docs/technical/deployment-guide.md](docs/technical/deployment-guide.md) for more troubleshooting tips.
 
 ## 📄 License
 
-This is a personal project tool. Use it freely for your own weather data management.
+This project is open source and available for personal use. See [LICENSE](LICENSE) for details.
 
 ## 🤝 Contributing
 
-Feel free to modify and enhance these scripts for your specific needs!
+Contributions, issues, and feature requests are welcome!
 
-## 💡 Next Steps
+1. **Read** [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines
+2. **Fork** the repository
+3. **Create** a feature branch: `git checkout -b feature/my-feature`
+4. **Commit** your changes: `git commit -m "Add my feature"`
+5. **Push** to the branch: `git push origin feature/my-feature`
+6. **Open** a Pull Request
 
-Once you have the basic system working, you might want to:
+## 🙏 Acknowledgments
 
-1. **Create a web dashboard** - Use Flask or Dash to create a live web interface
-2. **Add alerts** - Set up email/SMS notifications for weather conditions
-3. **Export reports** - Generate PDF reports with weather summaries
-4. **Compare data** - Analyze trends across months or years
-5. **Machine learning** - Predict weather patterns from historical data
+- **Ambient Weather** - For providing the API and excellent weather stations
+- **FastAPI** - For making Python web APIs a joy to build
+- **DuckDB** - For blazing-fast analytics queries
+- **Victory Charts** - For accessible, beautiful data visualizations
+- **React Aria** - For accessible component patterns
 
-Happy weather tracking! 🌤️
+## 📧 Support
+
+- **Documentation**: [docs/README.md](docs/README.md)
+- **Issues**: [GitHub Issues](https://github.com/jannaspicerbot/Weather-App/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/jannaspicerbot/Weather-App/discussions)
+
+## 🗺️ Roadmap
+
+See [docs/product/requirements.md](docs/product/requirements.md) for the complete roadmap.
+
+**Phase 3 (In Progress):**
+- ✅ APScheduler integration for automated data collection
+- ✅ Desktop installers (Windows/macOS)
+- 🔄 React + TypeScript frontend (in development)
+- 🔄 Victory Charts integration
+- 🔄 Multi-station support
+
+**Future Phases:**
+- User authentication for multi-user deployments
+- Real-time WebSocket updates
+- Mobile app (React Native)
+- Weather alerts and notifications
+- Machine learning for weather prediction
+
+---
+
+**Built with ❤️ for weather enthusiasts**
+
+[Documentation](docs/README.md) • [API Reference](docs/technical/api-reference.md) • [Contributing](docs/CONTRIBUTING.md)
