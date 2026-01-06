@@ -39,10 +39,12 @@ This will:
 2. Package the app with PyInstaller
 3. Create `dist\WeatherApp\WeatherApp.exe`
 
-**Create Installer (Optional):**
-1. Install Inno Setup
-2. Run: `"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss`
+**Create Installer (Recommended):**
+1. Install Inno Setup: https://jrsoftware.org/isinfo.php
+2. Run: `build_installer.bat`
 3. Installer created: `output\WeatherAppSetup.exe`
+
+See [windows/INSTALLER.md](windows/INSTALLER.md) for detailed instructions.
 
 ### macOS
 
