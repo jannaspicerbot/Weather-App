@@ -28,6 +28,12 @@ setup(
         "pydantic>=2.0.0",
         "python-dotenv>=1.0.0",
         "click>=8.1.0",
+        "duckdb>=0.10.0",
+        "apscheduler>=3.10.0",
+        "structlog>=24.1.0",
+        # Launcher/GUI dependencies
+        "pystray>=0.19.0",
+        "Pillow>=10.0.0",
     ],
     entry_points={
         'console_scripts': [

@@ -90,11 +90,15 @@ class WeatherTrayApp:
     def restart_app(self, icon=None, item=None):
         """Restart the application"""
         logger.info("Restarting application...")
-        self.quit_app(icon, item, restart=True)
+        self._do_quit(restart=True)
 
-    def quit_app(self, icon=None, item=None, restart=False):
-        """Quit application"""
+    def quit_app(self, icon=None, item=None):
+        """Quit application (menu callback)"""
         logger.info("Shutting down...")
+        self._do_quit(restart=False)
+
+    def _do_quit(self, restart=False):
+        """Internal quit implementation"""
         self.stop_server()
 
         if self.icon:
