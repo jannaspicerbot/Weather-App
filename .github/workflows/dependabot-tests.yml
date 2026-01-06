@@ -1,0 +1,47 @@
+name: Dependabot Testing
+on:
+  pull_request:
+    # Only run for PRs created by Dependabot
+    types: [opened, synchronize, reopened]
+
+jobs:
+  backend-tests:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Matches architecture requirements
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest # Ensure test runner is present
+
+      - name: Run Backend Tests
+        run: pytest
+
+  frontend-tests:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Modern LTS for React 18/Vite
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./web # Per architecture component layer
+        run: npm ci
+
+      - name: Run Frontend Tests
+        working-directory: ./web
+        run: npm run test # Executes Vitest
