@@ -88,13 +88,13 @@ def test_cooldown_intervals():
 
         print(f"  Status: {result['status_code']}", end="")
         if result["status_code"] == 200:
-            print(" ✅ SUCCESS!")
+            print(f" ✅ SUCCESS!")
             print(
                 f"  → Cooldown period: {wait_seconds}s ({wait_seconds/60:.1f} minutes)"
             )
             break
         elif result["status_code"] == 429:
-            print(" ❌ Still rate limited")
+            print(f" ❌ Still rate limited")
             print(f"     Response: {result.get('body', 'N/A')[:50]}")
         else:
             print(f" ⚠️  Unexpected: {result.get('body', 'N/A')[:50]}")
@@ -113,13 +113,13 @@ def test_cooldown_intervals():
         print(
             f"✅ Found cooldown period: {wait_time} seconds ({wait_time/60:.1f} minutes)"
         )
-        print("   External user reported: 5 seconds")
+        print(f"   External user reported: 5 seconds")
         print(f"   Our experience: {wait_time} seconds ({wait_time/5}x longer)")
         return wait_time
     else:
         max_wait = intervals[-1] if results else 0
         print(f"❌ Still rate limited after {max_wait}s ({max_wait/60:.1f} minutes)")
-        print("   May need to wait even longer (try 24 hours?)")
+        print(f"   May need to wait even longer (try 24 hours?)")
         return None
 
 
@@ -146,7 +146,7 @@ def test_progressive_intervals():
             print(f"  ✅ SUCCESS! Recovered after ~{i+1} minutes")
             break
         elif result["status_code"] == 429:
-            print("  ❌ Still rate limited")
+            print(f"  ❌ Still rate limited")
         else:
             print(f"  ⚠️  Status: {result['status_code']}")
 
@@ -165,7 +165,7 @@ def test_progressive_intervals():
         print(f"✅ Recovered after: ~{recovery_time/60:.0f} minutes")
         return recovery_time
     else:
-        print("❌ Still rate limited after 10 minutes")
+        print(f"❌ Still rate limited after 10 minutes")
         return None
 
 
@@ -209,7 +209,7 @@ def main():
             print("\n\nRunning progressive test to confirm...")
             time.sleep(5)
 
-        test_progressive_intervals()
+        recovery = test_progressive_intervals()
 
     # Final summary
     print("\n" + "=" * 70)
@@ -217,7 +217,7 @@ def main():
     print("=" * 70)
     print("Compare to external user:")
     print("  Their recovery: 5 seconds after burst 429")
-    print("  Our experience: (see results above)")
+    print(f"  Our experience: (see results above)")
     print()
     print("Next steps:")
     print("  1. Document cooldown period in phase-1-results.md")

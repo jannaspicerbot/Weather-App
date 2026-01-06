@@ -68,7 +68,7 @@ def test_device_list():
             print()
             return True
         elif response.status_code == 429:
-            print("❌ RATE LIMITED (429)")
+            print(f"❌ RATE LIMITED (429)")
             print(
                 f"Retry-After header: {response.headers.get('Retry-After', 'NOT PRESENT')}"
             )
@@ -76,7 +76,7 @@ def test_device_list():
             print()
             return False
         elif response.status_code == 401:
-            print("❌ UNAUTHORIZED (401) - Invalid API keys")
+            print(f"❌ UNAUTHORIZED (401) - Invalid API keys")
             print(f"Response: {response.text[:200]}")
             print()
             return False
@@ -139,7 +139,7 @@ def test_device_data():
             print()
             return True
         elif response.status_code == 429:
-            print("❌ RATE LIMITED (429)")
+            print(f"❌ RATE LIMITED (429)")
             print(
                 f"Retry-After header: {response.headers.get('Retry-After', 'NOT PRESENT')}"
             )
@@ -147,7 +147,7 @@ def test_device_data():
             print()
             return False
         elif response.status_code == 401:
-            print("❌ UNAUTHORIZED (401) - Invalid API keys")
+            print(f"❌ UNAUTHORIZED (401) - Invalid API keys")
             print(f"Response: {response.text[:200]}")
             print()
             return False
@@ -183,7 +183,7 @@ def check_credentials():
             issues.append("App Key contains whitespace")
 
     if not MAC_ADDRESS:
-        print("MAC Address: (not set - will skip device data test)")
+        print(f"MAC Address: (not set - will skip device data test)")
     else:
         print(f"MAC Address: {MAC_ADDRESS}")
 

@@ -4,7 +4,6 @@ Defines all endpoints for the FastAPI application
 """
 
 import time
-from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
 
@@ -35,7 +34,7 @@ def register_routes(app: FastAPI):
             },
         }
 
-    @app.get("/weather", response_model=List[WeatherData])
+    @app.get("/weather", response_model=list[WeatherData])
     def get_weather_data(
         request: Request,
         limit: int = Query(
@@ -45,10 +44,10 @@ def register_routes(app: FastAPI):
             description="Maximum number of records to return",
         ),
         offset: int = Query(default=0, ge=0, description="Number of records to skip"),
-        start_date: Optional[str] = Query(
+        start_date: str | None = Query(
             default=None, description="Start date (ISO format: YYYY-MM-DD)"
         ),
-        end_date: Optional[str] = Query(
+        end_date: str | None = Query(
             default=None, description="End date (ISO format: YYYY-MM-DD)"
         ),
         order: str = Query(
@@ -212,8 +211,8 @@ def register_routes(app: FastAPI):
 
     @app.get("/api/weather/range")
     def api_get_weather_range(
-        start_date: Optional[str] = Query(default=None),
-        end_date: Optional[str] = Query(default=None),
+        start_date: str | None = Query(default=None),
+        end_date: str | None = Query(default=None),
         limit: int = Query(default=1000, ge=1, le=10000),
     ):
         """

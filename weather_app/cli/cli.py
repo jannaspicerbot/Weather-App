@@ -115,26 +115,28 @@ def fetch(limit):
     try:
         logger.info("fetch_started", limit=limit)
 
-        # Initialize API client
+        # Initialize API client with context manager for proper cleanup
         click.echo(f"Fetching {limit} latest weather record(s)...")
-        api = AmbientWeatherAPI(api_key, app_key)
+        with AmbientWeatherAPI(api_key, app_key) as api:
+            # Get devices
+            devices = api.get_devices()
+            if not devices:
+                logger.warning("fetch_failed", reason="no_devices")
+                click.echo("❌ No devices found in your account")
+                sys.exit(1)
 
-        # Get devices
-        devices = api.get_devices()
-        if not devices:
-            logger.warning("fetch_failed", reason="no_devices")
-            click.echo("❌ No devices found in your account")
-            sys.exit(1)
+            device = devices[0]
+            mac = device["macAddress"]
+            device_name = device["info"]["name"]
 
-        device = devices[0]
-        mac = device["macAddress"]
-        device_name = device["info"]["name"]
+            logger.info("device_found", mac=mac, device_name=device_name)
+            click.echo(f"📡 Fetching from device: {device_name}")
 
-        logger.info("device_found", mac=mac, device_name=device_name)
-        click.echo(f"📡 Fetching from device: {device_name}")
+            # Add delay to respect rate limits (1 request per second)
+            time.sleep(1.1)
 
-        # Fetch data
-        data = api.get_device_data(mac, limit=limit)
+            # Fetch data
+            data = api.get_device_data(mac, limit=limit)
 
         if not data:
             logger.info("fetch_completed", records=0, reason="no_new_data")
@@ -242,62 +244,61 @@ def backfill(start, end, batch_size, delay):
     click.echo("")
 
     try:
-        # Initialize API client
-        api = AmbientWeatherAPI(api_key, app_key)
+        # Initialize API client with context manager for proper cleanup
+        with AmbientWeatherAPI(api_key, app_key) as api:
+            # Get devices
+            devices = api.get_devices()
+            if not devices:
+                logger.warning("backfill_failed", reason="no_devices")
+                click.echo("❌ No devices found in your account")
+                sys.exit(1)
 
-        # Get devices
-        devices = api.get_devices()
-        if not devices:
-            logger.warning("backfill_failed", reason="no_devices")
-            click.echo("❌ No devices found in your account")
-            sys.exit(1)
+            device = devices[0]
+            mac = device["macAddress"]
+            device_name = device["info"]["name"]
 
-        device = devices[0]
-        mac = device["macAddress"]
-        device_name = device["info"]["name"]
+            logger.info("device_found", mac=mac, device_name=device_name)
+            click.echo(f"📡 Fetching from device: {device_name}\n")
 
-        logger.info("device_found", mac=mac, device_name=device_name)
-        click.echo(f"📡 Fetching from device: {device_name}\n")
+            # Progress callback
+            total_inserted = 0
+            total_skipped = 0
 
-        # Progress callback
-        total_inserted = 0
-        total_skipped = 0
+            def progress_callback(records_fetched, requests_made):
+                nonlocal total_inserted, total_skipped
+                logger.info(
+                    "backfill_progress",
+                    records_fetched=records_fetched,
+                    requests_made=requests_made,
+                )
+                click.echo(
+                    f"Progress: {records_fetched} records fetched, {requests_made} API requests made"
+                )
 
-        def progress_callback(records_fetched, requests_made):
-            nonlocal total_inserted, total_skipped
-            logger.info(
-                "backfill_progress",
-                records_fetched=records_fetched,
-                requests_made=requests_made,
-            )
-            click.echo(
-                f"Progress: {records_fetched} records fetched, {requests_made} API requests made"
-            )
+            # Fetch all historical data
+            with WeatherDatabase(db_path) as db:
+                # Initialize backfill progress
+                db.init_backfill_progress(start, end)
 
-        # Fetch all historical data
-        with WeatherDatabase(db_path) as db:
-            # Initialize backfill progress
-            db.init_backfill_progress(start, end)
+                # Fetch data using the API client's built-in pagination
+                all_data = api.fetch_all_historical_data(
+                    mac,
+                    start_date=start_date,
+                    end_date=end_date,
+                    batch_size=batch_size,
+                    delay=delay,
+                    progress_callback=progress_callback,
+                )
 
-            # Fetch data using the API client's built-in pagination
-            all_data = api.fetch_all_historical_data(
-                mac,
-                start_date=start_date,
-                end_date=end_date,
-                batch_size=batch_size,
-                delay=delay,
-                progress_callback=progress_callback,
-            )
+                if not all_data:
+                    logger.info("backfill_completed", records=0, reason="no_data_found")
+                    click.echo("\n⚠️  No data found for the specified date range")
+                    db.clear_backfill_progress()
+                    return
 
-            if not all_data:
-                logger.info("backfill_completed", records=0, reason="no_data_found")
-                click.echo("\n⚠️  No data found for the specified date range")
-                db.clear_backfill_progress()
-                return
-
-            # Insert data in batches
-            click.echo(f"\n💾 Saving {len(all_data)} records to database...")
-            inserted, skipped = db.insert_data(all_data)
+                # Insert data in batches
+                click.echo(f"\n💾 Saving {len(all_data)} records to database...")
+                inserted, skipped = db.insert_data(all_data)
 
             total_inserted = inserted
             total_skipped = skipped

@@ -26,6 +26,18 @@ class AmbientWeatherAPI:
         self.application_key = application_key
         self.base_url = "https://api.ambientweather.net/v1"
 
+        # FIX #2: Use session for connection pooling and custom headers
+        self.session = requests.Session()
+        self.session.headers.update(
+            {
+                "User-Agent": "WeatherApp/1.0 (Python; DuckDB)",
+                "Accept": "application/json",
+            }
+        )
+
+        # FIX #1: Default timeout for all requests
+        self.timeout = 30
+
     def get_devices(self):
         """
         Get list of user's weather devices
@@ -40,7 +52,8 @@ class AmbientWeatherAPI:
         start_time = time.time()
 
         try:
-            response = requests.get(url, params=params)
+            # Use self.session instead of requests module directly
+            response = self.session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
             data = response.json()
 
@@ -98,7 +111,8 @@ class AmbientWeatherAPI:
         start_time = time.time()
 
         try:
-            response = requests.get(url, params=params)
+            # Use self.session instead of requests module directly
+            response = self.session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
             data = response.json()
 
@@ -206,3 +220,17 @@ class AmbientWeatherAPI:
                 raise
 
         return all_data
+
+    def close(self):
+        """Close the session when done"""
+        if self.session:
+            self.session.close()
+
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensure session is closed"""
+        self.close()
+        return False

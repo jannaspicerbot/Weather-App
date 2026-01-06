@@ -35,7 +35,7 @@ def test_one_minute_intervals(iterations=10, interval_seconds=60):
     print("=" * 70)
     print(f"Test: {iterations} requests at {interval_seconds}s intervals")
     print("=" * 70)
-    print("User reported: Can hit API every minute for 24 hours with no 429s")
+    print(f"User reported: Can hit API every minute for 24 hours with no 429s")
     print(
         f"We're testing: {iterations} requests over {iterations * interval_seconds / 60:.1f} minutes"
     )
@@ -45,7 +45,7 @@ def test_one_minute_intervals(iterations=10, interval_seconds=60):
     params = {"apiKey": API_KEY, "applicationKey": APP_KEY, "limit": 1}
 
     results = []
-    datetime.now()
+    start_time = datetime.now()
 
     for i in range(iterations):
         iteration_start = datetime.now()
@@ -175,7 +175,7 @@ def test_burst_sliding_window():
 
         # Cooldown period
         if duration < burst_durations[-1]:
-            print("  Cooling down for 10 seconds...")
+            print(f"  Cooling down for 10 seconds...")
             time.sleep(10)
             print()
 

@@ -45,7 +45,7 @@ def test_client_get_devices():
 
         if devices:
             device = devices[0]
-            print("Device Details:")
+            print(f"Device Details:")
             print(f"  MAC: {device.get('macAddress', 'N/A')}")
             print(f"  Name: {device.get('info', {}).get('name', 'N/A')}")
             print(f"  Location: {device.get('info', {}).get('location', 'N/A')}")
@@ -87,7 +87,7 @@ def test_client_get_device_data():
 
         if data:
             reading = data[0]
-            print("Latest Reading:")
+            print(f"Latest Reading:")
             print(f"  Date: {reading.get('date', 'N/A')}")
             print(f"  Temp: {reading.get('tempf', 'N/A')}°F")
             print(f"  Humidity: {reading.get('humidity', 'N/A')}%")
@@ -121,6 +121,7 @@ def compare_request_details():
     print("Comparing our client's request with known-working curl\n")
 
     try:
+
         from weather_app.api.ambient_client import AmbientWeatherClient
 
         # Get our client's session details

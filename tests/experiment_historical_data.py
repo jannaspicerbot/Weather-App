@@ -44,7 +44,7 @@ def test_small_date_range():
     }
 
     print(f"Requesting: {url}")
-    print("Params: limit=288 (1 day of 5-min data)")
+    print(f"Params: limit=288 (1 day of 5-min data)")
     print(f"Time: {datetime.now().isoformat()}\n")
 
     try:
@@ -72,14 +72,14 @@ def test_small_date_range():
                     )
                     print(f"  Resolution: {time_diff:.1f} minutes between readings")
                     print(
-                        "  → External user noted: API gives 5-min data, not real-time"
+                        f"  → External user noted: API gives 5-min data, not real-time"
                     )
 
             print()
             return True
 
         elif response.status_code == 429:
-            print("❌ RATE LIMITED")
+            print(f"❌ RATE LIMITED")
             print(
                 f"  Retry-After: {response.headers.get('Retry-After', 'NOT PRESENT')}"
             )
@@ -121,7 +121,7 @@ def test_multiple_small_vs_one_large():
             data = response.json()
             print(f"✅ SUCCESS: Got {len(data)} readings in one call")
         elif response.status_code == 429:
-            print("❌ RATE LIMITED on large query")
+            print(f"❌ RATE LIMITED on large query")
         else:
             print(f"⚠️  Status: {response.status_code}")
 
@@ -146,7 +146,7 @@ def test_multiple_small_vs_one_large():
             print(f"  Query {i+1}/10: ", end="")
 
             if response.status_code == 200:
-                print("✅ OK")
+                print(f"✅ OK")
                 successes += 1
             elif response.status_code == 429:
                 print(f"❌ 429 - Rate limited at query {i+1}")
@@ -190,9 +190,9 @@ def test_date_range_variations():
         response = requests.get(url, params=params1, timeout=10)
         print(f"  Status: {response.status_code}")
         if response.status_code == 200:
-            print("  ✅ Works")
+            print(f"  ✅ Works")
         elif response.status_code == 429:
-            print("  ❌ Rate limited")
+            print(f"  ❌ Rate limited")
     except Exception as e:
         print(f"  ❌ ERROR: {str(e)}")
 
@@ -215,9 +215,9 @@ def test_date_range_variations():
         response = requests.get(url, params=params2, timeout=10)
         print(f"  Status: {response.status_code}")
         if response.status_code == 200:
-            print("  ✅ Works")
+            print(f"  ✅ Works")
         elif response.status_code == 429:
-            print("  ❌ Rate limited")
+            print(f"  ❌ Rate limited")
     except Exception as e:
         print(f"  ❌ ERROR: {str(e)}")
 

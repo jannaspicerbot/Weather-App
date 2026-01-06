@@ -5,7 +5,7 @@ Provides clean interface for querying weather data using DuckDB
 
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from weather_app.config import DB_PATH
 from weather_app.database.engine import WeatherDatabase
@@ -21,10 +21,10 @@ class WeatherRepository:
     def get_all_readings(
         limit: int = 100,
         offset: int = 0,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
         order: str = "desc",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Query weather data from the database
 
@@ -96,7 +96,7 @@ class WeatherRepository:
             raise RuntimeError(f"Database error: {str(e)}")
 
     @staticmethod
-    def get_latest_reading() -> Optional[Dict[str, Any]]:
+    def get_latest_reading() -> dict[str, Any] | None:
         """
         Get the most recent weather data reading
 
@@ -138,7 +138,7 @@ class WeatherRepository:
             raise RuntimeError(f"Database error: {str(e)}")
 
     @staticmethod
-    def get_stats() -> Dict[str, Any]:
+    def get_stats() -> dict[str, Any]:
         """
         Get statistics about the weather database
 
