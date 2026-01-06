@@ -46,8 +46,10 @@ output/
 # PyInstaller build artifacts
 installer/*/build/
 installer/*/dist/
+installer/*/output/
 *.spec.orig
 *.iconset/  # Temporary iconset directory (macOS)
+innosetup-installer.exe  # Temporary Inno Setup installer download
 
 # IDE
 .vscode/
