@@ -2,7 +2,9 @@
 
 **Date:** January 6, 2026
 **Issue:** WeatherApp.exe fails to launch after installation
-**Status:** RESOLVED
+**Status:** PARTIALLY RESOLVED
+
+**Note:** The debug exe (WeatherApp_Debug.exe with console=True) now works correctly. The production exe (WeatherApp.exe with console=False) still fails to launch silently. Investigation and resolution will continue in a future PR.
 
 ---
 
@@ -280,14 +282,50 @@ Check `~/weather_app_debug.log` for detailed error information.
 
 After applying the fixes, verify:
 
-- [ ] `pip show weather-app` shows all required packages as dependencies
-- [ ] PyInstaller build completes without errors
-- [ ] Debug launcher runs without crashes
-- [ ] System tray icon appears
-- [ ] FastAPI server starts on `http://localhost:8000`
-- [ ] Dashboard opens in browser
-- [ ] Tray menu items work (Open Dashboard, Restart, Quit)
-- [ ] Scheduler starts and logs initialization
+**Debug exe (WeatherApp_Debug.exe with console=True):**
+- [x] `pip show weather-app` shows all required packages as dependencies
+- [x] PyInstaller build completes without errors
+- [x] Debug exe launches successfully
+- [ ] System tray icon appears (may not work on all systems)
+- [x] FastAPI server starts on `http://localhost:8000`
+- [x] Frontend dashboard served at root path (not API JSON)
+- [x] Dashboard opens in browser
+- [x] Scheduler starts and logs initialization
+
+**Production exe (WeatherApp.exe with console=False):**
+- [x] PyInstaller build completes without errors
+- [ ] **KNOWN ISSUE: Production exe fails to launch silently** - Investigation ongoing
+
+---
+
+## Known Issues & Future Work
+
+### Production Exe Launch Failure (console=False)
+
+**Status:** Unresolved - deferred to future PR
+
+**Problem:** The production exe (console=False) starts and immediately exits with no error message, logs, or visible indication of what went wrong.
+
+**What Works:**
+- Debug exe (console=True) launches successfully
+- Frontend is served correctly when using debug exe
+- All dependencies are present
+- Error handling has been added for tray icon failures
+
+**Possible Causes:**
+1. Console redirection issues in windowed mode preventing error output
+2. PyInstaller bootloader configuration for windowed apps
+3. Additional uncaught exception occurring only in console=False mode
+4. Windows-specific issue with windowed Python applications
+
+**Next Steps:**
+1. Add comprehensive logging to a file before any GUI initialization
+2. Test with alternative system tray libraries (e.g., infi.systray)
+3. Investigate PyInstaller bootloader options for windowed mode
+4. Consider using a Windows service or alternative launcher architecture
+
+**Workaround:**
+Use the debug exe (WeatherApp_Debug.exe) which has console=True and works correctly.
 
 ---
 
