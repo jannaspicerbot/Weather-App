@@ -39,7 +39,9 @@ def test_database_config():
         stats = WeatherRepository.get_stats()
         print("[OK] Database accessible")
         print(f"  Total records: {stats.get('total_records', 0):,}")
-        print(f"  Date range: {stats.get('min_date', 'N/A')} to {stats.get('max_date', 'N/A')}")
+        print(
+            f"  Date range: {stats.get('min_date', 'N/A')} to {stats.get('max_date', 'N/A')}"
+        )
 
         if stats.get("total_records", 0) > 0:
             print(f"  Date range days: {stats.get('date_range_days', 'N/A')}")

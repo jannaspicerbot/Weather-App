@@ -2,21 +2,21 @@
 Stop all weather app servers (FastAPI, scheduler, etc.)
 """
 
-import subprocess
-import time
 import socket
+import subprocess
 import sys
+import time
 
 # Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 
 def check_port(port):
     """Check if port is active"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1)
-    result = sock.connect_ex(('localhost', port))
+    result = sock.connect_ex(("localhost", port))
     sock.close()
     return result == 0
 
@@ -24,11 +24,11 @@ def check_port(port):
 def find_process_on_port(port):
     """Find PID of process using a port"""
     try:
-        cmd = f'netstat -ano | findstr :{port}'
+        cmd = f"netstat -ano | findstr :{port}"
         result = subprocess.run(cmd, capture_output=True, text=True, shell=True)
 
-        for line in result.stdout.strip().split('\n'):
-            if f':{port}' in line and 'LISTENING' in line:
+        for line in result.stdout.strip().split("\n"):
+            if f":{port}" in line and "LISTENING" in line:
                 parts = line.split()
                 pid = parts[-1]
                 return pid
@@ -40,15 +40,15 @@ def find_process_on_port(port):
 def kill_by_pid(pid):
     """Kill process by PID"""
     try:
-        subprocess.run(f'taskkill //F //PID {pid}', shell=True, capture_output=True)
+        subprocess.run(f"taskkill //F //PID {pid}", shell=True, capture_output=True)
         return True
     except:
         return False
 
 
-print("="*60)
+print("=" * 60)
 print("STOP ALL WEATHER APP SERVERS")
-print("="*60)
+print("=" * 60)
 
 # Check port 8000 (FastAPI)
 if check_port(8000):
@@ -94,9 +94,9 @@ else:
     print("\n❌ No server on port 5173")
 
 # Final check
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("FINAL STATUS")
-print("="*60)
+print("=" * 60)
 port_8000_active = check_port(8000)
 port_5173_active = check_port(5173)
 
@@ -114,7 +114,7 @@ if port_5173_active:
 else:
     print("✅ Port 5173: FREE")
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 
 if not port_8000_active and not port_5173_active:
     print("✅ All servers stopped successfully!")
@@ -122,4 +122,4 @@ else:
     print("⚠️  Some servers may still be running")
     print("   Check Task Manager and manually stop if needed")
 
-print("="*60)
+print("=" * 60)

@@ -13,7 +13,7 @@ Usage:
 
 import logging
 import sys
-from typing import Any, Dict
+from typing import Any
 
 import structlog
 
@@ -118,7 +118,7 @@ def log_api_request(
     logger: structlog.stdlib.BoundLogger,
     method: str,
     endpoint: str,
-    params: Dict[str, Any] = None,
+    params: dict[str, Any] = None,
     status_code: int = None,
     duration_ms: float = None,
 ) -> None:
@@ -197,7 +197,7 @@ def log_database_operation(
 def log_cli_command(
     logger: structlog.stdlib.BoundLogger,
     command: str,
-    args: Dict[str, Any] = None,
+    args: dict[str, Any] = None,
     success: bool = True,
     error: str = None,
     duration_ms: float = None,

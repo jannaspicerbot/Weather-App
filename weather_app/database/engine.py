@@ -5,7 +5,6 @@ DuckDB is 10-100x faster than SQLite for analytical queries
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
 
 import duckdb
 
@@ -114,7 +113,7 @@ class WeatherDatabase:
         """
         )
 
-    def insert_data(self, data: Union[Dict, List[Dict]]) -> Tuple[int, int]:
+    def insert_data(self, data: dict | list[dict]) -> tuple[int, int]:
         """
         Insert weather data into the database with idempotent INSERT OR REPLACE.
 
@@ -215,11 +214,11 @@ class WeatherDatabase:
 
     def get_data(
         self,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        limit: Optional[int] = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int | None = None,
         order_by: str = "dateutc DESC",
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """
         Retrieve weather data from the database.
 
@@ -259,7 +258,7 @@ class WeatherDatabase:
             return [dict(zip(columns, row)) for row in result]
         return []
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """
         Get statistics about the weather data in the database.
 
@@ -332,7 +331,7 @@ class WeatherDatabase:
         result = self.conn.execute("SELECT MAX(id) FROM backfill_progress").fetchone()
         return result[0]
 
-    def get_backfill_progress(self, progress_id: int) -> Optional[Dict]:
+    def get_backfill_progress(self, progress_id: int) -> dict | None:
         """
         Get the backfill progress for a specific progress record.
 

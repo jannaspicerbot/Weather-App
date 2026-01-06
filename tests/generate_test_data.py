@@ -189,7 +189,9 @@ class WeatherDataGenerator:
             if hour_of_day < 1:
                 dailyrainin = 0.0
             else:
-                dailyrainin = monthly_rain * random.uniform(0.8, 1.2) if monthly_rain > 0 else 0.0
+                dailyrainin = (
+                    monthly_rain * random.uniform(0.8, 1.2) if monthly_rain > 0 else 0.0
+                )
 
             # Reset counters at appropriate intervals
             if current_date.isocalendar()[1] != last_week:
@@ -292,9 +294,7 @@ class WeatherDataGenerator:
                 columns = [k for k in data_point.keys()]
                 placeholders = ", ".join(["?" for _ in columns])
                 values = [data_point.get(k) for k in columns]
-                query = (
-                    f"INSERT INTO weather_data ({', '.join(columns)}) VALUES ({placeholders})"
-                )
+                query = f"INSERT INTO weather_data ({', '.join(columns)}) VALUES ({placeholders})"
                 self.conn.execute(query, values)
 
             return True

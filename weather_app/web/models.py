@@ -2,8 +2,6 @@
 Pydantic models for API responses
 """
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -13,28 +11,28 @@ class WeatherData(BaseModel):
     id: int
     dateutc: int
     date: str
-    tempf: Optional[float] = None
-    feelsLike: Optional[float] = None
-    dewPoint: Optional[float] = None
-    tempinf: Optional[float] = None
-    humidity: Optional[int] = None
-    humidityin: Optional[int] = None
-    baromrelin: Optional[float] = None
-    baromabsin: Optional[float] = None
-    windspeedmph: Optional[float] = None
-    windgustmph: Optional[float] = None
-    winddir: Optional[int] = None
-    maxdailygust: Optional[float] = None
-    hourlyrainin: Optional[float] = None
-    dailyrainin: Optional[float] = None
-    weeklyrainin: Optional[float] = None
-    monthlyrainin: Optional[float] = None
-    totalrainin: Optional[float] = None
-    solarradiation: Optional[float] = None
-    uv: Optional[int] = None
-    battout: Optional[int] = None
-    battin: Optional[int] = None
-    raw_json: Optional[str] = None
+    tempf: float | None = None
+    feelsLike: float | None = None
+    dewPoint: float | None = None
+    tempinf: float | None = None
+    humidity: int | None = None
+    humidityin: int | None = None
+    baromrelin: float | None = None
+    baromabsin: float | None = None
+    windspeedmph: float | None = None
+    windgustmph: float | None = None
+    winddir: int | None = None
+    maxdailygust: float | None = None
+    hourlyrainin: float | None = None
+    dailyrainin: float | None = None
+    weeklyrainin: float | None = None
+    monthlyrainin: float | None = None
+    totalrainin: float | None = None
+    solarradiation: float | None = None
+    uv: int | None = None
+    battout: int | None = None
+    battin: int | None = None
+    raw_json: str | None = None
 
     class Config:
         from_attributes = True
@@ -44,6 +42,6 @@ class DatabaseStats(BaseModel):
     """Response model for database statistics"""
 
     total_records: int
-    min_date: Optional[str] = None
-    max_date: Optional[str] = None
-    date_range_days: Optional[int] = None
+    min_date: str | None = None
+    max_date: str | None = None
+    date_range_days: int | None = None

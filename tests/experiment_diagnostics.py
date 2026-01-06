@@ -14,8 +14,8 @@ import requests
 from dotenv import load_dotenv
 
 # Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # Load environment variables
 load_dotenv()
@@ -45,10 +45,10 @@ def check_api_key_format():
         if len(API_KEY) != 64:
             issues.append(f"API_KEY wrong length (expected 64, got {len(API_KEY)})")
 
-        if any(c in API_KEY for c in [' ', '\n', '\r', '\t']):
+        if any(c in API_KEY for c in [" ", "\n", "\r", "\t"]):
             issues.append("API_KEY contains whitespace")
 
-        if not all(c in '0123456789abcdefABCDEF' for c in API_KEY):
+        if not all(c in "0123456789abcdefABCDEF" for c in API_KEY):
             issues.append("API_KEY contains non-hex characters")
 
     print()
@@ -64,10 +64,10 @@ def check_api_key_format():
         if len(APP_KEY) != 64:
             issues.append(f"APP_KEY wrong length (expected 64, got {len(APP_KEY)})")
 
-        if any(c in APP_KEY for c in [' ', '\n', '\r', '\t']):
+        if any(c in APP_KEY for c in [" ", "\n", "\r", "\t"]):
             issues.append("APP_KEY contains whitespace")
 
-        if not all(c in '0123456789abcdefABCDEF' for c in APP_KEY):
+        if not all(c in "0123456789abcdefABCDEF" for c in APP_KEY):
             issues.append("APP_KEY contains non-hex characters")
 
     print()
@@ -80,12 +80,14 @@ def check_api_key_format():
         print(f"  Format: {MAC_ADDRESS}")
 
         # MAC should be XX:XX:XX:XX:XX:XX
-        if ':' not in MAC_ADDRESS:
+        if ":" not in MAC_ADDRESS:
             issues.append("MAC_ADDRESS missing colons (should be XX:XX:XX:XX:XX:XX)")
 
-        parts = MAC_ADDRESS.split(':')
+        parts = MAC_ADDRESS.split(":")
         if len(parts) != 6:
-            issues.append(f"MAC_ADDRESS wrong format (expected 6 parts, got {len(parts)})")
+            issues.append(
+                f"MAC_ADDRESS wrong format (expected 6 parts, got {len(parts)})"
+            )
 
     print()
 
@@ -157,7 +159,7 @@ def check_request_headers():
         if response.status_code == 200:
             data = response.json()
             print("Headers we send:")
-            for header, value in data.get('headers', {}).items():
+            for header, value in data.get("headers", {}).items():
                 print(f"  {header}: {value}")
         else:
             print(f"  ⚠️  httpbin returned {response.status_code}")
@@ -228,7 +230,7 @@ def summarize_environment():
         import pkg_resources
 
         print("Key Package Versions:")
-        for package in ['requests', 'urllib3', 'certifi']:
+        for package in ["requests", "urllib3", "certifi"]:
             try:
                 version = pkg_resources.get_distribution(package).version
                 print(f"  {package}: {version}")
@@ -277,7 +279,7 @@ def main():
         ("API Key Format", test_5_1),
         ("Network Connectivity", test_6_1),
         ("Request Headers", test_6_2),
-        ("SSL/TLS Config", test_6_3)
+        ("SSL/TLS Config", test_6_3),
     ]
 
     for test_name, passed in results:

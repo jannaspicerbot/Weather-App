@@ -28,10 +28,12 @@ class AmbientWeatherAPI:
 
         # FIX #2: Use session for connection pooling and custom headers
         self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'WeatherApp/1.0 (Python; DuckDB)',
-            'Accept': 'application/json'
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": "WeatherApp/1.0 (Python; DuckDB)",
+                "Accept": "application/json",
+            }
+        )
 
         # FIX #1: Default timeout for all requests
         self.timeout = 30
