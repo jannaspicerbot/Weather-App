@@ -129,7 +129,9 @@ def api_credentials():
     app_key = os.getenv("AMBIENT_APP_KEY")
 
     if not api_key or not app_key:
-        pytest.skip("API credentials not available (AMBIENT_API_KEY and AMBIENT_APP_KEY required)")
+        pytest.skip(
+            "API credentials not available (AMBIENT_API_KEY and AMBIENT_APP_KEY required)"
+        )
 
     return {"api_key": api_key, "app_key": app_key}
 
