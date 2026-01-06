@@ -24,6 +24,13 @@ if frontend_dist.exists():
 else:
     print("WARNING: Frontend not built! Run 'npm run build' in web/ directory")
 
+# Include icon resources
+icons_dir = project_root / 'weather_app' / 'resources' / 'icons'
+if icons_dir.exists():
+    datas += [(str(icons_dir), 'weather_app/resources/icons')]
+else:
+    print("WARNING: Icons directory not found!")
+
 # Include DuckDB data files (binary extensions)
 datas += collect_data_files('duckdb')
 

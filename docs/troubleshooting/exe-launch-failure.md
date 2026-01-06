@@ -49,6 +49,37 @@ ValueError: <bound method WeatherTrayApp.quit_app of <...>>
 
 ---
 
+### Issue 3: Setup Wizard Blocks Startup (console=False builds)
+
+**Problem:** When running the production exe (console=False), if the `.env` file doesn't exist in `%APPDATA%\WeatherApp\`, the setup wizard launches a tkinter GUI window. However, with console=False, this window may not display properly, causing the app to appear frozen or non-responsive.
+
+**Impact:** Users double-clicking the exe see nothing happen because the invisible setup wizard is waiting for input.
+
+**Solution:** Copy the .env file to the user data directory before running:
+```bash
+# Windows
+mkdir %APPDATA%\WeatherApp
+copy .env %APPDATA%\WeatherApp\.env
+
+# Then run the exe
+```
+
+Alternatively, use the debug version (`WeatherApp_Debug.exe`) which has console=True and will show the setup wizard properly.
+
+---
+
+### Issue 4: Frontend Not Served (API JSON displayed instead)
+
+**Problem:** When accessing `http://localhost:8000` in the browser, the API root endpoint was being served instead of the React frontend dashboard. This caused users to see JSON API information instead of the actual web interface.
+
+**Root Cause:** The API routes had a `@app.get("/")` endpoint defined, which took precedence over the FastAPI static file mount for the React frontend. Even though the frontend files were bundled and the static mount was registered last, explicitly defined routes have higher priority than mounted static files.
+
+**Impact:** Users could not access the web dashboard - they only saw API metadata JSON when visiting the root URL.
+
+**Solution:** Move the API root endpoint from `/` to `/api` to free up the root path for the frontend.
+
+---
+
 ## Solution
 
 ### Fix 1: Update setup.py Dependencies
@@ -106,6 +137,52 @@ def _do_quit(self, restart=False):
 
 **Files changed:**
 - [`weather_app/launcher/tray_app.py`](../../weather_app/launcher/tray_app.py)
+
+### Fix 3: Move API Root Route to /api
+
+Changed the API information endpoint from `/` to `/api` to allow the frontend to be served at the root path.
+
+**Before:**
+```python
+@app.get("/")
+def read_root():
+    """Root endpoint with API information"""
+    return {"message": "Weather API", ...}
+```
+
+**After:**
+```python
+@app.get("/api")
+def read_root():
+    """API information endpoint"""
+    return {"message": "Weather API", ...}
+```
+
+**Files changed:**
+- [`weather_app/web/routes.py`](../../weather_app/web/routes.py)
+
+**Result:**
+- Frontend dashboard served at `http://localhost:8000/`
+- API information available at `http://localhost:8000/api`
+- All API endpoints prefixed with `/api` or legacy `/weather` paths
+
+### Fix 4: Add Tray Icon Fallback
+
+Added error handling to prevent the app from crashing if the system tray icon fails to create (known issue with pystray on some Windows systems).
+
+**Changes:**
+- Start server before attempting to create tray icon
+- Wrap tray icon creation in try-except block
+- Keep server running even if tray fails
+- Added infinite loop to prevent exit when running without tray
+
+**Files changed:**
+- [`weather_app/launcher/tray_app.py`](../../weather_app/launcher/tray_app.py)
+
+**Result:**
+- App no longer crashes when tray icon fails
+- Server remains accessible even without tray
+- Dashboard can still be accessed at `http://localhost:8000`
 
 ---
 

@@ -19,19 +19,23 @@ logger = get_logger(__name__)
 def register_routes(app: FastAPI):
     """Register all API routes with the app"""
 
-    @app.get("/")
+    @app.get("/api")
     def read_root():
-        """Root endpoint with API information"""
+        """API information endpoint"""
         db_info = get_db_info()
         return {
             "message": "Weather API",
             "version": "1.0.0",
             "database": {"mode": db_info["mode"], "path": db_info["database_path"]},
             "endpoints": {
-                "/weather": "Get weather data with optional filters",
-                "/weather/latest": "Get the latest weather reading",
-                "/weather/stats": "Get database statistics",
+                "/api/weather/latest": "Get latest weather readings",
+                "/api/weather/range": "Get weather data within date range",
+                "/api/weather/stats": "Get database statistics",
                 "/api/scheduler/status": "Get scheduler status and configuration",
+                "/api/health": "Health check endpoint",
+                "/weather": "Legacy: Get weather data with filters",
+                "/weather/latest": "Legacy: Get latest reading",
+                "/weather/stats": "Legacy: Get database statistics",
             },
         }
 
