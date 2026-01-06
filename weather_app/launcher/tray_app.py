@@ -5,14 +5,14 @@ Manages the FastAPI server in the background and provides a system tray
 icon with menu options for user interaction.
 """
 
+import logging
 import sys
 import threading
 import webbrowser
 from pathlib import Path
-import logging
 
 # Note: pystray and PIL will be imported dynamically to handle missing dependencies gracefully
-from weather_app.config import PORT, BASE_DIR
+from weather_app.config import BASE_DIR, PORT
 from weather_app.launcher.setup_wizard import run_setup
 
 # Configure logging
@@ -32,6 +32,7 @@ class WeatherTrayApp:
         """Start FastAPI server in background thread"""
         try:
             import uvicorn
+
             from weather_app.web.app import create_app
 
             logger.info("Starting FastAPI server...")
@@ -41,7 +42,7 @@ class WeatherTrayApp:
                 host="127.0.0.1",
                 port=PORT,
                 log_level="info",
-                access_log=False  # Reduce console noise
+                access_log=False,  # Reduce console noise
             )
             self.server = uvicorn.Server(config)
             self.server_thread = threading.Thread(target=self.server.run, daemon=True)
@@ -62,7 +63,7 @@ class WeatherTrayApp:
     def open_dashboard(self, icon=None, item=None):
         """Open web dashboard in default browser"""
         try:
-            url = f'http://localhost:{PORT}'
+            url = f"http://localhost:{PORT}"
             logger.info(f"Opening dashboard: {url}")
             webbrowser.open(url)
         except Exception as e:
@@ -71,18 +72,18 @@ class WeatherTrayApp:
     def open_data_folder(self, icon=None, item=None):
         """Open user data folder in file explorer"""
         try:
-            import subprocess
             import platform
+            import subprocess
 
             data_path = str(BASE_DIR)
             logger.info(f"Opening data folder: {data_path}")
 
-            if platform.system() == 'Windows':
-                subprocess.Popen(['explorer', data_path])
-            elif platform.system() == 'Darwin':  # macOS
-                subprocess.Popen(['open', data_path])
+            if platform.system() == "Windows":
+                subprocess.Popen(["explorer", data_path])
+            elif platform.system() == "Darwin":  # macOS
+                subprocess.Popen(["open", data_path])
             else:  # Linux
-                subprocess.Popen(['xdg-open', data_path])
+                subprocess.Popen(["xdg-open", data_path])
         except Exception as e:
             logger.error(f"Failed to open data folder: {e}")
 
@@ -102,6 +103,7 @@ class WeatherTrayApp:
         if restart:
             # Restart the application
             import os
+
             python = sys.executable
             os.execl(python, python, *sys.argv)
         else:
@@ -119,11 +121,11 @@ class WeatherTrayApp:
         # Create a simple 64x64 icon with a weather theme
         # Blue background with white cloud-like shape
         size = 64
-        image = Image.new('RGB', (size, size), color='#2196F3')  # Blue background
+        image = Image.new("RGB", (size, size), color="#2196F3")  # Blue background
 
         draw = ImageDraw.Draw(image)
         # Draw a simple cloud shape (series of circles)
-        white = '#FFFFFF'
+        white = "#FFFFFF"
         # Left circle
         draw.ellipse([10, 25, 30, 45], fill=white)
         # Middle circle (larger)
@@ -145,7 +147,9 @@ class WeatherTrayApp:
         from PIL import Image
 
         # Try to load from resources folder (bundled with app)
-        resources_icon = Path(__file__).parent.parent / 'resources' / 'icons' / 'weather-app.png'
+        resources_icon = (
+            Path(__file__).parent.parent / "resources" / "icons" / "weather-app.png"
+        )
 
         if resources_icon.exists():
             try:
@@ -155,7 +159,7 @@ class WeatherTrayApp:
                 logger.warning(f"Failed to load icon from {resources_icon}: {e}")
 
         # Legacy fallback: check old location
-        legacy_icon = Path(__file__).parent / 'icon.png'
+        legacy_icon = Path(__file__).parent / "icon.png"
         if legacy_icon.exists():
             try:
                 logger.info(f"Loading icon from legacy path {legacy_icon}")
@@ -171,7 +175,6 @@ class WeatherTrayApp:
         """Run system tray application"""
         try:
             import pystray
-            from PIL import Image
         except ImportError as e:
             logger.error(
                 f"Missing required dependency: {e}\n"
@@ -184,15 +187,15 @@ class WeatherTrayApp:
 
         # Create menu
         menu = pystray.Menu(
-            pystray.MenuItem('Open Dashboard', self.open_dashboard, default=True),
-            pystray.MenuItem('Open Data Folder', self.open_data_folder),
+            pystray.MenuItem("Open Dashboard", self.open_dashboard, default=True),
+            pystray.MenuItem("Open Data Folder", self.open_data_folder),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem('Restart', self.restart_app),
-            pystray.MenuItem('Quit', self.quit_app)
+            pystray.MenuItem("Restart", self.restart_app),
+            pystray.MenuItem("Quit", self.quit_app),
         )
 
         # Create tray icon
-        self.icon = pystray.Icon('weather_app', image, 'Weather App', menu)
+        self.icon = pystray.Icon("weather_app", image, "Weather App", menu)
 
         # Start server in background
         try:
@@ -204,6 +207,7 @@ class WeatherTrayApp:
         # Auto-open dashboard on first start
         try:
             import time
+
             time.sleep(2)  # Wait for server to fully start
             self.open_dashboard()
         except Exception as e:
@@ -228,5 +232,5 @@ def main():
     app.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

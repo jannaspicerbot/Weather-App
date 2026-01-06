@@ -6,9 +6,10 @@ on first launch of the packaged application.
 """
 
 import tkinter as tk
-from tkinter import messagebox
 import webbrowser
-from weather_app.config import ENV_FILE, BASE_DIR
+from tkinter import messagebox
+
+from weather_app.config import BASE_DIR, ENV_FILE
 
 
 class SetupWizard:
@@ -29,9 +30,7 @@ class SetupWizard:
         """Create setup wizard UI"""
         # Title
         title = tk.Label(
-            self.root,
-            text="Welcome to Weather App!",
-            font=('Arial', 18, 'bold')
+            self.root, text="Welcome to Weather App!", font=("Arial", 18, "bold")
         )
         title.pack(pady=20)
 
@@ -39,9 +38,9 @@ class SetupWizard:
         instructions = tk.Label(
             self.root,
             text="Please enter your Ambient Weather API credentials.\n"
-                 "You can find these at: ambientweather.net/account",
-            font=('Arial', 10),
-            justify=tk.LEFT
+            "You can find these at: ambientweather.net/account",
+            font=("Arial", 10),
+            justify=tk.LEFT,
         )
         instructions.pack(pady=10)
 
@@ -49,7 +48,9 @@ class SetupWizard:
         api_frame = tk.Frame(self.root)
         api_frame.pack(pady=10, padx=40, fill=tk.X)
 
-        tk.Label(api_frame, text="API Key:", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
+        tk.Label(api_frame, text="API Key:", font=("Arial", 10, "bold")).pack(
+            anchor=tk.W
+        )
         api_entry = tk.Entry(api_frame, textvariable=self.api_key_var, width=50)
         api_entry.pack(fill=tk.X, pady=5)
 
@@ -57,7 +58,9 @@ class SetupWizard:
         app_frame = tk.Frame(self.root)
         app_frame.pack(pady=10, padx=40, fill=tk.X)
 
-        tk.Label(app_frame, text="Application Key:", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
+        tk.Label(app_frame, text="Application Key:", font=("Arial", 10, "bold")).pack(
+            anchor=tk.W
+        )
         app_entry = tk.Entry(app_frame, textvariable=self.app_key_var, width=50)
         app_entry.pack(fill=tk.X, pady=5)
 
@@ -65,19 +68,19 @@ class SetupWizard:
         help_text = tk.Label(
             self.root,
             text="Need help getting your API keys?",
-            font=('Arial', 9),
-            fg='blue',
-            cursor='hand2'
+            font=("Arial", 9),
+            fg="blue",
+            cursor="hand2",
         )
         help_text.pack(pady=5)
-        help_text.bind('<Button-1>', lambda e: self.open_help())
+        help_text.bind("<Button-1>", lambda e: self.open_help())
 
         # Additional info
         info_text = tk.Label(
             self.root,
             text="Don't have an Ambient Weather station?\nVisit ambientweather.com to learn more.",
-            font=('Arial', 8),
-            fg='gray'
+            font=("Arial", 8),
+            fg="gray",
         )
         info_text.pack(pady=5)
 
@@ -89,11 +92,11 @@ class SetupWizard:
             btn_frame,
             text="Save & Continue",
             command=self.save_credentials,
-            font=('Arial', 10, 'bold'),
-            bg='#4CAF50',
-            fg='white',
+            font=("Arial", 10, "bold"),
+            bg="#4CAF50",
+            fg="white",
             padx=20,
-            pady=10
+            pady=10,
         )
         save_btn.pack(side=tk.LEFT, padx=10)
 
@@ -101,9 +104,9 @@ class SetupWizard:
             btn_frame,
             text="Quit",
             command=self.quit_wizard,
-            font=('Arial', 10),
+            font=("Arial", 10),
             padx=20,
-            pady=10
+            pady=10,
         )
         quit_btn.pack(side=tk.LEFT, padx=10)
 
@@ -113,7 +116,9 @@ class SetupWizard:
         app_key = self.app_key_var.get().strip()
 
         if not api_key or not app_key:
-            messagebox.showerror("Error", "Please enter both API Key and Application Key")
+            messagebox.showerror(
+                "Error", "Please enter both API Key and Application Key"
+            )
             return
 
         # Create .env file in user data directory
@@ -138,20 +143,20 @@ LOG_LEVEL=INFO
             BASE_DIR.mkdir(parents=True, exist_ok=True)
 
             # Write .env file
-            ENV_FILE.write_text(env_content, encoding='utf-8')
+            ENV_FILE.write_text(env_content, encoding="utf-8")
 
             messagebox.showinfo(
                 "Success",
                 "Credentials saved successfully!\n\n"
                 "The Weather App will now start and begin collecting data.\n\n"
-                "Click the system tray icon to open your dashboard."
+                "Click the system tray icon to open your dashboard.",
             )
             self.root.quit()
         except Exception as e:
             messagebox.showerror(
                 "Error",
                 f"Failed to save credentials:\n{str(e)}\n\n"
-                f"Please check that the application has write access to:\n{ENV_FILE}"
+                f"Please check that the application has write access to:\n{ENV_FILE}",
             )
 
     def quit_wizard(self):
@@ -159,14 +164,14 @@ LOG_LEVEL=INFO
         result = messagebox.askyesno(
             "Quit Setup",
             "Are you sure you want to quit?\n\n"
-            "The Weather App requires API credentials to function."
+            "The Weather App requires API credentials to function.",
         )
         if result:
             self.root.quit()
 
     def open_help(self):
         """Open help URL in browser"""
-        webbrowser.open('https://ambientweather.net/account')
+        webbrowser.open("https://ambientweather.net/account")
 
     def run(self):
         """Run setup wizard and return whether setup was completed"""

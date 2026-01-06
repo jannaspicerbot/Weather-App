@@ -7,4 +7,4 @@ for packaged executables.
 
 from weather_app.launcher.tray_app import main
 
-__all__ = ['main']
+__all__ = ["main"]

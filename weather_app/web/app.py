@@ -48,25 +48,31 @@ def register_frontend(app: FastAPI) -> None:
     Args:
         app: FastAPI application instance
     """
-    from fastapi.staticfiles import StaticFiles
-    from pathlib import Path
     import sys
+    from pathlib import Path
 
-    if getattr(sys, 'frozen', False):
+    from fastapi.staticfiles import StaticFiles
+
+    if getattr(sys, "frozen", False):
         # Running as executable - static files bundled with app
         # PyInstaller extracts files to sys._MEIPASS temporary directory
-        static_dir = Path(sys._MEIPASS) / 'web' / 'dist'
+        static_dir = Path(sys._MEIPASS) / "web" / "dist"
     else:
         # Development mode - serve from project's web/dist directory
-        static_dir = Path(__file__).parent.parent.parent / 'web' / 'dist'
+        static_dir = Path(__file__).parent.parent.parent / "web" / "dist"
 
     if static_dir.exists():
         # Mount static files at root path with html=True to serve index.html
-        app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="frontend")
+        app.mount(
+            "/", StaticFiles(directory=str(static_dir), html=True), name="frontend"
+        )
         logger.info("frontend_mounted", static_dir=str(static_dir))
     else:
-        logger.warning("frontend_not_found", static_dir=str(static_dir),
-                      message="Frontend not built. Run 'npm run build' in web/ directory")
+        logger.warning(
+            "frontend_not_found",
+            static_dir=str(static_dir),
+            message="Frontend not built. Run 'npm run build' in web/ directory",
+        )
 
 
 def create_app() -> FastAPI:
