@@ -90,11 +90,15 @@ class WeatherTrayApp:
     def restart_app(self, icon=None, item=None):
         """Restart the application"""
         logger.info("Restarting application...")
-        self.quit_app(icon, item, restart=True)
+        self._do_quit(restart=True)
 
-    def quit_app(self, icon=None, item=None, restart=False):
-        """Quit application"""
+    def quit_app(self, icon=None, item=None):
+        """Quit application (menu callback)"""
         logger.info("Shutting down...")
+        self._do_quit(restart=False)
+
+    def _do_quit(self, restart=False):
+        """Internal quit implementation"""
         self.stop_server()
 
         if self.icon:
@@ -182,22 +186,7 @@ class WeatherTrayApp:
             )
             sys.exit(1)
 
-        # Load icon image
-        image = self.load_icon_image()
-
-        # Create menu
-        menu = pystray.Menu(
-            pystray.MenuItem("Open Dashboard", self.open_dashboard, default=True),
-            pystray.MenuItem("Open Data Folder", self.open_data_folder),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Restart", self.restart_app),
-            pystray.MenuItem("Quit", self.quit_app),
-        )
-
-        # Create tray icon
-        self.icon = pystray.Icon("weather_app", image, "Weather App", menu)
-
-        # Start server in background
+        # Start server in background first
         try:
             self.start_server()
         except Exception as e:
@@ -213,9 +202,40 @@ class WeatherTrayApp:
         except Exception as e:
             logger.warning(f"Failed to auto-open dashboard: {e}")
 
-        # Run tray icon (blocks until quit)
-        logger.info("System tray app running...")
-        self.icon.run()
+        # Try to create system tray icon
+        try:
+            # Load icon image
+            image = self.load_icon_image()
+
+            # Create menu
+            menu = pystray.Menu(
+                pystray.MenuItem("Open Dashboard", self.open_dashboard, default=True),
+                pystray.MenuItem("Open Data Folder", self.open_data_folder),
+                pystray.Menu.SEPARATOR,
+                pystray.MenuItem("Restart", self.restart_app),
+                pystray.MenuItem("Quit", self.quit_app),
+            )
+
+            # Create tray icon
+            self.icon = pystray.Icon("weather_app", image, "Weather App", menu)
+
+            # Run tray icon (blocks until quit)
+            logger.info("System tray app running...")
+            self.icon.run()
+        except Exception as e:
+            logger.error(f"Failed to create system tray icon: {e}")
+            logger.info("Server is running without system tray icon")
+            logger.info(f"Dashboard available at: http://localhost:{PORT}")
+
+            # Keep the server running even without tray icon
+            try:
+                import time
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                logger.info("Shutting down...")
+                self.stop_server()
+                sys.exit(0)
 
 
 def main():
