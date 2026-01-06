@@ -38,6 +38,37 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 
+def register_frontend(app: FastAPI) -> None:
+    """
+    Mount static frontend files to serve the React app.
+
+    When running as a packaged executable, serves files from bundled location.
+    In development mode, serves from web/dist directory.
+
+    Args:
+        app: FastAPI application instance
+    """
+    from fastapi.staticfiles import StaticFiles
+    from pathlib import Path
+    import sys
+
+    if getattr(sys, 'frozen', False):
+        # Running as executable - static files bundled with app
+        # PyInstaller extracts files to sys._MEIPASS temporary directory
+        static_dir = Path(sys._MEIPASS) / 'web' / 'dist'
+    else:
+        # Development mode - serve from project's web/dist directory
+        static_dir = Path(__file__).parent.parent.parent / 'web' / 'dist'
+
+    if static_dir.exists():
+        # Mount static files at root path with html=True to serve index.html
+        app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="frontend")
+        logger.info("frontend_mounted", static_dir=str(static_dir))
+    else:
+        logger.warning("frontend_not_found", static_dir=str(static_dir),
+                      message="Frontend not built. Run 'npm run build' in web/ directory")
+
+
 def create_app() -> FastAPI:
     """
     Application factory function that creates and configures FastAPI app
@@ -66,4 +97,11 @@ def create_app() -> FastAPI:
 
     routes.register_routes(app)
 
+    # Register frontend static files (must be last to not override API routes)
+    register_frontend(app)
+
     return app
+
+
+# Create app instance for uvicorn
+app = create_app()
