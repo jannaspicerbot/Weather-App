@@ -539,11 +539,103 @@ docker-compose up -d
 
 ## Security Considerations
 
-### API Keys
+### Credential Security
 
-- Never commit `.env` file to git (already in `.gitignore`)
-- Set file permissions: `chmod 600 .env`
-- Rotate keys periodically at https://ambientweather.net/account
+**Protecting Your API Keys:**
+
+Your `.env` file contains sensitive API credentials that must never be shared or committed to version control.
+
+**Best Practices:**
+- ✅ Never commit `.env` file to git (already in `.gitignore`)
+- ✅ Set restrictive file permissions: `chmod 600 .env` (Linux/macOS)
+- ✅ Use `.env.example` for documentation (safe to commit)
+- ✅ Rotate credentials before making your repository public
+- ❌ Never share API keys in screenshots, logs, or documentation
+- ❌ Never commit credentials to version control
+
+**Git Pre-Commit Hook:**
+
+A pre-commit hook has been installed at `.git/hooks/pre-commit` to prevent accidentally committing `.env` files. This provides an additional safety layer beyond `.gitignore`.
+
+### Credential Rotation
+
+**When to Rotate API Credentials:**
+- Before making your repository public
+- If credentials may have been exposed (screenshots, logs, shared files)
+- Periodically as a security best practice (e.g., every 6-12 months)
+- After revoking access for collaborators
+- If you suspect unauthorized API usage
+
+**How to Rotate Ambient Weather API Credentials:**
+
+1. **Generate New Credentials:**
+   - Visit https://ambientweather.net/account
+   - Navigate to **Dashboard → Account → API Keys**
+   - Click **"Regenerate API Key"** - This creates a new API key
+   - Click **"Regenerate Application Key"** - This creates a new Application key
+   - Copy both new keys immediately
+
+2. **Update Your .env File:**
+   ```bash
+   # Edit your .env file
+   nano .env  # or: vim .env, code .env, notepad .env
+
+   # Replace with new credentials
+   AMBIENT_API_KEY=your_new_api_key_here
+   AMBIENT_APP_KEY=your_new_application_key_here
+   ```
+
+3. **Restart Services:**
+
+   **Docker Deployment:**
+   ```bash
+   docker-compose restart backend
+   ```
+
+   **Native Python Deployment:**
+   ```bash
+   # Stop the running server (Ctrl+C)
+   # Restart it:
+   uvicorn weather_app.web.app:create_app --factory --reload
+   ```
+
+4. **Verify New Credentials Work:**
+   ```bash
+   # Test API connection
+   weather-app fetch --limit 1
+
+   # Or check API health
+   curl http://localhost:8000/health
+   ```
+
+5. **Revoke Old Credentials (Optional but Recommended):**
+   - Old API keys remain valid until explicitly revoked
+   - On Ambient Weather dashboard, you can view and revoke old keys
+   - This ensures old credentials cannot be misused
+
+**Important Notes:**
+- Ambient Weather allows multiple active API keys per account
+- Rotating creates new keys but doesn't automatically revoke old ones
+- For maximum security, revoke old keys after rotation is complete
+- Update any other applications or scripts using the old credentials
+
+### File Permissions
+
+**Linux/macOS:**
+```bash
+# Restrict .env file to owner only
+chmod 600 .env
+
+# Verify permissions
+ls -l .env
+# Should show: -rw------- (owner read/write only)
+```
+
+**Windows:**
+```powershell
+# Restrict .env file to current user only
+icacls .env /inheritance:r /grant:r "$($env:USERNAME):F"
+```
 
 ### Network Access
 
