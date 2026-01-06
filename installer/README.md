@@ -157,9 +157,23 @@ After building, test the executable on a clean machine or VM to ensure:
 - Add missing modules to the `hiddenimports` list
 - Rebuild with: `pyinstaller weather_app.spec --clean`
 
+## Application Icons
+
+Application icons are included in the build! The icons are stored in `weather_app/resources/icons/` and automatically bundled with the executable:
+
+- **Windows**: `weather-app.ico` (multi-size: 16x16 to 256x256)
+- **macOS**: `weather-app.icns` (Retina-ready)
+- **Runtime**: `weather-app.png` (system tray icon)
+
+To update icons, modify the source PNG at `docs/design/icons/weather-app-icon-soft-trust.png` and regenerate:
+
+```bash
+python scripts/convert_icon.py
+```
+
 ## Future Improvements
 
-- [ ] Add application icons (`.ico` for Windows, `.icns` for macOS)
+- [x] Add application icons (`.ico` for Windows, `.icns` for macOS) ✅
 - [ ] Code signing for security (requires developer certificates)
 - [ ] Auto-update mechanism
 - [ ] Reduce executable size with selective imports

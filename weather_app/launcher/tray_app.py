@@ -142,16 +142,29 @@ class WeatherTrayApp:
         Returns:
             PIL.Image: Icon image
         """
-        icon_path = Path(__file__).parent / 'icon.png'
+        from PIL import Image
 
-        if icon_path.exists():
+        # Try to load from resources folder (bundled with app)
+        resources_icon = Path(__file__).parent.parent / 'resources' / 'icons' / 'weather-app.png'
+
+        if resources_icon.exists():
             try:
-                from PIL import Image
-                return Image.open(icon_path)
+                logger.info(f"Loading icon from {resources_icon}")
+                return Image.open(resources_icon)
             except Exception as e:
-                logger.warning(f"Failed to load icon from {icon_path}: {e}")
+                logger.warning(f"Failed to load icon from {resources_icon}: {e}")
 
-        # Fallback to generated icon
+        # Legacy fallback: check old location
+        legacy_icon = Path(__file__).parent / 'icon.png'
+        if legacy_icon.exists():
+            try:
+                logger.info(f"Loading icon from legacy path {legacy_icon}")
+                return Image.open(legacy_icon)
+            except Exception as e:
+                logger.warning(f"Failed to load icon from {legacy_icon}: {e}")
+
+        # Final fallback: generate a simple icon
+        logger.info("Using generated icon (no icon file found)")
         return self.create_icon_image()
 
     def run(self):

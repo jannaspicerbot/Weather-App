@@ -90,7 +90,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    # icon='weather_app/launcher/icon.ico'  # TODO: Add icon file
+    icon=str(project_root / 'weather_app' / 'resources' / 'icons' / 'weather-app.ico'),
 )
 
 coll = COLLECT(

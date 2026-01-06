@@ -41,6 +41,13 @@ data/
 output/
 *.html
 !web/index.html
+!docs/design/**/*.html
+
+# PyInstaller build artifacts
+installer/*/build/
+installer/*/dist/
+*.spec.orig
+*.iconset/  # Temporary iconset directory (macOS)
 
 # IDE
 .vscode/

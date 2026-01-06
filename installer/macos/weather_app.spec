@@ -105,7 +105,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='WeatherApp.app',
-    # icon='weather_app/launcher/icon.icns',  # TODO: Add macOS icon
+    icon=str(project_root / 'weather_app' / 'resources' / 'icons' / 'weather-app.icns'),
     bundle_identifier='com.weatherapp.app',
     info_plist={
         'CFBundleName': 'Weather App',
