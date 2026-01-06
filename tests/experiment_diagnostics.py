@@ -234,7 +234,7 @@ def summarize_environment():
             try:
                 version = pkg_resources.get_distribution(package).version
                 print(f"  {package}: {version}")
-            except:
+            except Exception:
                 print(f"  {package}: not found")
     except ImportError:
         print("  (cannot check package versions)")

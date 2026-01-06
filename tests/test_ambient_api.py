@@ -8,6 +8,7 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
 import requests
 
 # Fix Windows console encoding for emoji support
@@ -27,6 +28,7 @@ except ImportError:
     )
 
 
+@pytest.mark.requires_api_key
 def test_api_connection():
     """Test the Ambient Weather API with minimal requests"""
 
