@@ -192,6 +192,39 @@ Weather-App/
 
 ## 🐍 Python/FastAPI Best Practices
 
+### Code Formatting & Linting
+
+This project uses automated tools to ensure code quality and consistency:
+
+**Tools:**
+- **Black** (line length: 88) - Opinionated code formatter
+- **Ruff** - Fast linter (replaces flake8, isort)
+- **isort** - Import sorting (Black-compatible profile)
+- **mypy** - Static type checking
+
+**Key rules from [pyproject.toml](../pyproject.toml):**
+- Line length: 88 characters (Black default)
+- Python versions: 3.10, 3.11, 3.12
+- Import sorting: Black-compatible profile with trailing commas
+- Type hints: Encouraged but not strictly required for all functions
+
+**Run before committing:**
+```bash
+# Format code with Black
+black weather_app/
+
+# Check and auto-fix linting issues
+ruff check --fix weather_app/
+
+# Type check with mypy
+mypy weather_app/
+
+# Or run all checks together
+black weather_app/ && ruff check --fix weather_app/ && mypy weather_app/
+```
+
+**Important:** CI will run these checks automatically. Fix any issues before pushing.
+
 ### Code Style
 - Use **type hints** for all function parameters and returns
 - Follow **PEP 8** naming conventions (snake_case for functions/variables)
@@ -796,24 +829,203 @@ export default function TemperatureChart({ data }) {
 
 ## 🧪 Testing & Validation
 
-### What to Test
-- **API endpoints** return expected data
-- **Database queries** work correctly
-- **React components** render without errors
-- **API calls** handle errors gracefully
+### Testing Framework
+This project uses **pytest** for automated testing with the following structure:
 
-### Quick Testing
+### Test Organization
+```bash
+tests/
+├── test_*.py          # Automated test files
+├── experiment_*.py    # Diagnostic/research scripts
+└── conftest.py        # Shared fixtures and configuration
+
+docs/testing/          # Testing documentation
+└── refactoring-test-plan.md  # Feature-specific test plans
+```
+
+### Test Markers (pytest.ini)
+Use pytest markers to categorize tests:
+- `@pytest.mark.unit` - Fast unit tests (no external dependencies)
+- `@pytest.mark.integration` - Integration tests (database, API)
+- `@pytest.mark.requires_api_key` - Tests needing Ambient Weather API + App keys
+
+### Running Tests
+```bash
+# Run all tests
+pytest
+
+# Run only unit tests (fast)
+pytest -m unit
+
+# Run without API key tests
+pytest -m "not requires_api_key"
+
+# Run specific test file
+pytest tests/test_database.py
+
+# Verbose output with detailed assertions
+pytest -v
+
+# Show print statements during test run
+pytest -s
+```
+
+### Writing Tests
+
+**Unit Tests:**
 ```python
-# Backend - Test endpoints manually first
-# Run: uvicorn main:app --reload
-# Visit: http://localhost:8000/docs (FastAPI auto-docs)
-# Try each endpoint in the Swagger UI
+import pytest
+from weather_app.database import WeatherRepository
 
-# Frontend - Test in browser
-# Run: npm run dev
+@pytest.mark.unit
+def test_temperature_conversion():
+    """Test Fahrenheit to Celsius conversion."""
+    result = convert_temp(32.0)
+    assert result == 0.0
+
+@pytest.mark.unit
+def test_validate_date_format():
+    """Test date string validation."""
+    assert validate_date("2024-01-01") is True
+    assert validate_date("01/01/2024") is False
+```
+
+**Integration Tests:**
+```python
+@pytest.mark.integration
+def test_database_insert(test_db):
+    """Test inserting weather data into database."""
+    repo = WeatherRepository(test_db)
+    data = {"tempf": 72.5, "humidity": 45, "date": "2024-01-01T12:00:00"}
+
+    result = repo.insert(data)
+    assert result.success is True
+    assert result.inserted_count == 1
+```
+
+**API Tests (requires both API key and App key):**
+```python
+@pytest.mark.requires_api_key
+@pytest.mark.integration
+def test_fetch_weather_data():
+    """Test fetching from Ambient Weather API.
+
+    Requires environment variables:
+    - AMBIENT_API_KEY
+    - AMBIENT_APP_KEY
+    """
+    api = AmbientWeatherAPI(api_key, app_key)
+    data = api.get_device_data(mac_address, limit=1)
+
+    assert len(data) == 1
+    assert "tempf" in data[0]
+    assert "humidity" in data[0]
+```
+
+### Test Fixtures (conftest.py)
+Create `tests/conftest.py` for shared fixtures:
+
+```python
+import pytest
+import tempfile
+from pathlib import Path
+from weather_app.database import WeatherDatabase
+
+@pytest.fixture
+def test_db():
+    """Create a temporary test database."""
+    with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as f:
+        db_path = f.name
+
+    db = WeatherDatabase(db_path)
+    db.initialize()
+    yield db
+
+    # Cleanup
+    Path(db_path).unlink(missing_ok=True)
+
+@pytest.fixture
+def sample_weather_data():
+    """Provide sample weather data for tests."""
+    return {
+        "tempf": 72.5,
+        "humidity": 45,
+        "windspeedmph": 5.2,
+        "baromrelin": 30.12,
+        "date": "2024-01-01T12:00:00"
+    }
+
+@pytest.fixture
+def api_credentials():
+    """Load API credentials from environment.
+
+    Both API key and App key are required for Ambient Weather API.
+    """
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    return {
+        "api_key": os.getenv("AMBIENT_API_KEY"),
+        "app_key": os.getenv("AMBIENT_APP_KEY")
+    }
+```
+
+### What to Test
+
+**Backend:**
+- ✅ Database operations (insert, query, update)
+- ✅ API client methods (with mock responses)
+- ✅ Data validation (Pydantic models)
+- ✅ Error handling (invalid input, missing data)
+- ✅ Date range logic
+- ✅ Statistics calculations
+- ✅ CLI commands (using Click's testing utilities)
+
+**Frontend:**
+- ✅ Component rendering (React Testing Library)
+- ✅ API integration (mock responses)
+- ✅ User interactions (button clicks, form inputs)
+- ✅ Chart data formatting
+- ✅ Error state handling
+
+### Manual Testing
+
+**Backend - Test endpoints with Swagger UI:**
+```bash
+# Start the FastAPI server
+uvicorn weather_app.web.app:create_app --factory --reload
+
+# Visit: http://localhost:8000/docs
+# Try each endpoint in the interactive Swagger UI
+```
+
+**Frontend - Test in browser:**
+```bash
+# Start the Vite dev server
+cd web && npm run dev
+
+# Visit: http://localhost:5174
 # Check browser console for errors
 # Test with real API and with mock data
 ```
+
+### Test-Driven Development (TDD)
+When adding new features:
+1. **Write test first** - Define expected behavior
+2. **Run test (should fail)** - Confirms test works
+3. **Write minimal code** - Make test pass
+4. **Refactor** - Improve code while keeping tests green
+5. **Repeat** - For each new requirement
+
+### CI/CD Testing
+Tests run automatically on every push via GitHub Actions.
+See [docs/technical/ci-cd.md](../docs/technical/ci-cd.md) for CI configuration details.
+
+### Feature-Specific Test Plans
+For major features or refactoring, create detailed test plans in `docs/testing/`:
+- Example: [docs/testing/refactoring-test-plan.md](../docs/testing/refactoring-test-plan.md)
 
 ---
 
