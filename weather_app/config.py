@@ -4,17 +4,54 @@ DuckDB-based high-performance analytics database
 """
 
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+
+def get_user_data_dir() -> Path:
+    """
+    Get platform-specific user data directory.
+
+    When running as a packaged executable, stores user data in OS-standard locations:
+    - Windows: %APPDATA%/WeatherApp
+    - macOS: ~/Library/Application Support/WeatherApp
+    - Linux: ~/.local/share/WeatherApp
+
+    When running in development mode, uses the project directory.
+
+    Returns:
+        Path: User data directory
+    """
+    if getattr(sys, 'frozen', False):
+        # Running as packaged executable
+        if sys.platform == 'win32':
+            base = Path(os.getenv('APPDATA', Path.home() / 'AppData' / 'Roaming'))
+        elif sys.platform == 'darwin':
+            base = Path.home() / 'Library' / 'Application Support'
+        else:
+            # Linux and other Unix-like systems
+            base = Path.home() / '.local' / 'share'
+
+        user_dir = base / 'WeatherApp'
+        user_dir.mkdir(parents=True, exist_ok=True)
+        return user_dir
+    else:
+        # Development mode - use project directory
+        return Path(__file__).parent.parent
+
 
 # Base paths
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = get_user_data_dir()
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
+
+# Environment file location
+ENV_FILE = BASE_DIR / ".env"
+
+# Load environment variables from .env file in user data directory
+load_dotenv(ENV_FILE)
 
 # Database configuration
 # Set USE_TEST_DB environment variable to "true" to use test database
