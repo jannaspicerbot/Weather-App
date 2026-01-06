@@ -217,7 +217,9 @@ def main():
     print("=" * 80)
     print("After stopping servers:")
     print("  1. Verify localhost:5173 is no longer accessible")
-    print("  2. Re-run diagnostics if needed: python tests/archive/api-debugging/diagnose_api_fixes.py")
+    print(
+        "  2. Re-run diagnostics if needed: python tests/archive/api-debugging/diagnose_api_fixes.py"
+    )
     print("  3. Monitor API calls without interference from background processes")
     print("=" * 80)
 
