@@ -14,13 +14,13 @@ pip install -r requirements.txt
 Start the FastAPI server:
 
 ```bash
-python main.py
+python server.py
 ```
 
 Or use uvicorn directly:
 
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn weather_app.web.app:create_app --factory --reload --host 0.0.0.0 --port 8000
 ```
 
 The API will be available at: `http://localhost:8000`
@@ -190,7 +190,7 @@ const weatherData = await response.json();
 To run in development mode with auto-reload:
 
 ```bash
-uvicorn main:app --reload
+uvicorn weather_app.web.app:create_app --factory --reload
 ```
 
 ## Testing

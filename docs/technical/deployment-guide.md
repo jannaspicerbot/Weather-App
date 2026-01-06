@@ -648,4 +648,5 @@ rm -rf Weather-App
 
 ## Document Changelog
 
+- **2026-01-06:** Consolidated DOCKER_SETUP.md content into this guide
 - **2026-01-02:** Initial deployment guide extracted from specifications.md

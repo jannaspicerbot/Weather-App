@@ -9,7 +9,7 @@ This guide shows you how to generate and use synthetic weather data for testing 
 Generate 30 days of test data (default):
 
 ```bash
-python generate_test_data.py
+python tests/data/generate_test_data.py
 ```
 
 This creates `ambient_weather_test.db` with realistic weather data.
@@ -60,7 +60,7 @@ Open http://localhost:8000/ and check the response:
 Generate data starting from a specific date:
 
 ```bash
-python generate_test_data.py --start-date 2024-01-01 --days 60
+python tests/data/generate_test_data.py --start-date 2024-01-01 --days 60
 ```
 
 ### Different Intervals
@@ -69,13 +69,13 @@ Generate data with different reading intervals:
 
 ```bash
 # Every 5 minutes (default, realistic)
-python generate_test_data.py --interval 5
+python tests/data/generate_test_data.py --interval 5
 
 # Every minute (more data points)
-python generate_test_data.py --interval 1
+python tests/data/generate_test_data.py --interval 1
 
 # Every 15 minutes (less data)
-python generate_test_data.py --interval 15
+python tests/data/generate_test_data.py --interval 15
 ```
 
 ### Custom Database Name
@@ -83,7 +83,7 @@ python generate_test_data.py --interval 15
 Use a different database file:
 
 ```bash
-python generate_test_data.py --db my_custom_test.db
+python tests/data/generate_test_data.py --db my_custom_test.db
 ```
 
 Then update [config.py](config.py):
@@ -96,7 +96,7 @@ TEST_DB = "my_custom_test.db"
 Clear and regenerate all data:
 
 ```bash
-python generate_test_data.py --clear
+python tests/data/generate_test_data.py --clear
 ```
 
 ## What Data is Generated?
@@ -144,7 +144,7 @@ The test data generator creates realistic weather patterns:
 ### Generate 1 Week of Recent Data
 
 ```bash
-python generate_test_data.py --days 7
+python tests/data/generate_test_data.py --days 7
 ```
 
 Result: ~2,000 records (5-minute intervals)
