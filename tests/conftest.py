@@ -6,11 +6,13 @@ This module provides common fixtures used across multiple test files.
 import os
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from dotenv import load_dotenv
 
-from weather_app.database import WeatherDatabase
+if TYPE_CHECKING:
+    pass
 
 
 @pytest.fixture
@@ -28,6 +30,9 @@ def test_db():
             result = test_db.insert_weather_data(data)
             assert result.success
     """
+    # Lazy import to avoid import errors when fixture isn't used
+    from weather_app.database import WeatherDatabase
+
     with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as f:
         db_path = f.name
 
