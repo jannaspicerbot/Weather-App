@@ -108,27 +108,47 @@ jobs:
             Write-Host "✅ Debug spec file found" -ForegroundColor Green
           }
 
-      - name: Build Windows Installer (Debug Mode)
+      - name: Build Windows Installer (Production)
         working-directory: installer/windows
         run: |
-          Write-Host "Building Windows installer in DEBUG mode..." -ForegroundColor Cyan
-          pyinstaller weather_app_debug.spec
-          if (Test-Path "dist/WeatherApp.exe") {
-            Write-Host "✅ Windows executable created successfully" -ForegroundColor Green
-            Get-Item "dist/WeatherApp.exe" | Select-Object Name, Length, LastWriteTime
+          Write-Host "Building Windows installer (PRODUCTION)..." -ForegroundColor Cyan
+          pyinstaller weather_app.spec --clean
+          if (Test-Path "dist/WeatherApp/WeatherApp.exe") {
+            Write-Host "✅ Production executable created successfully" -ForegroundColor Green
+            Get-Item "dist/WeatherApp/WeatherApp.exe" | Select-Object Name, Length, LastWriteTime
           } else {
-            Write-Host "❌ Executable not found" -ForegroundColor Red
+            Write-Host "❌ Production executable not found" -ForegroundColor Red
+            exit 1
+          }
+
+      - name: Build Windows Installer (Debug)
+        working-directory: installer/windows
+        run: |
+          Write-Host "Building Windows installer (DEBUG)..." -ForegroundColor Cyan
+          pyinstaller weather_app_debug.spec --clean
+          if (Test-Path "dist/WeatherApp_Debug/WeatherApp_Debug.exe") {
+            Write-Host "✅ Debug executable created successfully" -ForegroundColor Green
+            Get-Item "dist/WeatherApp_Debug/WeatherApp_Debug.exe" | Select-Object Name, Length, LastWriteTime
+          } else {
+            Write-Host "❌ Debug executable not found" -ForegroundColor Red
             exit 1
           }
 
       # -----------------------------------------------------------------------
       # SAVE BUILD ARTIFACTS
       # -----------------------------------------------------------------------
-      - name: Upload Windows Installer
+      - name: Upload Windows Production Installer
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer-exe-${{ github.sha }}
-          path: installer/windows/dist/WeatherApp.exe
+          name: windows-installer-${{ github.sha }}
+          path: installer/windows/dist/WeatherApp/
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
+
+      - name: Upload Windows Debug Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-debug-${{ github.sha }}
+          path: installer/windows/dist/WeatherApp_Debug/
           retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
 
   # ============================================================================
@@ -207,6 +227,20 @@ jobs:
           npm ci
           npm run build
           echo "✅ Frontend built for embedding in app bundle"
+
+      - name: Generate macOS Icon (.icns)
+        run: |
+          echo "🎨 Generating macOS icon file..."
+          ICONSET_PATH="weather_app/resources/icons/icon.iconset"
+          ICNS_PATH="weather_app/resources/icons/weather-app.icns"
+          if [ -d "$ICONSET_PATH" ]; then
+            iconutil -c icns "$ICONSET_PATH" -o "$ICNS_PATH"
+            echo "✅ Generated $ICNS_PATH"
+            ls -la "$ICNS_PATH"
+          else
+            echo "❌ Iconset not found at $ICONSET_PATH"
+            exit 1
+          fi
 
       - name: Build macOS App Bundle
         working-directory: installer/macos
