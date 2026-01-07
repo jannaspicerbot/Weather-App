@@ -68,7 +68,7 @@ def log_startup_info(log_file):
             if getattr(sys, "frozen", False):
                 f.write(f"  _MEIPASS: {getattr(sys, '_MEIPASS', 'NOT SET')}\n")
 
-            f.write(f"\nPython Path:\n")
+            f.write("\nPython Path:\n")
             for path in sys.path:
                 f.write(f"  {path}\n")
 
@@ -174,7 +174,7 @@ def verify_bundled_resources(log_file):
             missing.append(("PIL", str(e)))
 
         try:
-            import pystray
+            import pystray  # noqa: F401
 
             log_message(log_file, "✓ pystray imported")
         except ImportError as e:

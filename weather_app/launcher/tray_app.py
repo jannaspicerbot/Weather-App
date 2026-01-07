@@ -160,9 +160,7 @@ class WeatherTrayApp:
         # Try to load icon using resource path helper (handles frozen/dev)
         try:
             icon_path = get_icon_path("weather-app.png")
-            logger.info(
-                f"Loading icon from {icon_path} (frozen={is_frozen()})"
-            )
+            logger.info(f"Loading icon from {icon_path} (frozen={is_frozen()})")
             return Image.open(icon_path)
         except FileNotFoundError as e:
             logger.warning(f"Icon not found via resource_path: {e}")

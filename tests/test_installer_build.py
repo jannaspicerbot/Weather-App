@@ -8,7 +8,6 @@ Run after building with PyInstaller:
     pytest tests/test_installer_build.py -v
 """
 
-import sys
 from pathlib import Path
 
 import pytest
@@ -22,11 +21,19 @@ DEBUG_BUILD_DIR = INSTALLER_DIR / "dist" / "WeatherApp_Debug"
 class TestProductionBuild:
     """Tests for production WeatherApp.exe build"""
 
+    @pytest.mark.skipif(
+        not PROD_BUILD_DIR.exists(),
+        reason="Production build not found - run PyInstaller first",
+    )
     def test_prod_executable_exists(self):
         """Production executable should exist"""
         exe_path = PROD_BUILD_DIR / "WeatherApp.exe"
         assert exe_path.exists(), f"WeatherApp.exe not found at {exe_path}"
 
+    @pytest.mark.skipif(
+        not PROD_BUILD_DIR.exists(),
+        reason="Production build not found - run PyInstaller first",
+    )
     def test_prod_executable_size(self):
         """Production executable should be reasonable size"""
         exe_path = PROD_BUILD_DIR / "WeatherApp.exe"
@@ -36,13 +43,19 @@ class TestProductionBuild:
                 1 < size_mb < 500
             ), f"Suspicious exe size: {size_mb:.1f}MB (expected 1-500MB)"
 
+    @pytest.mark.skipif(
+        not PROD_BUILD_DIR.exists(),
+        reason="Production build not found - run PyInstaller first",
+    )
     def test_prod_internal_directory_exists(self):
         """_internal directory should exist with bundled files"""
         internal_dir = PROD_BUILD_DIR / "_internal"
-        assert (
-            internal_dir.exists()
-        ), f"_internal directory not found at {internal_dir}"
+        assert internal_dir.exists(), f"_internal directory not found at {internal_dir}"
 
+    @pytest.mark.skipif(
+        not PROD_BUILD_DIR.exists(),
+        reason="Production build not found - run PyInstaller first",
+    )
     def test_prod_frontend_bundled(self):
         """Frontend dist files should be bundled"""
         frontend_index = PROD_BUILD_DIR / "_internal" / "web" / "dist" / "index.html"
@@ -51,6 +64,10 @@ class TestProductionBuild:
             "Run 'npm run build' in web/ directory before building installer"
         )
 
+    @pytest.mark.skipif(
+        not PROD_BUILD_DIR.exists(),
+        reason="Production build not found - run PyInstaller first",
+    )
     def test_prod_frontend_assets(self):
         """Frontend should have assets directory"""
         assets_dir = PROD_BUILD_DIR / "_internal" / "web" / "dist" / "assets"
@@ -62,11 +79,13 @@ class TestProductionBuild:
         assets = list(assets_dir.iterdir())
         assert len(assets) > 0, "Frontend assets directory is empty"
 
+    @pytest.mark.skipif(
+        not PROD_BUILD_DIR.exists(),
+        reason="Production build not found - run PyInstaller first",
+    )
     def test_prod_icons_bundled(self):
         """App icons should be bundled"""
-        icons_dir = (
-            PROD_BUILD_DIR / "_internal" / "weather_app" / "resources" / "icons"
-        )
+        icons_dir = PROD_BUILD_DIR / "_internal" / "weather_app" / "resources" / "icons"
         assert icons_dir.exists(), f"Icons directory not found at {icons_dir}"
 
         # Check for specific icons
@@ -76,6 +95,10 @@ class TestProductionBuild:
         assert png_icon.exists(), f"PNG icon not found at {png_icon}"
         assert ico_icon.exists(), f"ICO icon not found at {ico_icon}"
 
+    @pytest.mark.skipif(
+        not PROD_BUILD_DIR.exists(),
+        reason="Production build not found - run PyInstaller first",
+    )
     def test_prod_duckdb_bundled(self):
         """DuckDB extension should be bundled"""
         # Look for duckdb directory or .pyd/.so files
@@ -96,9 +119,7 @@ class TestProductionBuild:
             content = spec_file.read_text()
             # Look for console=True (should be console=False)
             if "console=True" in content and "console=False" not in content:
-                pytest.fail(
-                    "Production spec has console=True, should be console=False"
-                )
+                pytest.fail("Production spec has console=True, should be console=False")
 
     @pytest.mark.skipif(
         not PROD_BUILD_DIR.exists(), reason="Production build not found"
@@ -115,6 +136,10 @@ class TestProductionBuild:
 class TestDebugBuild:
     """Tests for debug WeatherApp_Debug.exe build"""
 
+    @pytest.mark.skipif(
+        not DEBUG_BUILD_DIR.exists(),
+        reason="Debug build not found - run PyInstaller debug spec first",
+    )
     def test_debug_executable_exists(self):
         """Debug executable should exist"""
         exe_path = DEBUG_BUILD_DIR / "WeatherApp_Debug.exe"
@@ -123,6 +148,10 @@ class TestDebugBuild:
             "Build debug version with: pyinstaller weather_app_debug.spec"
         )
 
+    @pytest.mark.skipif(
+        not DEBUG_BUILD_DIR.exists(),
+        reason="Debug build not found - run PyInstaller debug spec first",
+    )
     def test_debug_executable_size(self):
         """Debug executable should be reasonable size"""
         exe_path = DEBUG_BUILD_DIR / "WeatherApp_Debug.exe"
@@ -195,9 +224,7 @@ class TestBuildConfiguration:
         content = spec_file.read_text()
 
         assert "web/dist" in content, "Spec file should reference frontend dist/"
-        assert (
-            ".exists()" in content
-        ), "Spec file should check if frontend dist exists"
+        assert ".exists()" in content, "Spec file should check if frontend dist exists"
 
 
 class TestResourceVerification:
@@ -233,9 +260,9 @@ class TestResourceVerification:
             if not path.exists():
                 missing.append(f"{name}: {path}")
 
-        assert (
-            not missing
-        ), f"Missing critical resources:\n" + "\n".join(f"  - {m}" for m in missing)
+        assert not missing, f"Missing critical resources:\n" + "\n".join(
+            f"  - {m}" for m in missing
+        )
 
 
 def test_crash_logger_module_exists():
@@ -252,9 +279,7 @@ def test_launcher_uses_crash_logger():
     assert launcher.exists(), "launcher.py not found"
 
     content = launcher.read_text()
-    assert (
-        "crash_logger" in content
-    ), "launcher.py should import crash_logger module"
+    assert "crash_logger" in content, "launcher.py should import crash_logger module"
     assert (
         "CrashLogger" in content
     ), "launcher.py should use CrashLogger context manager"
