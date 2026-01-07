@@ -21,7 +21,7 @@ def register_routes(app: FastAPI):
 
     @app.get("/api")
     def read_root():
-        """API information endpoint"""
+        """API information endpoint (moved from / to allow frontend at root)"""
         db_info = get_db_info()
         return {
             "message": "Weather API",
