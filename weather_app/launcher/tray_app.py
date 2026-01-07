@@ -202,7 +202,6 @@ class WeatherTrayApp:
         except Exception as e:
             logger.warning(f"Failed to auto-open dashboard: {e}")
 
-<<<<<<< HEAD
         # Try to create system tray icon
         try:
             # Load icon image
@@ -231,19 +230,6 @@ class WeatherTrayApp:
             # Keep the server running even without tray icon
             try:
                 import time
-=======
-        # Run tray icon (blocks until quit)
-        logger.info("System tray app running...")
-        try:
-            self.icon.run()
-        except Exception as e:
-            logger.error(f"Failed to create system tray icon: {e}")
-            logger.info("Server will continue running without tray icon")
-            logger.info(f"Access dashboard at http://localhost:{PORT}")
-            # Keep server running even without tray
-            import time
-            try:
->>>>>>> f035318 (Fix: Resolve WeatherApp.exe silent crash on startup)
                 while True:
                     time.sleep(1)
             except KeyboardInterrupt:
