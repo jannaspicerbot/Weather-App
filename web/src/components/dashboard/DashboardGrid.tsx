@@ -7,6 +7,8 @@
  * - Screen reader announcements for all drag operations
  * - Touch support for iPad
  * - Mouse support for desktop
+ *
+ * Compact 2x2 grid layout to fit all charts on screen without scrolling.
  */
 
 import {
@@ -130,7 +132,7 @@ export function DashboardGrid({ chartOrder, onReorder, children }: DashboardGrid
     >
       <SortableContext items={chartOrder} strategy={rectSortingStrategy}>
         <div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6"
+          className="charts-grid"
           role="region"
           aria-label="Weather charts - drag to reorder"
         >
@@ -152,15 +154,17 @@ export function DashboardGrid({ chartOrder, onReorder, children }: DashboardGrid
         )}
       </div>
 
-      {/* Keyboard instructions (visible on first focus) */}
-      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-        <h3 className="text-sm font-semibold text-blue-900 mb-2">Drag and Drop Instructions</h3>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li><strong>Mouse:</strong> Click and drag charts to reorder</li>
-          <li><strong>Touch:</strong> Long-press and drag charts to reorder</li>
-          <li><strong>Keyboard:</strong> Tab to a chart, press Enter to activate drag mode, use Arrow keys to move, press Enter to drop (Escape to cancel)</li>
-        </ul>
-      </div>
+      {/* Compact instructions tooltip */}
+      <details className="dashboard-instructions">
+        <summary className="dashboard-instructions__toggle">
+          Reorder charts
+        </summary>
+        <div className="dashboard-instructions__content">
+          <p><strong>Mouse:</strong> Drag charts</p>
+          <p><strong>Touch:</strong> Long-press and drag</p>
+          <p><strong>Keyboard:</strong> Tab → Enter → Arrows → Enter</p>
+        </div>
+      </details>
     </DndContext>
   );
 }
