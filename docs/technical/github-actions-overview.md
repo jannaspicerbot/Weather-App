@@ -1,7 +1,7 @@
 # GitHub Actions CI/CD Overview
 
 **Status:** ✅ Streamlined (January 2026)
-**Last Updated:** January 6, 2026
+**Last Updated:** January 7, 2026
 **Phase:** Phase 2 - Optimized Multi-Platform Testing
 
 ---
@@ -123,8 +123,19 @@ matrix:
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'weather_app/**'
+      - 'installer/**'
+      - 'web/**'
+      - 'requirements.txt'
+      - 'setup.py'
+      - 'pyproject.toml'
+      - 'package.json'
+      - '.github/workflows/platform-builds.yml'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      # Same paths as push
 ```
 
 **Jobs:**
@@ -132,7 +143,7 @@ on:
 | Job | Runs On | Purpose | Duration |
 |-----|---------|---------|----------|
 | `windows-installer` | Windows only | PyInstaller .exe build + Windows-specific tests | ~8-12 min |
-| `macos-app` | macOS only | macOS app bundle preparation + Mac-specific tests | ~5-7 min |
+| `macos-app` | macOS only | PyInstaller .app bundle + macOS-specific tests | ~8-12 min |
 | `frontend-build-artifacts` | Ubuntu, Windows, macOS (matrix) | Multi-platform frontend builds | ~4-6 min |
 
 **Windows-Specific Validations:**
@@ -140,23 +151,24 @@ on:
 - System tray icon compatibility (PIL + pystray)
 - Windows path handling
 - PowerShell integration
-- **PyInstaller .exe build** (only on `main` branch pushes)
+- **PyInstaller .exe build** (on all PRs and pushes)
 
 **macOS-Specific Validations:**
 - macOS system information (`sw_vers`)
 - File system compatibility
 - Native path handling
-- Future: `.app` bundle creation
+- **PyInstaller .app bundle build** (on all PRs and pushes)
 
 **Installer Builds:**
-- Windows .exe only builds on `push` to `main` branch (not on every PR)
+- Windows .exe builds on all PRs and pushes to main/develop
 - Uses `installer/windows/weather_app_debug.spec`
-- Uploads artifact with 30-day retention
-- macOS .app bundle: Disabled until Phase 3 deployment
+- macOS .app bundle builds on all PRs and pushes to main/develop
+- Uses `installer/macos/weather_app.spec`
 
 **Artifacts:**
-- `windows-installer-exe-<sha>` - WeatherApp.exe (30-day retention)
-- `frontend-dist-<os>-<sha>` - Frontend builds (7-day retention)
+- `windows-installer-exe-<sha>` - WeatherApp.exe (7 days for PRs, 30 days for main)
+- `macos-app-bundle-<sha>` - WeatherApp.app (7 days for PRs, 30 days for main)
+- `frontend-dist-<os>-<sha>` - Frontend builds (7 days for PRs, 30 days for main)
 
 ---
 
@@ -272,10 +284,11 @@ on:
 | Workflow | Artifact Name | Contents | Retention |
 |----------|---------------|----------|-----------|
 | **Main CI** | _(none)_ | Coverage → Codecov only | N/A |
-| **Platform Builds** | `windows-installer-exe-<sha>` | WeatherApp.exe | 30 days |
-| **Platform Builds** | `frontend-dist-ubuntu-<sha>` | web/dist/ (Ubuntu build) | 7 days |
-| **Platform Builds** | `frontend-dist-windows-<sha>` | web/dist/ (Windows build) | 7 days |
-| **Platform Builds** | `frontend-dist-macos-<sha>` | web/dist/ (macOS build) | 7 days |
+| **Platform Builds** | `windows-installer-exe-<sha>` | WeatherApp.exe | 7 days (PR) / 30 days (main) |
+| **Platform Builds** | `macos-app-bundle-<sha>` | WeatherApp.app | 7 days (PR) / 30 days (main) |
+| **Platform Builds** | `frontend-dist-ubuntu-<sha>` | web/dist/ (Ubuntu build) | 7 days (PR) / 30 days (main) |
+| **Platform Builds** | `frontend-dist-windows-<sha>` | web/dist/ (Windows build) | 7 days (PR) / 30 days (main) |
+| **Platform Builds** | `frontend-dist-macos-<sha>` | web/dist/ (macOS build) | 7 days (PR) / 30 days (main) |
 
 ### Downloading Artifacts
 
@@ -651,8 +664,8 @@ npm run build
 **Issue:** Path filtering not working
 **Solution:** Ensure you're using `github.event_name == 'pull_request'` fallback in `if:` conditions
 
-**Issue:** Windows installer not building on PR
-**Solution:** By design - only builds on `push` to `main` branch (saves Actions minutes)
+**Issue:** Platform builds not triggering
+**Solution:** Check that your changes touch files in the path filter (weather_app/, installer/, web/, etc.)
 
 **Issue:** Tests running even though I only changed docs
 **Solution:** Check path filter syntax in `if:` conditions. Docs-only changes should only trigger `docs-ci.yml`
@@ -706,6 +719,6 @@ gh run watch <run-id>
 
 ---
 
-**Last Updated:** January 6, 2026
-**Architecture Version:** 2.0 (Streamlined)
+**Last Updated:** January 7, 2026
+**Architecture Version:** 2.1 (PR Builds Enabled)
 **Status:** ✅ Production Ready
