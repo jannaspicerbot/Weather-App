@@ -1,7 +1,7 @@
 # CI/CD Automation
 
-**Version:** 1.0
-**Date:** 2026-01-03
+**Version:** 2.0
+**Date:** 2026-01-06
 **Status:** Active
 
 ---
@@ -9,6 +9,18 @@
 ## Overview
 
 The Weather App uses GitHub Actions for continuous integration and continuous deployment. All code changes are automatically tested for quality, security, accessibility, and documentation standards before merging.
+
+**NEW:** The project now uses a **three-tiered CI/CD strategy** with dedicated workflows for cross-platform testing, macOS builds, and Windows installers. See [GitHub Actions Overview](github-actions-overview.md) for complete details.
+
+---
+
+## Quick Links
+
+- **📋 [GitHub Actions Overview](github-actions-overview.md)** - Complete workflow architecture and strategy
+- **🔄 [Cross-Platform CI Details](cross-platform-ci.md)** - Matrix testing documentation
+- **🪟 Windows Build:** `.github/workflows/windows-build.yml`
+- **🍎 macOS Build:** `.github/workflows/macos-build.yml`
+- **🌐 Cross-Platform:** `.github/workflows/cross-platform-ci.yml`
 
 ---
 
@@ -24,7 +36,64 @@ The Weather App uses GitHub Actions for continuous integration and continuous de
 
 ## Workflows
 
-### 1. Backend CI (`backend-ci.yml`)
+### Primary Workflows (Active)
+
+#### 1. Cross-Platform CI (`cross-platform-ci.yml`) ⭐ NEW
+
+**Purpose:** Fast, efficient multi-platform matrix testing
+
+**Triggers:** Push/PR to `main` or `develop`
+
+**Jobs:**
+- **multi-platform-test**: Tests on Ubuntu, Windows, macOS with Python 3.10, 3.11, 3.12
+- **lint-and-quality**: Python (Ruff, Black, isort, mypy) + Frontend (ESLint, TSC)
+- **security-scan**: Safety + Bandit
+- **api-integration**: FastAPI endpoint tests
+- **build-artifacts**: Production builds for all platforms
+
+**See:** [cross-platform-ci.md](cross-platform-ci.md) for detailed documentation
+
+---
+
+#### 2. macOS Build (`macos-build.yml`) ⭐ NEW
+
+**Purpose:** Native macOS validation and builds
+
+**Triggers:** Push/PR to `main` or `develop`
+
+**Jobs:**
+- **build-macos**: Complete macOS build, test, and validation
+  - Backend tests with DuckDB/FastAPI validation
+  - Frontend Vite build
+  - macOS system integration tests
+  - Artifact uploads (frontend dist, test results)
+
+**Future:** macOS .app bundle creation
+
+---
+
+#### 3. Windows Build (`windows-build.yml`) ⭐ NEW
+
+**Purpose:** Windows-specific testing and installer builds
+
+**Triggers:** Push/PR to `main` or `develop`
+
+**Jobs:**
+- **build-windows**: Complete Windows build, test, and package
+  - Backend tests with Windows-specific validations
+  - Frontend Vite build
+  - Console encoding tests (emoji support)
+  - System tray icon compatibility
+  - **PyInstaller .exe build** (on main branch)
+  - Installer verification tests
+
+**Artifacts:** Windows installer (.exe) retained for 30 days
+
+---
+
+### Legacy Workflows (Retained for Compatibility)
+
+#### 1. Backend CI (`backend-ci.yml`)
 
 **Triggers:** Push/PR to `main` or `develop` affecting Python code
 
