@@ -532,3 +532,61 @@ button:focus-visible {
 .dashboard-instructions__content p {
   margin: var(--spacing-1) 0;
 }
+
+/* ============================================
+   SORTABLE METRIC CARD (Drag-and-Drop)
+   ============================================ */
+
+.sortable-metric-card {
+  cursor: grab;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sortable-metric-card:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.sortable-metric-card--dragging {
+  cursor: grabbing;
+  z-index: 10;
+}
+
+/* Ensure the inner MetricCard fills the sortable wrapper */
+.sortable-metric-card .metric-card {
+  height: 100%;
+}
+
+/* ============================================
+   METRICS INSTRUCTIONS (Collapsible)
+   ============================================ */
+
+.metrics-instructions {
+  margin-top: var(--spacing-4);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.metrics-instructions__toggle {
+  cursor: pointer;
+  padding: var(--spacing-2);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.metrics-instructions__toggle:hover {
+  background-color: var(--color-bg-elevated);
+}
+
+.metrics-instructions__content {
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  margin-top: var(--spacing-2);
+}
+
+.metrics-instructions__content p {
+  margin: var(--spacing-1) 0;
+}

@@ -15,6 +15,7 @@ import DateRangeSelector from './DateRangeSelector';
 import { DashboardGrid } from './dashboard/DashboardGrid';
 import { SortableChartCard } from './dashboard/SortableChartCard';
 import { useDashboardLayout } from '../hooks/useDashboardLayout';
+import { useMetricsLayout } from '../hooks/useMetricsLayout';
 
 export default function Dashboard() {
   const [latestWeather, setLatestWeather] = useState<WeatherData | null>(null);
@@ -27,6 +28,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { chartOrder, setChartOrder, resetLayout } = useDashboardLayout();
+  const { metricsOrder, setMetricsOrder, resetMetricsLayout } = useMetricsLayout();
+
+  // Reset both chart and metrics layouts
+  const handleResetAllLayouts = () => {
+    resetLayout();
+    resetMetricsLayout();
+  };
 
   useEffect(() => {
     fetchLatestData();
@@ -196,7 +204,7 @@ export default function Dashboard() {
             )}
           </div>
           <button
-            onClick={resetLayout}
+            onClick={handleResetAllLayouts}
             className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px]"
             aria-label="Reset dashboard layout to default order"
           >
@@ -224,7 +232,11 @@ export default function Dashboard() {
 
         {/* Current Conditions */}
         {latestWeather && (
-          <CurrentConditions weather={latestWeather} />
+          <CurrentConditions
+            weather={latestWeather}
+            metricsOrder={metricsOrder}
+            onMetricsReorder={setMetricsOrder}
+          />
         )}
 
         {/* Date Range Selector */}

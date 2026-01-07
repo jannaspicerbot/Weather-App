@@ -4,6 +4,12 @@
  * Shows the latest weather reading with all available metrics.
  * Follows design system from docs/design/dashboard-layout.md and docs/design/design-tokens.md
  *
+ * Features:
+ * - Drag-and-drop reordering of metric cards (dnd-kit)
+ * - Responsive masonry grid layout
+ * - WCAG 2.2 AA accessibility (keyboard nav, screen reader announcements)
+ * - localStorage persistence of user's preferred order
+ *
  * Layout: Responsive masonry grid
  * - Desktop (≥1024px): 6 columns
  * - Tablet (768-1023px): 4 columns
@@ -12,9 +18,14 @@
 
 import { type WeatherData } from '../api';
 import { MetricCard } from './MetricCard';
+import { MetricsGrid } from './dashboard/MetricsGrid';
+import { SortableMetricCard } from './dashboard/SortableMetricCard';
+import { type MetricId } from '../hooks/useMetricsLayout';
 
 interface CurrentConditionsProps {
   weather: WeatherData;
+  metricsOrder: MetricId[];
+  onMetricsReorder: (newOrder: MetricId[]) => void;
 }
 
 type ColorCategory = 'water' | 'growth' | 'interactive';
@@ -27,7 +38,11 @@ interface MetricConfig {
   description?: string;
 }
 
-export default function CurrentConditions({ weather }: CurrentConditionsProps) {
+export default function CurrentConditions({
+  weather,
+  metricsOrder,
+  onMetricsReorder,
+}: CurrentConditionsProps) {
   const formatValue = (
     value: number | null | undefined,
     unit: string,
@@ -37,96 +52,97 @@ export default function CurrentConditions({ weather }: CurrentConditionsProps) {
     return `${value.toFixed(decimals)}${unit}`;
   };
 
-  // Metrics organized by semantic color categories per design-tokens.md:
+  // Metrics configuration map - keyed by MetricId for easy lookup
+  // Colors organized by semantic categories per design-tokens.md:
   // - water: Temperature, rain, humidity (blue family)
   // - growth: Wind, air quality, nature metrics (green family)
   // - interactive: Special/highlighted metrics (accent color)
-  const metrics: MetricConfig[] = [
-    {
+  const metricsConfig: Record<MetricId, MetricConfig> = {
+    temperature: {
       label: 'Temperature',
       value: formatValue(weather.tempf, '°F'),
       icon: '🌡️',
       colorCategory: 'water',
       description: 'Current outdoor temperature',
     },
-    {
+    feelsLike: {
       label: 'Feels Like',
       value: formatValue(weather.feelsLike, '°F'),
       icon: '🌡️',
       colorCategory: 'water',
       description: 'Apparent temperature accounting for wind and humidity',
     },
-    {
+    humidity: {
       label: 'Humidity',
       value: formatValue(weather.humidity, '%', 0),
       icon: '💧',
       colorCategory: 'water',
       description: 'Relative humidity percentage',
     },
-    {
+    dewPoint: {
       label: 'Dew Point',
       value: formatValue(weather.dewPoint, '°F'),
       icon: '💧',
       colorCategory: 'water',
       description: 'Temperature at which dew forms',
     },
-    {
+    windSpeed: {
       label: 'Wind Speed',
       value: formatValue(weather.windspeedmph, ' mph'),
       icon: '💨',
       colorCategory: 'growth',
       description: 'Current wind speed',
     },
-    {
+    windGust: {
       label: 'Wind Gust',
       value: formatValue(weather.windgustmph, ' mph'),
       icon: '💨',
       colorCategory: 'growth',
       description: 'Maximum wind gust speed',
     },
-    {
+    windDirection: {
       label: 'Wind Direction',
       value: weather.winddir != null ? `${weather.winddir}°` : 'N/A',
       icon: '🧭',
       colorCategory: 'growth',
       description: 'Wind direction in degrees',
     },
-    {
+    pressure: {
       label: 'Pressure',
       value: formatValue(weather.baromrelin, ' inHg', 2),
       icon: '⏱️',
       colorCategory: 'interactive',
       description: 'Barometric pressure',
     },
-    {
+    hourlyRain: {
       label: 'Hourly Rain',
       value: formatValue(weather.hourlyrainin, ' in', 2),
       icon: '🌧️',
       colorCategory: 'water',
       description: 'Rainfall in the past hour',
     },
-    {
+    dailyRain: {
       label: 'Daily Rain',
       value: formatValue(weather.dailyrainin, ' in', 2),
       icon: '🌧️',
       colorCategory: 'water',
       description: 'Total rainfall today',
     },
-    {
+    solarRadiation: {
       label: 'Solar Radiation',
       value: formatValue(weather.solarradiation, ' W/m²', 0),
       icon: '☀️',
       colorCategory: 'interactive',
       description: 'Solar radiation intensity',
     },
-    {
+    uvIndex: {
       label: 'UV Index',
       value: weather.uv != null ? weather.uv.toString() : 'N/A',
       icon: '☀️',
       colorCategory: 'interactive',
       description: 'Ultraviolet radiation index',
     },
-  ];
+  };
 
   // Format the date for display
   const formatDate = (dateStr: string): string => {
@@ -164,23 +180,34 @@ export default function CurrentConditions({ weather }: CurrentConditionsProps) {
         </time>
       </header>
 
-      <div
-        className="current-conditions__grid"
-        role="list"
-        aria-label="Weather metrics"
-      >
-        {metrics.map((metric) => (
-          <div key={metric.label} role="listitem">
-            <MetricCard
-              label={metric.label}
-              value={metric.value}
-              icon={metric.icon}
-              colorCategory={metric.colorCategory}
-              description={metric.description}
-            />
-          </div>
-        ))}
-      </div>
+      <MetricsGrid metricsOrder={metricsOrder} onReorder={onMetricsReorder}>
+        {metricsOrder.map((metricId) => {
+          const config = metricsConfig[metricId];
+          return (
+            <SortableMetricCard key={metricId} id={metricId}>
+              <MetricCard
+                label={config.label}
+                value={config.value}
+                icon={config.icon}
+                colorCategory={config.colorCategory}
+                description={config.description}
+              />
+            </SortableMetricCard>
+          );
+        })}
+      </MetricsGrid>
+
+      {/* Compact instructions for reordering */}
+      <details className="metrics-instructions">
+        <summary className="metrics-instructions__toggle">
+          Reorder metrics
+        </summary>
+        <div className="metrics-instructions__content">
+          <p><strong>Mouse:</strong> Drag cards to reorder</p>
+          <p><strong>Touch:</strong> Long-press and drag</p>
+          <p><strong>Keyboard:</strong> Tab to card, Enter, Arrow keys, Enter</p>
+        </div>
+      </details>
     </section>
   );
 }
