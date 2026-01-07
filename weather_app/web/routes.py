@@ -18,9 +18,9 @@ logger = get_logger(__name__)
 def register_routes(app: FastAPI):
     """Register all API routes with the app"""
 
-    @app.get("/")
+    @app.get("/api")
     def read_root():
-        """Root endpoint with API information"""
+        """API information endpoint (moved from / to allow frontend at root)"""
         db_info = get_db_info()
         return {
             "message": "Weather API",
