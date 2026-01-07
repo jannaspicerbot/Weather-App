@@ -230,6 +230,7 @@ class WeatherTrayApp:
             # Keep the server running even without tray icon
             try:
                 import time
+
                 while True:
                     time.sleep(1)
             except KeyboardInterrupt:

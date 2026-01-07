@@ -61,8 +61,11 @@ ignore = [
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
     "B904",  # raise exceptions with 'from err' or 'from None'
+    "B905",  # zip() without explicit strict parameter (Python 3.10+ feature)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["F541", "UP009"]  # Allow f-strings without placeholders and UTF-8 declarations in tests
+"tests/**/*.py" = ["F541", "F841", "E722", "UP009"]  # Allow f-strings without placeholders, unused variables, bare except, and UTF-8 declarations in tests
+"tests/utils/*.py" = ["F841", "E722"]  # Allow unused variables and bare except in test utilities
+"tests/archive/**/*.py" = ["F841", "E402", "E722", "F401", "F541"]  # Relax linting for archived experimental code
