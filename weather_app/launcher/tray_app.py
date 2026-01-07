@@ -88,17 +88,17 @@ class WeatherTrayApp:
             logger.error(f"Failed to open data folder: {e}")
 
     def restart_app(self, icon=None, item=None):
-        """Restart the application"""
+        """Restart the application (menu callback)"""
         logger.info("Restarting application...")
         self._do_quit(restart=True)
 
     def quit_app(self, icon=None, item=None):
         """Quit application (menu callback)"""
-        logger.info("Shutting down...")
         self._do_quit(restart=False)
 
     def _do_quit(self, restart=False):
         """Internal quit implementation"""
+        logger.info("Shutting down...")
         self.stop_server()
 
         if self.icon:
@@ -230,6 +230,7 @@ class WeatherTrayApp:
             # Keep the server running even without tray icon
             try:
                 import time
+
                 while True:
                     time.sleep(1)
             except KeyboardInterrupt:
