@@ -1,10 +1,10 @@
 # Troubleshooting: WeatherApp.exe Launch Failure
 
-**Date:** January 6, 2026
+**Date:** January 6, 2026 (Updated: January 7, 2026)
 **Issue:** WeatherApp.exe fails to launch after installation
-**Status:** PARTIALLY RESOLVED
+**Status:** ✅ RESOLVED
 
-**Note:** The debug exe (WeatherApp_Debug.exe with console=True) now works correctly. The production exe (WeatherApp.exe with console=False) still fails to launch silently. Investigation and resolution will continue in a future PR.
+**Resolution:** The production exe crash was caused by uvicorn's logging configuration attempting to access `sys.stdout.isatty()` when `sys.stdout` is `None` in frozen executables with `console=False`. Fixed by disabling uvicorn's log config.
 
 ---
 
@@ -51,7 +51,32 @@ ValueError: <bound method WeatherTrayApp.quit_app of <...>>
 
 ---
 
-### Issue 3: Setup Wizard Blocks Startup (console=False builds)
+### Issue 3: Uvicorn Logging Fails When sys.stdout is None (ROOT CAUSE)
+
+**Problem:** When PyInstaller packages with `console=False` (no console window), `sys.stdout` is set to `None`. Uvicorn's default logging formatter tries to call `sys.stdout.isatty()`, which raises `AttributeError: 'NoneType' object has no attribute 'isatty'`.
+
+**Error (from crash log):**
+```
+UNCAUGHT EXCEPTION
+Type: SystemExit
+Message: 1
+
+Traceback:
+  File "uvicorn\logging.py", line 42, in __init__
+  AttributeError: 'NoneType' object has no attribute 'isatty'
+
+  File "weather_app\launcher\tray_app.py", line 40, in start_server
+  File "uvicorn\config.py", line 278, in __init__
+  ValueError: Unable to configure formatter 'default'
+```
+
+**Impact:** Server startup fails immediately, app exits with code 1, no visible error because console is hidden.
+
+**Why we didn't see it before:** Without crash logging infrastructure, the error was completely invisible.
+
+---
+
+### Issue 4: Setup Wizard Blocks Startup (console=False builds)
 
 **Problem:** When running the production exe (console=False), if the `.env` file doesn't exist in `%APPDATA%\WeatherApp\`, the setup wizard launches a tkinter GUI window. However, with console=False, this window may not display properly, causing the app to appear frozen or non-responsive.
 
@@ -70,7 +95,7 @@ Alternatively, use the debug version (`WeatherApp_Debug.exe`) which has console=
 
 ---
 
-### Issue 4: Frontend Not Served (API JSON displayed instead)
+### Issue 5: Frontend Not Served (API JSON displayed instead)
 
 **Problem:** When accessing `http://localhost:8000` in the browser, the API root endpoint was being served instead of the React frontend dashboard. This caused users to see JSON API information instead of the actual web interface.
 
@@ -140,7 +165,44 @@ def _do_quit(self, restart=False):
 **Files changed:**
 - [`weather_app/launcher/tray_app.py`](../../weather_app/launcher/tray_app.py)
 
-### Fix 3: Move API Root Route to /api
+### Fix 3: Disable Uvicorn Logging Config (CRITICAL FIX)
+
+Disabled uvicorn's default logging configuration to prevent the `sys.stdout.isatty()` error in frozen executables.
+
+**Before:**
+```python
+config = uvicorn.Config(
+    app,
+    host="127.0.0.1",
+    port=PORT,
+    log_level="info",
+    access_log=False,
+)
+```
+
+**After:**
+```python
+config = uvicorn.Config(
+    app,
+    host="127.0.0.1",
+    port=PORT,
+    log_level="info",
+    access_log=False,
+    log_config=None,  # CRITICAL: Disable uvicorn logging config when frozen
+)
+```
+
+**Why this works:**
+- `log_config=None` disables uvicorn's logging configuration entirely
+- The application's own logging (structured logging to files) handles all logging
+- No dependency on `sys.stdout.isatty()` which fails when `sys.stdout` is `None`
+
+**Files changed:**
+- [`weather_app/launcher/tray_app.py`](../../weather_app/launcher/tray_app.py)
+
+**Commit:** `93a2518` - Fix: Disable uvicorn logging config when running as frozen exe
+
+### Fix 4: Move API Root Route to /api
 
 Changed the API information endpoint from `/` to `/api` to allow the frontend to be served at the root path.
 
@@ -168,7 +230,7 @@ def read_root():
 - API information available at `http://localhost:8000/api`
 - All API endpoints prefixed with `/api` or legacy `/weather` paths
 
-### Fix 4: Add Tray Icon Fallback
+### Fix 5: Add Tray Icon Fallback
 
 Added error handling to prevent the app from crashing if the system tray icon fails to create (known issue with pystray on some Windows systems).
 
@@ -286,7 +348,7 @@ After applying the fixes, verify:
 - [x] `pip show weather-app` shows all required packages as dependencies
 - [x] PyInstaller build completes without errors
 - [x] Debug exe launches successfully
-- [ ] System tray icon appears (may not work on all systems)
+- [ ] System tray icon appears (may not work on all systems - known Windows 11 issue)
 - [x] FastAPI server starts on `http://localhost:8000`
 - [x] Frontend dashboard served at root path (not API JSON)
 - [x] Dashboard opens in browser
@@ -294,38 +356,49 @@ After applying the fixes, verify:
 
 **Production exe (WeatherApp.exe with console=False):**
 - [x] PyInstaller build completes without errors
-- [ ] **KNOWN ISSUE: Production exe fails to launch silently** - Investigation ongoing
+- [x] Production exe launches successfully (fixed with `log_config=None`)
+- [x] FastAPI server starts and responds to requests
+- [x] Dashboard accessible at http://localhost:8000
+- [ ] System tray icon appears (known Windows 11 issue - not blocking)
 
 ---
 
 ## Known Issues & Future Work
 
-### Production Exe Launch Failure (console=False)
+### Production Exe Launch Failure (console=False) - ✅ RESOLVED
 
-**Status:** Unresolved - deferred to future PR
+**Status:** Fixed in commit `93a2518`
 
-**Problem:** The production exe (console=False) starts and immediately exits with no error message, logs, or visible indication of what went wrong.
+**Root Cause:** Uvicorn's logging configuration called `sys.stdout.isatty()` when `sys.stdout` was `None` in frozen executables with `console=False`.
 
-**What Works:**
-- Debug exe (console=True) launches successfully
-- Frontend is served correctly when using debug exe
-- All dependencies are present
-- Error handling has been added for tray icon failures
+**Solution:** Added `log_config=None` to uvicorn.Config() to disable uvicorn's logging configuration.
+
+**Diagnostic Infrastructure Added:**
+- Crash logging to `%APPDATA%\WeatherApp\logs\startup_*.log`
+- Runtime hooks to verify bundled resources
+- Build verification scripts (`installer/windows/verify_build.py`)
+
+### System Tray Icon Not Appearing (Windows 11)
+
+**Status:** Known issue - not blocking
+
+**Problem:** The system tray icon doesn't appear on some Windows 11 systems, even though pystray loads and runs without errors.
 
 **Possible Causes:**
-1. Console redirection issues in windowed mode preventing error output
-2. PyInstaller bootloader configuration for windowed apps
-3. Additional uncaught exception occurring only in console=False mode
-4. Windows-specific issue with windowed Python applications
+1. pystray compatibility with Windows 11
+2. Unsigned executable restrictions
+3. Windows notification area settings
 
-**Next Steps:**
-1. Add comprehensive logging to a file before any GUI initialization
-2. Test with alternative system tray libraries (e.g., infi.systray)
-3. Investigate PyInstaller bootloader options for windowed mode
-4. Consider using a Windows service or alternative launcher architecture
+**Workarounds:**
+- Dashboard auto-opens in browser on startup
+- Access via http://localhost:8000
+- Use browser bookmark
+- App remains fully functional without tray icon
 
-**Workaround:**
-Use the debug exe (WeatherApp_Debug.exe) which has console=True and works correctly.
+**Future Investigation:**
+- Test on Windows 10 to confirm OS-specific
+- Investigate alternative tray libraries (infi.systray, win10toast-click)
+- Consider code signing
 
 ---
 

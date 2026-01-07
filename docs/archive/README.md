@@ -8,13 +8,16 @@ This directory contains **archived documentation and materials** from historical
 
 ```
 docs/archive/
-├── README.md              # This file
-├── ci-cd/                 # Archived CI/CD documentation
-├── troubleshooting/       # API debugging investigation materials
-├── architecture.md.old    # Superseded architecture docs
-├── requirements.md.old    # Superseded requirements docs
-├── specifications.md.old  # Superseded specifications docs
-└── peer-review.md         # Historical peer review notes
+├── README.md                          # This file
+├── ci-cd/                             # Archived CI/CD documentation
+├── troubleshooting/                   # API debugging investigation materials
+├── GITHUB_ACTIONS_IMPROVEMENTS.md     # CI/CD improvements summary (Jan 2026)
+├── INSTALLER_FIXES_SUMMARY.md         # Installer diagnostic infrastructure (Jan 2026)
+├── INSTALLER_FIX_VERIFIED.md          # Installer fix verification (Jan 2026)
+├── architecture.md.old                # Superseded architecture docs
+├── requirements.md.old                # Superseded requirements docs
+├── specifications.md.old              # Superseded specifications docs
+└── peer-review.md                     # Historical peer review notes
 ```
 
 ---
@@ -48,6 +51,50 @@ The GitHub Actions workflows were consolidated from **7 workflows** down to **3 
 ### Current Documentation
 
 For up-to-date CI/CD documentation, see **[GitHub Actions Overview](../technical/github-actions-overview.md)**.
+
+---
+
+## Windows Installer Documentation Archive
+
+**Archive Date:** January 7, 2026
+**Reason:** Root-level PR summaries consolidated into existing documentation
+
+### What Happened
+
+Three root-level summary files were created during the Windows installer debugging effort. These have been archived because:
+
+1. The actual fix is documented in **[Troubleshooting: exe-launch-failure.md](../troubleshooting/exe-launch-failure.md)**
+2. Testing procedures are documented in **[installer/windows/TESTING.md](../../installer/windows/TESTING.md)**
+3. Root cause analysis is in **[windows-installer-root-cause-analysis.md](../testing/windows-installer-root-cause-analysis.md)**
+
+### Archived Files
+
+| File | Original Purpose |
+|------|------------------|
+| `GITHUB_ACTIONS_IMPROVEMENTS.md` | Summary of CI/CD workflow improvements |
+| `INSTALLER_FIXES_SUMMARY.md` | Summary of diagnostic infrastructure added |
+| `INSTALLER_FIX_VERIFIED.md` | Verification that production exe fix worked |
+
+### Key Fix (for reference)
+
+The production exe crash was caused by uvicorn's logging configuration attempting to call `sys.stdout.isatty()` when `sys.stdout` is `None` in frozen executables with `console=False`.
+
+**Solution:** Add `log_config=None` to uvicorn.Config():
+
+```python
+config = uvicorn.Config(
+    app,
+    host="127.0.0.1",
+    port=PORT,
+    log_level="info",
+    access_log=False,
+    log_config=None,  # CRITICAL: Disable uvicorn logging config when frozen
+)
+```
+
+### Current Documentation
+
+For up-to-date installer troubleshooting, see **[Troubleshooting: exe-launch-failure.md](../troubleshooting/exe-launch-failure.md)**.
 
 ---
 
