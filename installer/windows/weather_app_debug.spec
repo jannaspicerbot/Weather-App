@@ -67,7 +67,7 @@ a = Analysis(
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=['hooks/runtime_hook_debug.py'],  # Debug configuration + diagnostics
     excludes=[
         'matplotlib',  # Exclude if not needed to reduce size
         'scipy',       # Exclude if not needed
