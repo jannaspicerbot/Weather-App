@@ -37,12 +37,17 @@ class WeatherTrayApp:
 
             logger.info("Starting FastAPI server...")
             app = create_app()
+
+            # When frozen (packaged exe with console=False), sys.stdout is None
+            # This breaks uvicorn's default logging configuration
+            # Disable uvicorn's logging setup and let our app logging handle it
             config = uvicorn.Config(
                 app,
                 host="127.0.0.1",
                 port=PORT,
                 log_level="info",
                 access_log=False,  # Reduce console noise
+                log_config=None,  # CRITICAL: Disable uvicorn logging config when frozen
             )
             self.server = uvicorn.Server(config)
             self.server_thread = threading.Thread(target=self.server.run, daemon=True)
@@ -150,19 +155,17 @@ class WeatherTrayApp:
         """
         from PIL import Image
 
-        # Try to load from resources folder (bundled with app)
-        resources_icon = (
-            Path(__file__).parent.parent / "resources" / "icons" / "weather-app.png"
-        )
+        from weather_app.launcher.resource_path import get_icon_path, is_frozen
 
-        if resources_icon.exists():
-            try:
-                logger.info(f"Loading icon from {resources_icon}")
-                return Image.open(resources_icon)
-            except Exception as e:
-                logger.warning(f"Failed to load icon from {resources_icon}: {e}")
+        # Try to load icon using resource path helper (handles frozen/dev)
+        try:
+            icon_path = get_icon_path("weather-app.png")
+            logger.info(f"Loading icon from {icon_path} (frozen={is_frozen()})")
+            return Image.open(icon_path)
+        except FileNotFoundError as e:
+            logger.warning(f"Icon not found via resource_path: {e}")
 
-        # Legacy fallback: check old location
+        # Legacy fallback: check old hardcoded location
         legacy_icon = Path(__file__).parent / "icon.png"
         if legacy_icon.exists():
             try:
