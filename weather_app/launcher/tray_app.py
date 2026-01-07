@@ -37,12 +37,17 @@ class WeatherTrayApp:
 
             logger.info("Starting FastAPI server...")
             app = create_app()
+
+            # When frozen (packaged exe with console=False), sys.stdout is None
+            # This breaks uvicorn's default logging configuration
+            # Disable uvicorn's logging setup and let our app logging handle it
             config = uvicorn.Config(
                 app,
                 host="127.0.0.1",
                 port=PORT,
                 log_level="info",
                 access_log=False,  # Reduce console noise
+                log_config=None,  # CRITICAL: Disable uvicorn logging config when frozen
             )
             self.server = uvicorn.Server(config)
             self.server_thread = threading.Thread(target=self.server.run, daemon=True)
