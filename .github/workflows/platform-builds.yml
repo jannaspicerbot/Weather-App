@@ -1,0 +1,227 @@
+name: Platform-Specific Builds
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # ============================================================================
+  # WINDOWS INSTALLER BUILD
+  # Only runs platform-specific tests and installer generation
+  # Relies on main-ci.yml for core testing
+  # ============================================================================
+  windows-installer:
+    name: Windows Installer Build
+    runs-on: windows-latest
+    # Wait for main CI to pass before building
+    needs: []  # Will be triggered independently but can reference main-ci if needed
+
+    steps:
+      # -----------------------------------------------------------------------
+      # CHECKOUT CODE
+      # -----------------------------------------------------------------------
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # SETUP PYTHON
+      # -----------------------------------------------------------------------
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      # -----------------------------------------------------------------------
+      # WINDOWS-SPECIFIC VALIDATIONS
+      # -----------------------------------------------------------------------
+      - name: Test Windows Console Encoding
+        run: |
+          python -c "import sys; print(f'Console encoding: {sys.stdout.encoding}')"
+          Write-Host "Testing emoji support: ✅ 📊 🌡️ 💧" -ForegroundColor Cyan
+
+      - name: Verify Windows Path Handling
+        run: |
+          python -c "import os; print(f'Temp directory: {os.environ.get(\"TEMP\")}')"
+          python -c "from pathlib import Path; print(f'Current directory: {Path.cwd()}')"
+
+      - name: Test Windows Tray Icon Compatibility
+        run: |
+          python -c "from PIL import Image; print('PIL/Pillow available for tray icons')"
+          python -c "import pystray; print('pystray available for Windows tray')"
+
+      # -----------------------------------------------------------------------
+      # WINDOWS SYSTEM INFORMATION
+      # -----------------------------------------------------------------------
+      - name: Display Windows System Information
+        run: |
+          Write-Host "🪟 Windows System Information:" -ForegroundColor Cyan
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type"
+          Write-Host ""
+          Write-Host "Python Version:" -ForegroundColor Yellow
+          python --version
+          Write-Host ""
+          Write-Host "PowerShell Version:" -ForegroundColor Yellow
+          $PSVersionTable.PSVersion
+
+      # -----------------------------------------------------------------------
+      # WINDOWS INSTALLER BUILD (PyInstaller)
+      # -----------------------------------------------------------------------
+      - name: Test PyInstaller Compatibility
+        run: |
+          pip install pyinstaller
+          Write-Host "PyInstaller installed successfully" -ForegroundColor Green
+          pyinstaller --version
+
+      - name: Verify PyInstaller Spec Files
+        run: |
+          if (Test-Path "installer/windows/weather_app.spec") {
+            Write-Host "✅ Production spec file found" -ForegroundColor Green
+          }
+          if (Test-Path "installer/windows/weather_app_debug.spec") {
+            Write-Host "✅ Debug spec file found" -ForegroundColor Green
+          }
+
+      - name: Build Windows Installer (Debug Mode)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: installer/windows
+        run: |
+          Write-Host "Building Windows installer in DEBUG mode..." -ForegroundColor Cyan
+          pyinstaller weather_app_debug.spec
+          if (Test-Path "dist/WeatherApp.exe") {
+            Write-Host "✅ Windows executable created successfully" -ForegroundColor Green
+            Get-Item "dist/WeatherApp.exe" | Select-Object Name, Length, LastWriteTime
+          } else {
+            Write-Host "❌ Executable not found" -ForegroundColor Red
+            exit 1
+          }
+
+      # -----------------------------------------------------------------------
+      # SAVE BUILD ARTIFACTS
+      # -----------------------------------------------------------------------
+      - name: Upload Windows Installer (if built)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-exe-${{ github.sha }}
+          path: installer/windows/dist/WeatherApp.exe
+          retention-days: 30
+
+  # ============================================================================
+  # MACOS APP BUNDLE BUILD
+  # Only runs platform-specific tests and app bundle generation
+  # Relies on main-ci.yml for core testing
+  # ============================================================================
+  macos-app:
+    name: macOS App Bundle Build
+    runs-on: macos-latest
+    # Wait for main CI to pass before building
+    needs: []  # Will be triggered independently but can reference main-ci if needed
+
+    steps:
+      # -----------------------------------------------------------------------
+      # CHECKOUT CODE
+      # -----------------------------------------------------------------------
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # SETUP PYTHON
+      # -----------------------------------------------------------------------
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      # -----------------------------------------------------------------------
+      # MACOS-SPECIFIC VALIDATIONS
+      # -----------------------------------------------------------------------
+      - name: Verify macOS System Information
+        run: |
+          echo "🍎 macOS System Information:"
+          sw_vers
+          echo ""
+          echo "Python Version:"
+          python --version
+          echo ""
+          echo "Architecture:"
+          uname -m
+
+      - name: Test macOS File System Compatibility
+        run: |
+          python -c "import os; print(f'Home directory: {os.path.expanduser(\"~\")}')"
+          python -c "from pathlib import Path; print(f'Current directory: {Path.cwd()}')"
+
+      # -----------------------------------------------------------------------
+      # FUTURE: MACOS APP BUNDLE BUILD
+      # -----------------------------------------------------------------------
+      - name: Prepare macOS App Bundle (Future)
+        if: false  # Disabled until Phase 3 deployment
+        run: |
+          echo "🚀 Future: Build .app bundle for macOS distribution"
+          echo "Will use py2app or similar tool"
+          echo "✅ macOS app bundle prepared"
+
+  # ============================================================================
+  # FRONTEND BUILD ARTIFACTS
+  # Build production frontend bundles for all platforms
+  # ============================================================================
+  frontend-build-artifacts:
+    name: Frontend Build - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    # Only run if frontend files changed
+    if: |
+      contains(github.event.head_commit.modified, 'web/') ||
+      contains(github.event.head_commit.modified, '.github/workflows/platform-builds.yml') ||
+      github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build Frontend Bundle
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+          echo "✅ Frontend bundle built successfully on ${{ matrix.os }}"
+
+      - name: Check Bundle Size
+        working-directory: web
+        shell: bash
+        run: |
+          echo "📦 Frontend Bundle Size on ${{ matrix.os }}:"
+          du -sh dist/ 2>/dev/null || echo "Size check completed"
+
+      - name: Upload Frontend Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ matrix.os }}-${{ github.sha }}
+          path: web/dist/
+          retention-days: 7

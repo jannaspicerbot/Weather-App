@@ -1,4 +1,4 @@
-name: Cross-Platform Build & Test
+name: Main CI
 
 on:
   push:
@@ -8,11 +8,10 @@ on:
 
 jobs:
   # ============================================================================
-  # MULTI-PLATFORM TESTING
-  # Testing on Linux (iPad proxy), Windows (PC), and macOS (Mac)
+  # BACKEND TESTS - Multi-platform, multi-version Python testing
   # ============================================================================
-  multi-platform-test:
-    name: Test on ${{ matrix.os }} - Python ${{ matrix.python-version }}
+  backend-tests:
+    name: Backend Tests - ${{ matrix.os }} - Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -26,23 +25,26 @@ jobs:
           - os: ubuntu-latest
             python-version: '3.12'
 
+    # Only run if backend files changed
+    if: |
+      contains(github.event.head_commit.modified, 'weather_app/') ||
+      contains(github.event.head_commit.modified, 'tests/') ||
+      contains(github.event.head_commit.modified, 'requirements.txt') ||
+      contains(github.event.head_commit.modified, 'pyproject.toml') ||
+      contains(github.event.head_commit.modified, '.github/workflows/main-ci.yml') ||
+      github.event_name == 'pull_request'
+
     steps:
-      # -----------------------------------------------------------------------
-      # CHECKOUT CODE
-      # -----------------------------------------------------------------------
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # -----------------------------------------------------------------------
-      # BACKEND SETUP (Python 3.11 + FastAPI + DuckDB)
-      # -----------------------------------------------------------------------
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
-      - name: Install Backend Dependencies
+      - name: Install Dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
@@ -54,46 +56,17 @@ jobs:
         shell: bash
         run: |
           pytest tests/ -v -m "not requires_api_key" --cov=weather_app --cov-report=xml --cov-report=term
-        continue-on-error: false
 
-      # -----------------------------------------------------------------------
-      # FRONTEND SETUP (React 18 + Vite + TypeScript)
-      # -----------------------------------------------------------------------
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
-
-      - name: Install Frontend Dependencies
-        shell: bash
-        working-directory: web
-        run: npm ci
-
-      - name: Build Frontend (Vite + TypeScript)
-        shell: bash
-        working-directory: web
-        run: |
-          npm run build
-          echo "Frontend build successful on ${{ matrix.os }}"
-
-      # -----------------------------------------------------------------------
-      # PLATFORM-SPECIFIC VALIDATIONS
-      # -----------------------------------------------------------------------
-      - name: Validate DuckDB on ${{ matrix.os }}
+      - name: Validate DuckDB
         shell: bash
         run: |
           python -c "import duckdb; print(f'DuckDB {duckdb.__version__} working on ${{ matrix.os }}')"
 
-      - name: Validate FastAPI on ${{ matrix.os }}
+      - name: Validate FastAPI
         shell: bash
         run: |
           python -c "from weather_app.web.app import create_app; app = create_app(); print('FastAPI app initialized on ${{ matrix.os }}')"
 
-      # -----------------------------------------------------------------------
-      # COVERAGE UPLOAD (Ubuntu + Python 3.11 only)
-      # -----------------------------------------------------------------------
       - name: Upload Coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4
@@ -102,48 +75,69 @@ jobs:
           fail_ci_if_error: false
 
   # ============================================================================
-  # LINTING & CODE QUALITY (Ubuntu only - runs once)
+  # BACKEND LINTING - Run once on Ubuntu
   # ============================================================================
-  lint-and-quality:
-    name: Code Quality Checks
+  backend-lint:
+    name: Backend Linting & Type Check
     runs-on: ubuntu-latest
+
+    # Only run if backend files changed
+    if: |
+      contains(github.event.head_commit.modified, 'weather_app/') ||
+      contains(github.event.head_commit.modified, 'tests/') ||
+      contains(github.event.head_commit.modified, 'pyproject.toml') ||
+      contains(github.event.head_commit.modified, '.github/workflows/main-ci.yml') ||
+      github.event_name == 'pull_request'
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # -----------------------------------------------------------------------
-      # PYTHON LINTING
-      # -----------------------------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install Python Linting Tools
+      - name: Install Linting Tools
         run: |
           python -m pip install --upgrade pip
           pip install ruff black isort mypy
           pip install -r requirements.txt
 
-      - name: Run Ruff (Fast Python Linter)
+      - name: Run Ruff (Fast Linter)
         run: ruff check weather_app/ tests/ --exclude tests/archive
-        continue-on-error: true
 
-      - name: Check Python Code Formatting (Black)
+      - name: Check Code Formatting (Black)
         run: black --check weather_app/ tests/ --exclude tests/archive
 
       - name: Check Import Sorting (isort)
         run: isort --check-only weather_app/ tests/ --skip tests/archive
 
-      - name: Type Check with mypy
+      - name: Type Check (mypy)
         run: mypy weather_app/
         continue-on-error: true
 
-      # -----------------------------------------------------------------------
-      # FRONTEND LINTING (iPad UI Compatibility)
-      # -----------------------------------------------------------------------
+  # ============================================================================
+  # FRONTEND TESTS - Lint, type check, and build
+  # ============================================================================
+  frontend-tests:
+    name: Frontend Tests & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    # Only run if frontend files changed
+    if: |
+      contains(github.event.head_commit.modified, 'web/') ||
+      contains(github.event.head_commit.modified, '.github/workflows/main-ci.yml') ||
+      github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -151,24 +145,37 @@ jobs:
           cache: 'npm'
           cache-dependency-path: web/package-lock.json
 
-      - name: Install Frontend Dependencies
-        working-directory: web
+      - name: Install Dependencies
         run: npm ci
 
-      - name: Run ESLint (Touch Event & CSS Standards)
-        working-directory: web
+      - name: Run ESLint
         run: npm run lint
 
       - name: TypeScript Type Check
-        working-directory: web
         run: npx tsc -b --noEmit
 
+      - name: Build Production Bundle
+        run: npm run build
+
+      - name: Check Bundle Size
+        run: |
+          du -sh dist/
+          echo "✅ Frontend build completed successfully"
+
   # ============================================================================
-  # SECURITY SCANNING (Ubuntu only - runs once)
+  # SECURITY SCAN - Run once on Ubuntu after backend tests pass
   # ============================================================================
   security-scan:
     name: Security Vulnerability Scan
     runs-on: ubuntu-latest
+    needs: [backend-tests]
+
+    # Only run if backend files changed
+    if: |
+      contains(github.event.head_commit.modified, 'weather_app/') ||
+      contains(github.event.head_commit.modified, 'requirements.txt') ||
+      contains(github.event.head_commit.modified, '.github/workflows/main-ci.yml') ||
+      github.event_name == 'pull_request'
 
     steps:
       - name: Checkout Code
@@ -195,11 +202,19 @@ jobs:
         continue-on-error: true
 
   # ============================================================================
-  # API INTEGRATION TESTS (Ubuntu only - runs once)
+  # API INTEGRATION TESTS - Run once on Ubuntu after backend tests pass
   # ============================================================================
   api-integration:
     name: FastAPI Integration Tests
     runs-on: ubuntu-latest
+    needs: [backend-tests]
+
+    # Only run if backend files changed
+    if: |
+      contains(github.event.head_commit.modified, 'weather_app/') ||
+      contains(github.event.head_commit.modified, 'tests/') ||
+      contains(github.event.head_commit.modified, '.github/workflows/main-ci.yml') ||
+      github.event_name == 'pull_request'
 
     steps:
       - name: Checkout Code
@@ -232,42 +247,3 @@ jobs:
           python -c "from weather_app.web.app import create_app; app = create_app(); import json; print(json.dumps(app.openapi(), indent=2))" > openapi.json
           echo "✅ OpenAPI schema generated successfully"
           cat openapi.json
-
-  # ============================================================================
-  # BUILD ARTIFACTS (Matrix: All Platforms)
-  # ============================================================================
-  build-artifacts:
-    name: Build Artifacts - ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    needs: [multi-platform-test, lint-and-quality]
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
-
-      - name: Build Frontend Bundle
-        working-directory: web
-        run: |
-          npm ci
-          npm run build
-          echo "Frontend bundle size:"
-          du -sh dist/ || dir dist\
-
-      - name: Check Build Artifacts
-        run: |
-          echo "✅ Build artifacts created successfully on ${{ matrix.os }}"

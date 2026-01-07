@@ -28,7 +28,7 @@ docs/
 │   ├── cli-reference.md               # CLI command reference
 │   ├── database-schema.md             # Database schema & queries
 │   ├── deployment-guide.md            # Installation & deployment
-│   └── ci-cd.md                       # CI/CD automation & testing
+│   └── github-actions-overview.md    # CI/CD automation & testing
 └── archive/                           # Historical docs (Phase 1-2)
     ├── requirements.md.old
     ├── specifications.md.old
@@ -162,12 +162,12 @@ docs/
 - Updates & maintenance
 - Platform-specific notes (Raspberry Pi, Windows, macOS)
 
-**[CI/CD Automation](technical/ci-cd.md)**
-- GitHub Actions workflows
+**[CI/CD Automation](technical/github-actions-overview.md)**
+- Streamlined GitHub Actions workflows (main-ci.yml, platform-builds.yml)
 - Quality gates and testing requirements
-- Accessibility testing (WCAG 2.2 AA compliance)
 - Local development testing
-- Troubleshooting CI failures
+- Comprehensive troubleshooting guide
+- Migration guide from old workflows
 
 **When to read:** You want to install, configure, or use the application
 
@@ -398,8 +398,12 @@ Historical documentation from Phase 1-2 is available in [archive/](archive/) for
 
 ## Document Changelog
 
+- **2026-01-06:** Consolidated CI/CD documentation (60-70% duplication removed)
+  - Merged ci-cd.md, cross-platform-ci.md into single github-actions-overview.md
+  - Archived old workflow documentation to docs/archive/ci-cd/
+  - Streamlined from 3 overlapping docs to 1 comprehensive guide
 - **2026-01-03:** Added CI/CD automation documentation and GitHub Actions workflows
-  - Created comprehensive CI/CD guide (docs/technical/ci-cd.md)
+  - Created comprehensive CI/CD guide (docs/technical/github-actions-overview.md)
   - Added Backend CI, Frontend CI & Accessibility, and Documentation CI workflows
   - Included accessibility testing requirements (axe-core, Lighthouse, ESLint jsx-a11y)
 - **2026-01-03:** Added ADR-006 (React Aria) and ADR-007 (Victory Charts) for Phase 3 Web UI
