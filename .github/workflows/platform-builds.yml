@@ -212,12 +212,18 @@ jobs:
           echo "PyInstaller installed successfully"
           pyinstaller --version
 
-      - name: Verify PyInstaller Spec File
+      - name: Verify PyInstaller Spec Files
         run: |
           if [ -f "installer/macos/weather_app.spec" ]; then
-            echo "✅ macOS spec file found"
+            echo "✅ macOS production spec file found"
           else
-            echo "❌ macOS spec file not found"
+            echo "❌ macOS production spec file not found"
+            exit 1
+          fi
+          if [ -f "installer/macos/weather_app_debug.spec" ]; then
+            echo "✅ macOS debug spec file found"
+          else
+            echo "❌ macOS debug spec file not found"
             exit 1
           fi
 
@@ -242,68 +248,45 @@ jobs:
             exit 1
           fi
 
-      - name: Build macOS App Bundle
+      - name: Build macOS App Bundle (Production)
         working-directory: installer/macos
         run: |
-          echo "🍎 Building macOS app bundle..."
+          echo "🍎 Building macOS app bundle (PRODUCTION)..."
           pyinstaller weather_app.spec --clean
           if [ -d "dist/WeatherApp.app" ]; then
-            echo "✅ macOS app bundle created successfully"
+            echo "✅ macOS production app bundle created successfully"
             ls -la dist/
           else
-            echo "❌ App bundle not found"
+            echo "❌ Production app bundle not found"
+            exit 1
+          fi
+
+      - name: Build macOS App Bundle (Debug)
+        working-directory: installer/macos
+        run: |
+          echo "🍎 Building macOS app bundle (DEBUG)..."
+          pyinstaller weather_app_debug.spec --clean
+          if [ -d "dist/WeatherApp_Debug.app" ]; then
+            echo "✅ macOS debug app bundle created successfully"
+            ls -la dist/
+          else
+            echo "❌ Debug app bundle not found"
             exit 1
           fi
 
       # -----------------------------------------------------------------------
       # SAVE BUILD ARTIFACTS
       # -----------------------------------------------------------------------
-      - name: Upload macOS App Bundle
+      - name: Upload macOS Production App Bundle
         uses: actions/upload-artifact@v4
         with:
           name: macos-app-bundle-${{ github.sha }}
           path: installer/macos/dist/WeatherApp.app
           retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
 
-  # ============================================================================
-  # FRONTEND BUILD ARTIFACTS
-  # Build production frontend bundles for all platforms
-  # ============================================================================
-  frontend-build-artifacts:
-    name: Frontend Build - ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
-
-      - name: Build Frontend Bundle
-        working-directory: web
-        run: |
-          npm ci
-          npm run build
-          echo "✅ Frontend bundle built successfully on ${{ matrix.os }}"
-
-      - name: Check Bundle Size
-        working-directory: web
-        shell: bash
-        run: |
-          echo "📦 Frontend Bundle Size on ${{ matrix.os }}:"
-          du -sh dist/ 2>/dev/null || echo "Size check completed"
-
-      - name: Upload Frontend Build Artifacts
+      - name: Upload macOS Debug App Bundle
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-dist-${{ matrix.os }}-${{ github.sha }}
-          path: web/dist/
+          name: macos-app-bundle-debug-${{ github.sha }}
+          path: installer/macos/dist/WeatherApp_Debug.app
           retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
