@@ -55,9 +55,7 @@ class WeatherDatabase:
     def _create_tables(self):
         """Create weather_data and backfill_progress tables if they don't exist."""
         # Create sequence for weather_data IDs (DuckDB requires explicit sequences)
-        self.conn.execute(
-            "CREATE SEQUENCE IF NOT EXISTS weather_data_id_seq START 1"
-        )
+        self.conn.execute("CREATE SEQUENCE IF NOT EXISTS weather_data_id_seq START 1")
 
         # Create weather_data table
         # DuckDB uses BIGINT for large integers, DOUBLE for floats, INTEGER for smaller ints
