@@ -521,6 +521,25 @@ import {
 - ✅ Color contrast meets WCAG AA (4.5:1 minimum)
 - ✅ Color-blind friendly palette (don't rely on color alone)
 
+**Color as Secondary Indicator (WCAG 1.4.1):**
+
+Per WCAG 2.2 standards, color must never be the **only** way to convey information. When multiple data series appear in one chart:
+
+- Use different `strokeDasharray` patterns (solid vs. dashed)
+- Include distinct symbols or markers in legends
+- Provide text labels where feasible
+
+```typescript
+// ✅ GOOD - Color + pattern differentiation
+// Primary metric: solid line
+<VictoryLine style={{ data: { stroke: 'var(--color-water)', strokeWidth: 2 } }} />
+
+// Secondary metric: dashed line (visually distinct without relying on color)
+<VictoryLine style={{ data: { stroke: 'var(--color-growth)', strokeWidth: 2, strokeDasharray: '6,3' } }} />
+```
+
+For detailed chart styling guidelines, see [Design Tokens - Chart Implementation Guide](./design-tokens.md#chart-implementation-guide).
+
 ---
 
 ## Testing Strategy

@@ -709,6 +709,108 @@ ThemeManager.importConfig(config);
 
 ---
 
+## Chart Implementation Guide
+
+This section defines the visual standards for Victory Charts to ensure clean lines, proper differentiation, and WCAG 2.2 AA compliance.
+
+### Chart Design Standards
+
+The system uses the Victory library configured for high accessibility and clean aesthetics.
+
+#### Clean Lines & Outlines
+
+| Element | Token/Value | Purpose |
+|---------|-------------|---------|
+| **Line Stroke** | `strokeWidth: 2` | Visible without being heavy |
+| **Grid Lines** | `var(--chart-grid)` + `strokeDasharray: '4,4'` | Context without competing with data |
+| **Axis Lines** | `var(--color-border)` | Professional, subtle boundaries |
+| **Axis Labels** | `var(--chart-axis)` | Desaturated, readable text |
+
+#### Legend & Data Differentiation
+
+Map metrics to distinct semantic "color families" for clear differentiation:
+
+| Metric Category | Semantic Token | Recommended Use |
+|-----------------|----------------|-----------------|
+| **Water/Temp** | `var(--color-water)` | Temperature, Rainfall, Humidity |
+| **Growth/Wind** | `var(--color-growth)` | Wind Speed, Air Quality, Nature metrics |
+| **Interactive** | `var(--color-interactive)` | Highlighted data, hovered points |
+
+### Implementation Rules
+
+Follow these rules to maintain visual consistency:
+
+1. **No Hard-Coding**
+   ```typescript
+   // ❌ BAD - Hard-coded hex
+   style={{ stroke: '#3B6B8F' }}
+
+   // ✅ GOOD - Semantic token
+   style={{ stroke: 'var(--chart-line-water)' }}
+   ```
+
+2. **Color as Secondary** (WCAG 2.2 Compliance)
+   - Color should never be the **only** way to convey information
+   - Use different `strokeDasharray` patterns for multiple lines in one chart
+   - Example: Solid line for primary metric, dashed for secondary
+   ```typescript
+   // Primary metric: solid line
+   <VictoryLine style={{ data: { stroke: 'var(--color-water)', strokeWidth: 2 } }} />
+
+   // Secondary metric: dashed line
+   <VictoryLine style={{ data: { stroke: 'var(--color-growth)', strokeWidth: 2, strokeDasharray: '6,3' } }} />
+   ```
+
+3. **Opacity for Depth**
+   - Use alpha variants for area fills under lines
+   - Provides depth without obscuring background grid
+   ```typescript
+   // Area fill with 15% opacity
+   <VictoryArea style={{ data: { fill: 'var(--color-water-15)', stroke: 'var(--chart-line-water)' } }} />
+   ```
+
+### Recommended Palettes for Charts
+
+For the cleanest lines and highest differentiation:
+
+| Palette | Best For | Characteristics |
+|---------|----------|-----------------|
+| **Serene Clarity** | Professional dashboards | High-clarity blues and greens |
+| **Deep Confidence** | Maximum readability | Highest contrast ratios |
+| **Accessible Harmony** | WCAG AAA compliance | Maximum accessibility |
+
+### Victory Chart Theme Object
+
+```typescript
+// src/utils/chartTheme.ts
+export const weatherChartTheme = {
+  axis: {
+    style: {
+      axis: { stroke: 'var(--color-border)', strokeWidth: 1 },
+      grid: { stroke: 'var(--chart-grid)', strokeDasharray: '4,4' },
+      tickLabels: {
+        fill: 'var(--chart-axis)',
+        fontSize: 12,
+        fontFamily: 'Inter, system-ui, sans-serif'
+      }
+    }
+  },
+  line: {
+    style: {
+      data: { strokeWidth: 2 },
+      labels: { fill: 'var(--color-text-primary)' }
+    }
+  },
+  area: {
+    style: {
+      data: { strokeWidth: 2 }
+    }
+  }
+};
+```
+
+---
+
 ## Summary
 
 **To answer your questions:**
