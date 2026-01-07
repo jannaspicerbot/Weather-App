@@ -1,64 +1,77 @@
 /**
  * Humidity Chart Component
  *
- * Displays humidity percentage over time using Victory charts
+ * Displays humidity percentage over time using Victory charts.
+ * Uses semantic design tokens from design-tokens.md.
  */
 
 import { VictoryChart, VictoryLine, VictoryAxis } from 'victory';
 import { type WeatherData } from '../../api';
+import { ChartCard } from './ChartCard';
 
 interface HumidityChartProps {
   data: WeatherData[];
 }
 
+// Chart height for compact 2x2 grid layout
+const CHART_HEIGHT = 200;
+
 export default function HumidityChart({ data }: HumidityChartProps) {
   const hasData = data && data.length > 0;
 
-  const humidityData = hasData ? data.map(d => ({
-    x: new Date(d.dateutc),
-    y: d.humidity ?? null,
-  })).filter(d => d.y !== null) : [];
+  const humidityData = hasData
+    ? data
+        .map((d) => ({
+          x: new Date(d.dateutc),
+          y: d.humidity ?? null,
+        }))
+        .filter((d) => d.y !== null)
+    : [];
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Humidity</h3>
-
+    <ChartCard
+      title="Humidity"
+      colorCategory="water"
+      description="Line chart showing humidity percentage over time"
+    >
       {!hasData || humidityData.length === 0 ? (
-        <div className="h-64 flex items-center justify-center text-gray-500">
+        <div className="chart-card__empty">
           No data available for selected date range
         </div>
       ) : (
-        <VictoryChart
-          height={300}
-        >
+        <VictoryChart height={CHART_HEIGHT} padding={{ top: 15, bottom: 35, left: 50, right: 20 }}>
           <VictoryAxis
             tickFormat={(t) => {
               const date = new Date(t);
               return `${date.getMonth() + 1}/${date.getDate()}`;
             }}
             style={{
-              tickLabels: { fontSize: 10, padding: 5 },
+              axis: { stroke: 'var(--color-border)' },
+              grid: { stroke: 'var(--chart-grid)', strokeDasharray: '4,4' },
+              tickLabels: { fontSize: 8, fill: 'var(--chart-axis)', padding: 4 },
             }}
           />
 
           <VictoryAxis
             dependentAxis
-            label="Humidity (%)"
+            label="%"
             domain={[0, 100]}
             style={{
-              axisLabel: { fontSize: 12, padding: 35 },
-              tickLabels: { fontSize: 10 },
+              axis: { stroke: 'var(--color-border)' },
+              grid: { stroke: 'var(--chart-grid)', strokeDasharray: '4,4' },
+              axisLabel: { fontSize: 9, fill: 'var(--chart-axis)', padding: 30 },
+              tickLabels: { fontSize: 8, fill: 'var(--chart-axis)' },
             }}
           />
 
           <VictoryLine
             data={humidityData}
             style={{
-              data: { stroke: '#3b82f6', strokeWidth: 2 },
+              data: { stroke: 'var(--color-water)', strokeWidth: 2 },
             }}
           />
         </VictoryChart>
       )}
-    </div>
+    </ChartCard>
   );
 }

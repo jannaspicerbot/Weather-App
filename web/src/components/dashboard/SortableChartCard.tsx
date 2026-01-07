@@ -3,6 +3,9 @@
  *
  * Wrapper component that makes chart cards draggable/sortable using dnd-kit.
  * Provides full accessibility support (keyboard, screen reader, touch).
+ *
+ * Note: Visual styling is handled by ChartCard component inside.
+ * This wrapper only adds drag-and-drop behavior.
  */
 
 import { useSortable } from '@dnd-kit/sortable';
@@ -31,20 +34,15 @@ export function SortableChartCard({ id, children }: SortableChartCardProps) {
   };
 
   return (
-    <article
+    <div
       ref={setNodeRef}
       style={style}
-      className={`
-        bg-white shadow-md rounded-lg p-6
-        focus:outline-none
-        focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
-        ${isDragging ? 'cursor-grabbing z-10' : 'cursor-grab'}
-      `}
+      className={`sortable-chart-card ${isDragging ? 'sortable-chart-card--dragging' : ''}`}
       aria-label={`${id} chart - draggable`}
       {...attributes}
       {...listeners}
     >
       {children}
-    </article>
+    </div>
   );
 }
