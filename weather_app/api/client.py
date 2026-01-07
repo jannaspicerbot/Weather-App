@@ -146,6 +146,7 @@ class AmbientWeatherAPI:
         batch_size=288,
         delay=1.0,
         progress_callback=None,
+        batch_callback=None,
     ):
         """
         Fetch all historical data for a device with pagination
@@ -156,12 +157,18 @@ class AmbientWeatherAPI:
             end_date: End date (datetime object)
             batch_size: Records per API call (max 288)
             delay: Delay between API calls in seconds
-            progress_callback: Optional callback function(records_fetched, requests_made)
+            progress_callback: Optional callback function(total_fetched, requests_made)
+            batch_callback: Optional callback function(batch_data) called after each batch
+                           for incremental processing/saving. Returns (inserted, skipped).
 
         Returns:
-            List of all weather data records
+            Tuple of (total_records, total_inserted, total_skipped) if batch_callback used,
+            otherwise list of all weather data records (legacy behavior)
         """
-        all_data = []
+        all_data = [] if batch_callback is None else None
+        total_fetched = 0
+        total_inserted = 0
+        total_skipped = 0
         requests_made = 0
         current_end_date = None
 
@@ -184,14 +191,18 @@ class AmbientWeatherAPI:
                 if not data:
                     break
 
-                all_data.extend(data)
+                total_fetched += len(data)
+
+                # If batch_callback provided, save incrementally
+                if batch_callback:
+                    inserted, skipped = batch_callback(data)
+                    total_inserted += inserted
+                    total_skipped += skipped
+                else:
+                    all_data.extend(data)
 
                 if progress_callback:
-                    progress_callback(len(all_data), requests_made)
-
-                # Check if we have all data
-                if len(data) < batch_size:
-                    break
+                    progress_callback(total_fetched, requests_made)
 
                 # Get timestamp of oldest record for next batch
                 oldest_timestamp = min(d.get("dateutc", float("inf")) for d in data)
@@ -219,6 +230,9 @@ class AmbientWeatherAPI:
                     continue
                 raise
 
+        # Return appropriate format based on mode
+        if batch_callback:
+            return (total_fetched, total_inserted, total_skipped)
         return all_data
 
     def close(self):

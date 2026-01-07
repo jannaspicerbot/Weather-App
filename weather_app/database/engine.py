@@ -54,12 +54,17 @@ class WeatherDatabase:
 
     def _create_tables(self):
         """Create weather_data and backfill_progress tables if they don't exist."""
+        # Create sequence for weather_data IDs (DuckDB requires explicit sequences)
+        self.conn.execute(
+            "CREATE SEQUENCE IF NOT EXISTS weather_data_id_seq START 1"
+        )
+
         # Create weather_data table
         # DuckDB uses BIGINT for large integers, DOUBLE for floats, INTEGER for smaller ints
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS weather_data (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY DEFAULT nextval('weather_data_id_seq'),
                 dateutc BIGINT UNIQUE NOT NULL,
                 date VARCHAR,
                 tempf DOUBLE,
@@ -96,11 +101,16 @@ class WeatherDatabase:
         )
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_date ON weather_data(date)")
 
+        # Create sequence for backfill_progress IDs (DuckDB requires explicit sequences)
+        self.conn.execute(
+            "CREATE SEQUENCE IF NOT EXISTS backfill_progress_id_seq START 1"
+        )
+
         # Create backfill_progress table to track backfill operations
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS backfill_progress (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY DEFAULT nextval('backfill_progress_id_seq'),
                 start_date VARCHAR NOT NULL,
                 end_date VARCHAR NOT NULL,
                 current_date VARCHAR NOT NULL,
