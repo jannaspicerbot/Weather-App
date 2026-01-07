@@ -39,15 +39,15 @@ jobs:
         run: |
           # Runs your Pydantic and DuckDB logic tests
           pytest tests/ -v -m "not requires_api_key" --cov=weather_app --cov-report=term
-          echo "✅ Backend tests passed on macOS"
+          echo "Backend tests passed on macOS"
 
       - name: Validate DuckDB on macOS
         run: |
-          python -c "import duckdb; print(f'✅ DuckDB {duckdb.__version__} working on macOS')"
+          python -c "import duckdb; print(f'DuckDB {duckdb.__version__} working on macOS')"
 
       - name: Validate FastAPI on macOS
         run: |
-          python -c "from weather_app.web.app import create_app; app = create_app(); print('✅ FastAPI app initialized on macOS')"
+          python -c "from weather_app.web.app import create_app; app = create_app(); print('FastAPI app initialized on macOS')"
 
       # -----------------------------------------------------------------------
       # SETUP FRONTEND (React + Vite)
@@ -67,7 +67,7 @@ jobs:
         working-directory: web
         run: |
           npm run build # Verifies TypeScript safety and Vite bundling
-          echo "✅ Frontend build successful on macOS"
+          echo "Frontend build successful on macOS"
 
       - name: Check Frontend Bundle Size
         working-directory: web
@@ -95,8 +95,8 @@ jobs:
       - name: Test macOS File System Compatibility
         run: |
           # Test macOS-specific path handling
-          python -c "import os; print(f'✅ Home directory: {os.path.expanduser(\"~\")}')"
-          python -c "from pathlib import Path; print(f'✅ Current directory: {Path.cwd()}')"
+          python -c "import os; print(f'Home directory: {os.path.expanduser(\"~\")}')"
+          python -c "from pathlib import Path; print(f'Current directory: {Path.cwd()}')"
 
       # -----------------------------------------------------------------------
       # SAVE THE BUILD ARTIFACTS

@@ -76,7 +76,7 @@ jobs:
         working-directory: web
         run: |
           npm run build
-          echo "✅ Frontend build successful on ${{ matrix.os }}"
+          echo "Frontend build successful on ${{ matrix.os }}"
 
       # -----------------------------------------------------------------------
       # PLATFORM-SPECIFIC VALIDATIONS
@@ -84,12 +84,12 @@ jobs:
       - name: Validate DuckDB on ${{ matrix.os }}
         shell: bash
         run: |
-          python -c "import duckdb; print(f'✅ DuckDB {duckdb.__version__} working on ${{ matrix.os }}')"
+          python -c "import duckdb; print(f'DuckDB {duckdb.__version__} working on ${{ matrix.os }}')"
 
       - name: Validate FastAPI on ${{ matrix.os }}
         shell: bash
         run: |
-          python -c "from weather_app.web.app import create_app; app = create_app(); print('✅ FastAPI app initialized on ${{ matrix.os }}')"
+          python -c "from weather_app.web.app import create_app; app = create_app(); print('FastAPI app initialized on ${{ matrix.os }}')"
 
       # -----------------------------------------------------------------------
       # COVERAGE UPLOAD (Ubuntu + Python 3.11 only)

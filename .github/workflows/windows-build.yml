@@ -38,15 +38,15 @@ jobs:
       - name: Verify Backend Logic (Windows)
         run: |
           pytest tests/ -v -m "not requires_api_key" --cov=weather_app --cov-report=term
-          Write-Host "✅ Backend tests passed on Windows" -ForegroundColor Green
+          Write-Host "Backend tests passed on Windows" -ForegroundColor Green
 
       - name: Validate DuckDB on Windows
         run: |
-          python -c "import duckdb; print(f'✅ DuckDB {duckdb.__version__} working on Windows')"
+          python -c "import duckdb; print(f'DuckDB {duckdb.__version__} working on Windows')"
 
       - name: Validate FastAPI on Windows
         run: |
-          python -c "from weather_app.web.app import create_app; app = create_app(); print('✅ FastAPI app initialized on Windows')"
+          python -c "from weather_app.web.app import create_app; app = create_app(); print('FastAPI app initialized on Windows')"
 
       # -----------------------------------------------------------------------
       # WINDOWS-SPECIFIC VALIDATIONS
@@ -54,18 +54,18 @@ jobs:
       - name: Test Windows Console Encoding
         run: |
           python -c "import sys; print(f'Console encoding: {sys.stdout.encoding}')"
-          python -c "print('Testing emoji support: ✅ 📊 🌡️ 💧')"
+          Write-Host "Testing emoji support: ✅ 📊 🌡️ 💧" -ForegroundColor Cyan
 
       - name: Verify Windows Path Handling
         run: |
-          python -c "import os; print(f'✅ Temp directory: {os.environ.get(\"TEMP\")}')"
-          python -c "from pathlib import Path; print(f'✅ Current directory: {Path.cwd()}')"
+          python -c "import os; print(f'Temp directory: {os.environ.get(\"TEMP\")}')"
+          python -c "from pathlib import Path; print(f'Current directory: {Path.cwd()}')"
 
       - name: Test Windows Tray Icon Compatibility
         run: |
           # Verify pystray and PIL dependencies for system tray
-          python -c "from PIL import Image; print('✅ PIL/Pillow available for tray icons')"
-          python -c "import pystray; print('✅ pystray available for Windows tray')"
+          python -c "from PIL import Image; print('PIL/Pillow available for tray icons')"
+          python -c "import pystray; print('pystray available for Windows tray')"
 
       # -----------------------------------------------------------------------
       # SETUP FRONTEND
@@ -85,7 +85,7 @@ jobs:
         working-directory: web
         run: |
           npm run build
-          Write-Host "✅ Frontend build successful on Windows" -ForegroundColor Green
+          Write-Host "Frontend build successful on Windows" -ForegroundColor Green
 
       - name: Check Frontend Bundle Size
         working-directory: web
@@ -116,29 +116,29 @@ jobs:
       - name: Test PyInstaller Compatibility
         run: |
           pip install pyinstaller
-          Write-Host "✅ PyInstaller installed successfully" -ForegroundColor Green
+          Write-Host "PyInstaller installed successfully" -ForegroundColor Green
           pyinstaller --version
 
       - name: Verify PyInstaller Spec Files
         run: |
           if (Test-Path "installer/windows/weather_app.spec") {
-            Write-Host "✅ Production spec file found" -ForegroundColor Green
+            Write-Host "Production spec file found" -ForegroundColor Green
           }
           if (Test-Path "installer/windows/weather_app_debug.spec") {
-            Write-Host "✅ Debug spec file found" -ForegroundColor Green
+            Write-Host "Debug spec file found" -ForegroundColor Green
           }
 
       - name: Build Windows Installer (Debug Mode)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: installer/windows
         run: |
-          Write-Host "🔨 Building Windows installer in DEBUG mode..." -ForegroundColor Cyan
+          Write-Host "Building Windows installer in DEBUG mode..." -ForegroundColor Cyan
           pyinstaller weather_app_debug.spec
           if (Test-Path "dist/WeatherApp.exe") {
-            Write-Host "✅ Windows executable created successfully" -ForegroundColor Green
+            Write-Host "Windows executable created successfully" -ForegroundColor Green
             Get-Item "dist/WeatherApp.exe" | Select-Object Name, Length, LastWriteTime
           } else {
-            Write-Host "❌ Executable not found" -ForegroundColor Red
+            Write-Host "Executable not found" -ForegroundColor Red
             exit 1
           }
 
