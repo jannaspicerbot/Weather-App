@@ -260,68 +260,73 @@ def backfill(start, end, batch_size, delay):
             logger.info("device_found", mac=mac, device_name=device_name)
             click.echo(f"📡 Fetching from device: {device_name}\n")
 
-            # Progress callback
-            total_inserted = 0
-            total_skipped = 0
-
-            def progress_callback(records_fetched, requests_made):
-                nonlocal total_inserted, total_skipped
-                logger.info(
-                    "backfill_progress",
-                    records_fetched=records_fetched,
-                    requests_made=requests_made,
-                )
-                click.echo(
-                    f"Progress: {records_fetched} records fetched, {requests_made} API requests made"
-                )
-
-            # Fetch all historical data
+            # Fetch and save data incrementally
             with WeatherDatabase(db_path) as db:
                 # Initialize backfill progress
-                db.init_backfill_progress(start, end)
+                progress_id = db.init_backfill_progress(start, end)
 
-                # Fetch data using the API client's built-in pagination
-                all_data = api.fetch_all_historical_data(
+                # Progress callback - shows fetch progress
+                def progress_callback(records_fetched, requests_made):
+                    logger.info(
+                        "backfill_progress",
+                        records_fetched=records_fetched,
+                        requests_made=requests_made,
+                    )
+                    click.echo(
+                        f"Progress: {records_fetched} records fetched, "
+                        f"{requests_made} API requests made"
+                    )
+
+                # Batch callback - saves each batch immediately to database
+                def batch_callback(batch_data):
+                    inserted, skipped = db.insert_data(batch_data)
+                    logger.debug(
+                        "batch_saved",
+                        batch_size=len(batch_data),
+                        inserted=inserted,
+                        skipped=skipped,
+                    )
+                    return inserted, skipped
+
+                # Fetch data with incremental saving
+                result = api.fetch_all_historical_data(
                     mac,
                     start_date=start_date,
                     end_date=end_date,
                     batch_size=batch_size,
                     delay=delay,
                     progress_callback=progress_callback,
+                    batch_callback=batch_callback,
                 )
 
-                if not all_data:
+                total_fetched, total_inserted, total_skipped = result
+
+                if total_fetched == 0:
                     logger.info("backfill_completed", records=0, reason="no_data_found")
                     click.echo("\n⚠️  No data found for the specified date range")
-                    db.clear_backfill_progress()
+                    db.clear_backfill_progress(progress_id)
                     return
 
-                # Insert data in batches
-                click.echo(f"\n💾 Saving {len(all_data)} records to database...")
-                inserted, skipped = db.insert_data(all_data)
-
-            total_inserted = inserted
-            total_skipped = skipped
-
-            # Update progress as completed
-            db.update_backfill_progress(
-                current_position=int(start_date.timestamp() * 1000),
-                records_fetched=len(all_data),
-                requests_made=0,  # Tracked in progress_callback
-                status="completed",
-            )
+                # Update progress as completed
+                db.update_backfill_progress(
+                    progress_id=progress_id,
+                    current_date=end,
+                    total_records=total_fetched,
+                    skipped_records=total_skipped,
+                    status="completed",
+                )
 
         duration_ms = (time.time() - start_time) * 1000
         logger.info(
             "backfill_completed",
-            total_records=len(all_data),
+            total_records=total_fetched,
             inserted=total_inserted,
             skipped=total_skipped,
             duration_ms=round(duration_ms, 2),
         )
 
         click.echo("\n✅ Backfill completed!")
-        click.echo(f"   Total records: {len(all_data)}")
+        click.echo(f"   Total records: {total_fetched}")
         click.echo(f"   Inserted: {total_inserted}")
         click.echo(f"   Skipped (duplicates): {total_skipped}")
 
@@ -335,14 +340,8 @@ def backfill(start, end, batch_size, delay):
         duration_ms = (time.time() - start_time) * 1000
         logger.error("backfill_failed", error=str(e), duration_ms=round(duration_ms, 2))
         click.echo(f"\n❌ Error: {e}")
-        with WeatherDatabase(db_path) as db:
-            db.update_backfill_progress(
-                current_position=0,
-                records_fetched=0,
-                requests_made=0,
-                status="failed",
-                error=str(e),
-            )
+        # Note: progress_id may not be defined if error occurred before init
+        # The backfill_progress table will retain any partial progress for debugging
         sys.exit(1)
 
 
