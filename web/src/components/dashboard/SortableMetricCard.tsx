@@ -41,9 +41,9 @@ export function SortableMetricCard({ id, children }: SortableMetricCardProps) {
       ref={setNodeRef}
       style={style}
       className={`sortable-metric-card ${isDragging ? 'sortable-metric-card--dragging' : ''}`}
-      role="listitem"
       {...attributes}
       {...listeners}
+      role="listitem"
     >
       {children}
     </div>
