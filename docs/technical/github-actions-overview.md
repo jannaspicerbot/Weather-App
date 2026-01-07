@@ -142,33 +142,35 @@ on:
 
 | Job | Runs On | Purpose | Duration |
 |-----|---------|---------|----------|
-| `windows-installer` | Windows only | PyInstaller .exe build + Windows-specific tests | ~8-12 min |
-| `macos-app` | macOS only | PyInstaller .app bundle + macOS-specific tests | ~8-12 min |
-| `frontend-build-artifacts` | Ubuntu, Windows, macOS (matrix) | Multi-platform frontend builds | ~4-6 min |
+| `windows-installer` | Windows only | PyInstaller .exe builds (production + debug) + Windows-specific tests | ~8-12 min |
+| `macos-app` | macOS only | PyInstaller .app bundles (production + debug) + macOS-specific tests | ~8-12 min |
 
 **Windows-Specific Validations:**
 - Console encoding tests (emoji support: ✅ 📊 🌡️ 💧)
 - System tray icon compatibility (PIL + pystray)
 - Windows path handling
 - PowerShell integration
-- **PyInstaller .exe build** (on all PRs and pushes)
+- **PyInstaller .exe builds** (production + debug, on all PRs and pushes)
 
 **macOS-Specific Validations:**
 - macOS system information (`sw_vers`)
 - File system compatibility
 - Native path handling
-- **PyInstaller .app bundle build** (on all PRs and pushes)
+- **PyInstaller .app bundle builds** (production + debug, on all PRs and pushes)
 
 **Installer Builds:**
 - Windows .exe builds on all PRs and pushes to main/develop
-- Uses `installer/windows/weather_app_debug.spec`
+  - Production: `installer/windows/weather_app.spec` → `WeatherApp.exe`
+  - Debug: `installer/windows/weather_app_debug.spec` → `WeatherApp_Debug.exe` (with console)
 - macOS .app bundle builds on all PRs and pushes to main/develop
-- Uses `installer/macos/weather_app.spec`
+  - Production: `installer/macos/weather_app.spec` → `WeatherApp.app`
+  - Debug: `installer/macos/weather_app_debug.spec` → `WeatherApp_Debug.app` (with console)
 
 **Artifacts:**
-- `windows-installer-exe-<sha>` - WeatherApp.exe (7 days for PRs, 30 days for main)
-- `macos-app-bundle-<sha>` - WeatherApp.app (7 days for PRs, 30 days for main)
-- `frontend-dist-<os>-<sha>` - Frontend builds (7 days for PRs, 30 days for main)
+- `windows-installer-<sha>` - WeatherApp.exe production build (7 days for PRs, 30 days for main)
+- `windows-installer-debug-<sha>` - WeatherApp_Debug.exe with console (7 days for PRs, 30 days for main)
+- `macos-app-bundle-<sha>` - WeatherApp.app production build (7 days for PRs, 30 days for main)
+- `macos-app-bundle-debug-<sha>` - WeatherApp_Debug.app with console (7 days for PRs, 30 days for main)
 
 ---
 
@@ -284,11 +286,19 @@ on:
 | Workflow | Artifact Name | Contents | Retention |
 |----------|---------------|----------|-----------|
 | **Main CI** | _(none)_ | Coverage → Codecov only | N/A |
-| **Platform Builds** | `windows-installer-exe-<sha>` | WeatherApp.exe | 7 days (PR) / 30 days (main) |
-| **Platform Builds** | `macos-app-bundle-<sha>` | WeatherApp.app | 7 days (PR) / 30 days (main) |
-| **Platform Builds** | `frontend-dist-ubuntu-<sha>` | web/dist/ (Ubuntu build) | 7 days (PR) / 30 days (main) |
-| **Platform Builds** | `frontend-dist-windows-<sha>` | web/dist/ (Windows build) | 7 days (PR) / 30 days (main) |
-| **Platform Builds** | `frontend-dist-macos-<sha>` | web/dist/ (macOS build) | 7 days (PR) / 30 days (main) |
+| **Platform Builds** | `windows-installer-<sha>` | WeatherApp.exe (production) | 7 days (PR) / 30 days (main) |
+| **Platform Builds** | `windows-installer-debug-<sha>` | WeatherApp_Debug.exe (with console) | 7 days (PR) / 30 days (main) |
+| **Platform Builds** | `macos-app-bundle-<sha>` | WeatherApp.app (production) | 7 days (PR) / 30 days (main) |
+| **Platform Builds** | `macos-app-bundle-debug-<sha>` | WeatherApp_Debug.app (with console) | 7 days (PR) / 30 days (main) |
+
+### Production vs Debug Builds
+
+| Build Type | Console | Use Case |
+|------------|---------|----------|
+| **Production** | Hidden | Normal use - clean UI without console window |
+| **Debug** | Visible | Troubleshooting - shows logs and error messages in console |
+
+Debug builds also set `USE_TEST_DB=true`, `LOG_LEVEL=DEBUG`, and `DEBUG_MODE=true` via runtime hooks.
 
 ### Downloading Artifacts
 
@@ -302,11 +312,17 @@ on:
 # List recent workflow runs
 gh run list --workflow=platform-builds.yml --limit 5
 
-# Download Windows installer
-gh run download <run-id> -n windows-installer-exe-<sha>
+# Download Windows production installer
+gh run download <run-id> -n windows-installer-<sha>
 
-# Download frontend build
-gh run download <run-id> -n frontend-dist-ubuntu-<sha>
+# Download Windows debug installer
+gh run download <run-id> -n windows-installer-debug-<sha>
+
+# Download macOS production app
+gh run download <run-id> -n macos-app-bundle-<sha>
+
+# Download macOS debug app
+gh run download <run-id> -n macos-app-bundle-debug-<sha>
 ```
 
 ---
@@ -397,7 +413,13 @@ bandit -r weather_app/
 
 # Windows installer (Windows only)
 cd installer/windows
-pyinstaller weather_app_debug.spec
+pyinstaller weather_app.spec        # Production
+pyinstaller weather_app_debug.spec  # Debug
+
+# macOS app bundle (macOS only)
+cd installer/macos
+pyinstaller weather_app.spec        # Production
+pyinstaller weather_app_debug.spec  # Debug
 ```
 
 ---
@@ -720,5 +742,5 @@ gh run watch <run-id>
 ---
 
 **Last Updated:** January 7, 2026
-**Architecture Version:** 2.1 (PR Builds Enabled)
+**Architecture Version:** 2.2 (Simplified - Debug Builds for Both Platforms)
 **Status:** ✅ Production Ready
