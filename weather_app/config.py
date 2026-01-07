@@ -24,17 +24,17 @@ def get_user_data_dir() -> Path:
     Returns:
         Path: User data directory
     """
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         # Running as packaged executable
-        if sys.platform == 'win32':
-            base = Path(os.getenv('APPDATA', Path.home() / 'AppData' / 'Roaming'))
-        elif sys.platform == 'darwin':
-            base = Path.home() / 'Library' / 'Application Support'
+        if sys.platform == "win32":
+            base = Path(os.getenv("APPDATA", Path.home() / "AppData" / "Roaming"))
+        elif sys.platform == "darwin":
+            base = Path.home() / "Library" / "Application Support"
         else:
             # Linux and other Unix-like systems
-            base = Path.home() / '.local' / 'share'
+            base = Path.home() / ".local" / "share"
 
-        user_dir = base / 'WeatherApp'
+        user_dir = base / "WeatherApp"
         user_dir.mkdir(parents=True, exist_ok=True)
         return user_dir
     else:
@@ -108,5 +108,5 @@ def get_db_info():
         "using_test_db": USE_TEST_DB,
         "database_path": DB_PATH,
         "database_engine": DB_ENGINE,
-        "mode": "TEST" if USE_TEST_DB else "PRODUCTION"
+        "mode": "TEST" if USE_TEST_DB else "PRODUCTION",
     }

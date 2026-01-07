@@ -6,6 +6,7 @@ Defines all endpoints for the FastAPI application
 import time
 
 from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 
 from weather_app.config import get_db_info
 from weather_app.database import WeatherRepository
@@ -27,10 +28,14 @@ def register_routes(app: FastAPI):
             "version": "1.0.0",
             "database": {"mode": db_info["mode"], "path": db_info["database_path"]},
             "endpoints": {
-                "/weather": "Get weather data with optional filters",
-                "/weather/latest": "Get the latest weather reading",
-                "/weather/stats": "Get database statistics",
+                "/api/weather/latest": "Get latest weather readings",
+                "/api/weather/range": "Get weather data within date range",
+                "/api/weather/stats": "Get database statistics",
                 "/api/scheduler/status": "Get scheduler status and configuration",
+                "/api/health": "Health check endpoint",
+                "/weather": "Legacy: Get weather data with filters",
+                "/weather/latest": "Legacy: Get latest reading",
+                "/weather/stats": "Legacy: Get database statistics",
             },
         }
 
@@ -252,17 +257,23 @@ def register_routes(app: FastAPI):
     @app.exception_handler(404)
     async def not_found_handler(request, exc):
         """Handle 404 errors"""
-        return {
-            "error": "Not Found",
-            "detail": "The requested resource was not found",
-            "status_code": 404,
-        }
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": "Not Found",
+                "detail": "The requested resource was not found",
+                "status_code": 404,
+            },
+        )
 
     @app.exception_handler(500)
     async def internal_error_handler(request, exc):
         """Handle 500 errors"""
-        return {
-            "error": "Internal Server Error",
-            "detail": "An internal server error occurred",
-            "status_code": 500,
-        }
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Internal Server Error",
+                "detail": "An internal server error occurred",
+                "status_code": 500,
+            },
+        )

@@ -271,4 +271,53 @@ def calc(t, h):
 
 ---
 
-**Last Updated:** January 3, 2026
+## 🔒 Security Best Practices
+
+### Git Pre-Commit Hook Installation
+
+The repository includes a pre-commit hook that prevents accidentally committing sensitive files like `.env`. This provides an additional safety layer beyond `.gitignore`.
+
+**To install the pre-commit hook:**
+
+The hook source is version-controlled at `scripts/git-hooks/pre-commit`. To install it:
+
+**Linux/macOS:**
+```bash
+# Copy the hook to your local .git/hooks directory
+cp scripts/git-hooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+**Windows:**
+```powershell
+# Copy the hook to your local .git/hooks directory
+Copy-Item scripts/git-hooks/pre-commit .git/hooks/pre-commit
+```
+
+**What the hook does:**
+- ❌ **Blocks** commits containing `.env` files
+- ⚠️ **Warns** about other potential secret files (`secrets.py`, `*.pem`, `*.key`)
+- 📝 **Provides** clear error messages and remediation steps
+
+**Testing the hook:**
+```bash
+# This should be blocked by .gitignore, but the hook provides extra safety
+git add .env
+git commit -m "Test"
+# Hook will prevent the commit if .env somehow gets staged
+```
+
+### Credential Management
+
+**NEVER commit credentials to version control:**
+- ✅ Use `.env` file for local development (already in `.gitignore`)
+- ✅ Use `.env.example` for documentation (safe to commit)
+- ✅ Rotate credentials before making repository public
+- ❌ Never hardcode API keys in source code
+- ❌ Never commit `.env` files
+
+See [docs/technical/deployment-guide.md](technical/deployment-guide.md#credential-security) for complete credential rotation instructions.
+
+---
+
+**Last Updated:** January 6, 2026

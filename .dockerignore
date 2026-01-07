@@ -17,12 +17,7 @@ venv/
 env/
 ENV/
 
-# Database files
-*.db
-*.db-journal
-*.db.backup
-*.sqlite
-*.sqlite3
+# Database files (DuckDB only - SQLite removed from project)
 *.duckdb
 *.duckdb.wal
 

@@ -1,15 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec file for Weather App (Windows)
+PyInstaller DEBUG spec file for Weather App (Windows)
 
-Packages the Weather App as a standalone Windows executable with:
-- System tray application
-- Embedded FastAPI server
-- Pre-built React frontend
-- DuckDB database engine
+This version has console=True to show error messages during debugging.
 
 Build command:
-    pyinstaller weather_app.spec --clean
+    pyinstaller weather_app_debug.spec --clean
 """
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
@@ -86,12 +82,12 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='WeatherApp',
-    debug=False,
+    name='WeatherApp_Debug',
+    debug=True,  # Enable debug mode
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,  # No console window (GUI app)
+    console=True,  # SHOW CONSOLE for debugging
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -107,5 +103,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='WeatherApp',
+    name='WeatherApp_Debug',
 )

@@ -97,7 +97,7 @@ USE_TEST_DB=true
 
 Then start the API server:
 ```bash
-python main.py
+python server.py
 ```
 
 The API will now serve data from `ambient_weather_test.duckdb` instead of the production database.

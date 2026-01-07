@@ -18,7 +18,7 @@ Perfect for testing without needing an Ambient Weather account.
 ### Step 1: Generate Test Data
 
 ```bash
-python tests/generate_test_data.py --days 7
+python tests/data/generate_test_data.py --days 7
 ```
 
 This creates 7 days of realistic weather data (~2,000 records).
@@ -46,7 +46,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000
 Open a new terminal and run:
 
 ```bash
-python tests/test_local_server.py
+python tests/integration/test_local_server.py
 ```
 
 Or visit in your browser:
@@ -186,7 +186,7 @@ The script is smart - it only downloads new data, not everything again!
 - Check that port 8000 is not in use
 
 **"No data found"** (Test mode)
-- Generate test data: `python tests/generate_test_data.py`
+- Generate test data: `python tests/data/generate_test_data.py`
 - Make sure `USE_TEST_DB=true` is set
 
 **"No data found"** (Production mode)
@@ -280,12 +280,13 @@ python scripts/ambient_weather_fetch.py
 - `scripts/update_weather.py` - Update weather data
 
 ### Tests (Development & Testing)
-- `tests/test_local_server.py` - Tests local FastAPI server endpoints
-- `tests/test_ambient_api.py` - Tests external Ambient Weather API connection
-- `tests/generate_test_data.py` - Generate synthetic weather data
-- `tests/test_rate_limit_incremental.py` - Test rate limiting
-- `tests/test_websocket.py` - Test WebSocket connections
-- `tests/check_retry_after.py` - Check retry-after headers
+- `tests/integration/test_local_server.py` - Tests local FastAPI server endpoints
+- `tests/integration/test_ambient_api.py` - Tests external Ambient Weather API connection
+- `tests/data/generate_test_data.py` - Generate synthetic weather data
+- `tests/data/verify_test_data.py` - Verify test data integrity
+- `tests/utils/find_background_servers.py` - Find running servers on ports
+- `tests/utils/stop_all_servers.py` - Stop all background servers
+- `tests/archive/` - Historical diagnostic and experimental scripts (reference only)
 
 ---
 

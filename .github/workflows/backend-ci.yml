@@ -39,14 +39,14 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run Ruff (fast linter)
-      run: ruff check weather_app/ tests/
+      run: ruff check weather_app/ tests/ --exclude tests/archive
       continue-on-error: true
 
     - name: Check code formatting with Black
-      run: black --check weather_app/ tests/
+      run: black --check weather_app/ tests/ --exclude tests/archive
 
     - name: Check import sorting with isort
-      run: isort --check-only weather_app/ tests/
+      run: isort --check-only weather_app/ tests/ --skip tests/archive
 
     - name: Type check with mypy
       run: mypy weather_app/
@@ -75,6 +75,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest pytest-cov pytest-asyncio
         pip install -r requirements.txt
+        pip install -e .
 
     - name: Run tests with coverage
       run: |
@@ -132,6 +133,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest httpx
         pip install -r requirements.txt
+        pip install -e .
 
     - name: Create test .env file
       run: |

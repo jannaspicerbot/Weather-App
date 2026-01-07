@@ -26,6 +26,17 @@ A modern, full-stack web application for collecting, storing, and visualizing da
 2. API credentials from Ambient Weather ([Get them here](https://ambientweather.net/account))
 3. Docker + Docker Compose (recommended) OR Python 3.10+ and Node.js 18+
 
+## ⚠️ Important: API Credentials Security
+
+**NEVER commit your `.env` file to Git!** This file contains your personal API credentials.
+
+- ✅ The `.env` file is already in `.gitignore` to protect your credentials
+- ✅ Use `.env.example` as a template (safe to commit)
+- ✅ Get your API keys from: https://ambientweather.net/account
+- ❌ **Never share** your API keys publicly or commit them to version control
+
+**Before making this repository public**, rotate (regenerate) your API credentials to ensure old keys cannot be misused. See [docs/technical/deployment-guide.md](docs/technical/deployment-guide.md#credential-security) for credential rotation instructions.
+
 ## 🚀 Quick Start
 
 ### Option 1: Docker Compose (Recommended)
