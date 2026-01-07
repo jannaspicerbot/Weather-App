@@ -1,0 +1,187 @@
+name: Windows Build & Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-windows:
+    name: Windows Native Build & Test
+    # Uses a Windows Server runner
+    runs-on: windows-latest
+
+    steps:
+      # -----------------------------------------------------------------------
+      # CHECKOUT CODE
+      # -----------------------------------------------------------------------
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # SETUP PYTHON BACKEND
+      # -----------------------------------------------------------------------
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-asyncio
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Verify Backend Logic (Windows)
+        run: |
+          pytest tests/ -v -m "not requires_api_key" --cov=weather_app --cov-report=term
+          Write-Host "✅ Backend tests passed on Windows" -ForegroundColor Green
+
+      - name: Validate DuckDB on Windows
+        run: |
+          python -c "import duckdb; print(f'✅ DuckDB {duckdb.__version__} working on Windows')"
+
+      - name: Validate FastAPI on Windows
+        run: |
+          python -c "from weather_app.web.app import create_app; app = create_app(); print('✅ FastAPI app initialized on Windows')"
+
+      # -----------------------------------------------------------------------
+      # WINDOWS-SPECIFIC VALIDATIONS
+      # -----------------------------------------------------------------------
+      - name: Test Windows Console Encoding
+        run: |
+          python -c "import sys; print(f'Console encoding: {sys.stdout.encoding}')"
+          python -c "print('Testing emoji support: ✅ 📊 🌡️ 💧')"
+
+      - name: Verify Windows Path Handling
+        run: |
+          python -c "import os; print(f'✅ Temp directory: {os.environ.get(\"TEMP\")}')"
+          python -c "from pathlib import Path; print(f'✅ Current directory: {Path.cwd()}')"
+
+      - name: Test Windows Tray Icon Compatibility
+        run: |
+          # Verify pystray and PIL dependencies for system tray
+          python -c "from PIL import Image; print('✅ PIL/Pillow available for tray icons')"
+          python -c "import pystray; print('✅ pystray available for Windows tray')"
+
+      # -----------------------------------------------------------------------
+      # SETUP FRONTEND
+      # -----------------------------------------------------------------------
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build React Frontend
+        working-directory: web
+        run: |
+          npm run build
+          Write-Host "✅ Frontend build successful on Windows" -ForegroundColor Green
+
+      - name: Check Frontend Bundle Size
+        working-directory: web
+        run: |
+          Write-Host "📦 Windows Frontend Bundle Size:" -ForegroundColor Cyan
+          Get-ChildItem -Path dist -Recurse | Measure-Object -Property Length -Sum | Select-Object @{Name="Size(MB)";Expression={"{0:N2}" -f ($_.Sum / 1MB)}}
+
+      # -----------------------------------------------------------------------
+      # WINDOWS SYSTEM INFORMATION
+      # -----------------------------------------------------------------------
+      - name: Display Windows System Information
+        run: |
+          Write-Host "🪟 Windows System Information:" -ForegroundColor Cyan
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type"
+          Write-Host ""
+          Write-Host "Python Version:" -ForegroundColor Yellow
+          python --version
+          Write-Host ""
+          Write-Host "Node.js Version:" -ForegroundColor Yellow
+          node --version
+          Write-Host ""
+          Write-Host "PowerShell Version:" -ForegroundColor Yellow
+          $PSVersionTable.PSVersion
+
+      # -----------------------------------------------------------------------
+      # WINDOWS INSTALLER BUILD (PyInstaller)
+      # -----------------------------------------------------------------------
+      - name: Test PyInstaller Compatibility
+        run: |
+          pip install pyinstaller
+          Write-Host "✅ PyInstaller installed successfully" -ForegroundColor Green
+          pyinstaller --version
+
+      - name: Verify PyInstaller Spec Files
+        run: |
+          if (Test-Path "installer/windows/weather_app.spec") {
+            Write-Host "✅ Production spec file found" -ForegroundColor Green
+          }
+          if (Test-Path "installer/windows/weather_app_debug.spec") {
+            Write-Host "✅ Debug spec file found" -ForegroundColor Green
+          }
+
+      - name: Build Windows Installer (Debug Mode)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: installer/windows
+        run: |
+          Write-Host "🔨 Building Windows installer in DEBUG mode..." -ForegroundColor Cyan
+          pyinstaller weather_app_debug.spec
+          if (Test-Path "dist/WeatherApp.exe") {
+            Write-Host "✅ Windows executable created successfully" -ForegroundColor Green
+            Get-Item "dist/WeatherApp.exe" | Select-Object Name, Length, LastWriteTime
+          } else {
+            Write-Host "❌ Executable not found" -ForegroundColor Red
+            exit 1
+          }
+
+      - name: Run Installer Verification Tests
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          pytest tests/test_installer_build.py -v
+
+      # -----------------------------------------------------------------------
+      # SAVE BUILD ARTIFACTS
+      # -----------------------------------------------------------------------
+      - name: Upload Windows Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-weather-app-dist
+          path: |
+            web/dist/
+          retention-days: 7
+
+      - name: Upload Windows Installer (if built)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-exe
+          path: |
+            installer/windows/dist/WeatherApp.exe
+          retention-days: 30
+
+      - name: Upload Backend Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-results
+          path: |
+            .coverage
+            htmlcov/
+          retention-days: 7
+
+      # -----------------------------------------------------------------------
+      # FUTURE: WINDOWS MSI INSTALLER
+      # -----------------------------------------------------------------------
+      - name: Prepare Windows MSI Installer (Future)
+        if: false  # Disabled until Phase 3 deployment
+        run: |
+          Write-Host "🚀 Future: Build .msi installer for Windows distribution" -ForegroundColor Magenta
+          Write-Host "Will use WiX Toolset or Inno Setup"
