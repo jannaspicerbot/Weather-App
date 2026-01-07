@@ -1,7 +1,7 @@
 # Weather App - Ambient Weather Data Dashboard
 
-![Backend CI](https://github.com/jannaspicerbot/Weather-App/workflows/Backend%20CI/badge.svg)
-![Frontend CI](https://github.com/jannaspicerbot/Weather-App/workflows/Frontend%20CI%20%26%20Accessibility/badge.svg)
+![Main CI](https://github.com/jannaspicerbot/Weather-App/workflows/Main%20CI/badge.svg)
+![Accessibility CI](https://github.com/jannaspicerbot/Weather-App/workflows/Accessibility%20CI/badge.svg)
 ![Documentation CI](https://github.com/jannaspicerbot/Weather-App/workflows/Documentation%20CI/badge.svg)
 [![codecov](https://codecov.io/gh/jannaspicerbot/Weather-App/branch/main/graph/badge.svg)](https://codecov.io/gh/jannaspicerbot/Weather-App)
 
