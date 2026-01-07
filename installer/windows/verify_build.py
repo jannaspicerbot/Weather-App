@@ -15,6 +15,11 @@ import argparse
 import sys
 from pathlib import Path
 
+# Fix Windows console encoding for unicode characters
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
 
 def verify_build(build_name, build_dir, exe_name, is_debug=False):
     """
