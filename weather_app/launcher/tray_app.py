@@ -88,17 +88,17 @@ class WeatherTrayApp:
             logger.error(f"Failed to open data folder: {e}")
 
     def restart_app(self, icon=None, item=None):
-        """Restart the application"""
+        """Restart the application (menu callback)"""
         logger.info("Restarting application...")
         self._do_quit(restart=True)
 
     def quit_app(self, icon=None, item=None):
         """Quit application (menu callback)"""
-        logger.info("Shutting down...")
         self._do_quit(restart=False)
 
     def _do_quit(self, restart=False):
         """Internal quit implementation"""
+        logger.info("Shutting down...")
         self.stop_server()
 
         if self.icon:
@@ -202,6 +202,7 @@ class WeatherTrayApp:
         except Exception as e:
             logger.warning(f"Failed to auto-open dashboard: {e}")
 
+<<<<<<< HEAD
         # Try to create system tray icon
         try:
             # Load icon image
@@ -230,6 +231,19 @@ class WeatherTrayApp:
             # Keep the server running even without tray icon
             try:
                 import time
+=======
+        # Run tray icon (blocks until quit)
+        logger.info("System tray app running...")
+        try:
+            self.icon.run()
+        except Exception as e:
+            logger.error(f"Failed to create system tray icon: {e}")
+            logger.info("Server will continue running without tray icon")
+            logger.info(f"Access dashboard at http://localhost:{PORT}")
+            # Keep server running even without tray
+            import time
+            try:
+>>>>>>> f035318 (Fix: Resolve WeatherApp.exe silent crash on startup)
                 while True:
                     time.sleep(1)
             except KeyboardInterrupt:
