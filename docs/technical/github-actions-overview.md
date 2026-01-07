@@ -447,30 +447,227 @@ needs: [backend-tests]  # From main-ci.yml
 
 ---
 
+## Quality Gates
+
+### Pull Request Requirements
+
+Before a PR can be merged to `main`, it must:
+
+1. **Pass all CI workflows** ✅
+   - Main CI (all jobs: backend-tests, backend-lint, frontend-tests, security-scan, api-integration)
+   - Platform Builds (optional: windows-installer, macos-app)
+   - Documentation CI (if docs changed)
+
+2. **Code coverage** (recommended)
+   - Backend: ≥80% coverage
+   - Frontend: ≥80% coverage
+
+3. **Code review** (manual)
+   - At least one approval from code owner
+   - All conversations resolved
+
+4. **No security vulnerabilities**
+   - Safety and Bandit scans pass or warnings are reviewed/accepted
+
+---
+
+## Local Development
+
+### Running Tests Locally
+
+Before pushing, run these commands locally to catch issues early:
+
+#### Backend Tests
+```bash
+# Install dev dependencies
+pip install pytest pytest-cov pytest-asyncio ruff black isort mypy
+
+# Run tests with coverage
+pytest tests/ -v --cov=weather_app -m "not requires_api_key"
+
+# Run linting
+ruff check weather_app/ tests/ --exclude tests/archive
+black --check weather_app/ tests/ --exclude tests/archive
+isort --check-only weather_app/ tests/ --skip tests/archive
+mypy weather_app/
+
+# Auto-fix formatting
+black weather_app/ tests/ --exclude tests/archive
+isort weather_app/ tests/ --skip tests/archive
+```
+
+#### Frontend Tests
+```bash
+cd web
+
+# Install dependencies
+npm ci
+
+# Run tests
+npm run test
+
+# Run linting
+npm run lint
+
+# Type check
+npx tsc -b --noEmit
+
+# Build production bundle
+npm run build
+
+# Auto-fix formatting
+npm run lint -- --fix
+```
+
+#### Documentation Checks
+```bash
+# Install markdownlint-cli (if not installed)
+npm install -g markdownlint-cli
+
+# Lint markdown files
+markdownlint '**/*.md' --ignore node_modules --ignore web/node_modules
+
+# Check links (requires markdown-link-check)
+npm install -g markdown-link-check
+find docs -name "*.md" -exec markdown-link-check {} \;
+```
+
+---
+
 ## Troubleshooting
 
-### Common Issues
+### Common CI Failures
+
+#### Backend Issues
+
+**Issue:** "Black formatting failed"
+**Cause:** Code not formatted with Black
+**Fix:**
+```bash
+black weather_app/ tests/ --exclude tests/archive
+git add .
+git commit --amend --no-edit
+git push --force-with-lease
+```
+
+**Issue:** "Ruff linting errors"
+**Cause:** Code style violations
+**Fix:**
+```bash
+ruff check weather_app/ tests/ --exclude tests/archive --fix
+git add .
+git commit -m "Fix: Resolve linting issues"
+```
+
+**Issue:** "mypy type checking failed"
+**Cause:** Type annotation issues
+**Fix:** Review mypy output and add/fix type hints. Common issues:
+- Missing return type annotations
+- Incorrect type specifications
+- Missing imports for types
+
+**Issue:** "pytest tests failed"
+**Cause:** Test failures or errors
+**Fix:**
+```bash
+# Run tests locally to see details
+pytest tests/ -v -m "not requires_api_key"
+
+# Run specific failing test
+pytest tests/test_specific.py::test_function -v
+
+# Run with print statements visible
+pytest tests/ -v -s
+```
+
+#### Frontend Issues
+
+**Issue:** "ESLint errors"
+**Cause:** JavaScript/TypeScript linting violations
+**Fix:**
+```bash
+cd web
+npm run lint -- --fix  # Auto-fix some issues
+npm run lint           # Review remaining issues
+```
+
+**Issue:** "TypeScript compilation failed"
+**Cause:** Type errors in TypeScript code
+**Fix:**
+```bash
+cd web
+npx tsc -b --noEmit  # See all type errors
+# Fix type errors in reported files
+```
+
+**Issue:** "Vite build failed"
+**Cause:** Build errors, missing dependencies, or configuration issues
+**Fix:**
+```bash
+cd web
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+```
+
+#### Security Issues
+
+**Issue:** "Safety check found vulnerabilities"
+**Cause:** Known vulnerabilities in Python dependencies
+**Fix:**
+1. Review Safety output for affected packages
+2. Update vulnerable packages: `pip install --upgrade <package>`
+3. If no fix available, assess risk and document in security review
+4. Add to ignore list if false positive
+
+**Issue:** "Bandit found security issues"
+**Cause:** Potential security issues in Python code
+**Fix:**
+1. Review Bandit output
+2. Fix legitimate issues (SQL injection, hardcoded secrets, etc.)
+3. Add `# nosec` comment with justification for false positives
+
+#### Documentation Issues
+
+**Issue:** "Broken links in documentation"
+**Cause:** Invalid internal or external links
+**Fix:**
+1. Review link-check job output
+2. Fix broken links in markdown files
+3. Update `.markdown-link-check.json` to ignore known external issues
+
+**Issue:** "ADR sequence gap"
+**Cause:** Missing ADR number in sequence
+**Fix:**
+- ADRs must be numbered sequentially (001, 002, 003, ...)
+- If you deleted an ADR, don't reuse the number
+- Add a note in the next ADR: "ADR-XXX was superseded and removed"
+
+#### Workflow-Specific Issues
 
 **Issue:** "workflow does not exist" error
 **Solution:** Old workflow was removed. Update references to use `main-ci.yml` or `platform-builds.yml`
 
 **Issue:** Path filtering not working
-**Solution:** Ensure you're using `github.event_name == 'pull_request'` fallback
+**Solution:** Ensure you're using `github.event_name == 'pull_request'` fallback in `if:` conditions
 
 **Issue:** Windows installer not building on PR
-**Solution:** By design - only builds on `push` to `main` branch
+**Solution:** By design - only builds on `push` to `main` branch (saves Actions minutes)
 
 **Issue:** Tests running even though I only changed docs
-**Solution:** Check path filter syntax in `if:` conditions
+**Solution:** Check path filter syntax in `if:` conditions. Docs-only changes should only trigger `docs-ci.yml`
+
+**Issue:** Job stuck "waiting for a runner"
+**Solution:** GitHub Actions queue is full. Wait or cancel other running workflows to free up runners.
 
 ---
 
 ## Related Documentation
 
 - **Workflows README**: [.github/workflows/README.md](../../.github/workflows/README.md)
-- **CI/CD Guide**: [docs/technical/ci-cd.md](ci-cd.md)
 - **Testing Guide**: [docs/testing/refactoring-test-plan.md](../testing/refactoring-test-plan.md)
 - **Contributing**: [docs/CONTRIBUTING.md](../CONTRIBUTING.md)
+- **Archived CI Docs**: [docs/archive/ci-cd/](../../archive/ci-cd/) - Historical workflow documentation (pre-consolidation)
 
 ---
 
