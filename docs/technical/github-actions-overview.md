@@ -8,11 +8,12 @@
 
 ## Overview
 
-The Weather App uses a **streamlined two-workflow strategy** to ensure comprehensive testing and build validation across all target platforms with **60-70% fewer GitHub Actions minutes** compared to the previous architecture:
+The Weather App uses a **streamlined four-workflow strategy** to ensure comprehensive testing, accessibility compliance, and build validation across all target platforms with **60-70% fewer GitHub Actions minutes** compared to the previous architecture:
 
 1. **Main CI** (`main-ci.yml`) - Primary quality gate for all code changes
-2. **Platform Builds** (`platform-builds.yml`) - Platform-specific installers and artifacts
-3. **Docs CI** (`docs-ci.yml`) - Documentation validation (unchanged)
+2. **Accessibility CI** (`accessibility-ci.yml`) - WCAG 2.2 Level AA compliance testing
+3. **Platform Builds** (`platform-builds.yml`) - Platform-specific installers and artifacts
+4. **Docs CI** (`docs-ci.yml`) - Documentation validation
 
 ---
 
@@ -41,13 +42,14 @@ Problems:
 - Wasted ~200+ Actions minutes per PR
 ```
 
-### After: 3 Workflows, Zero Redundancy
+### After: 4 Workflows, Zero Redundancy
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  NEW ARCHITECTURE (3 workflows, ~50-80 min per PR)               │
+│  NEW ARCHITECTURE (4 workflows, ~50-80 min per PR)               │
 ├─────────────────────────────────────────────────────────────────┤
 │  ✅ main-ci.yml           → All standard CI (tests, lint, security)│
+│  ✅ accessibility-ci.yml  → WCAG 2.2 accessibility testing        │
 │  ✅ platform-builds.yml   → Platform-specific builds only         │
 │  ✅ docs-ci.yml           → Documentation validation (unchanged)  │
 └─────────────────────────────────────────────────────────────────┘
@@ -59,6 +61,7 @@ Benefits:
 ✅ Cleaner failure reports
 ✅ Easier maintenance (update linting rules in one place)
 ✅ Path filtering (workflows only run if relevant files changed)
+✅ Dedicated accessibility compliance verification
 ```
 
 ---
@@ -114,7 +117,60 @@ matrix:
 
 ---
 
-### 2. Platform Builds (`platform-builds.yml`)
+### 2. Accessibility CI (`accessibility-ci.yml`)
+
+**Purpose:** WCAG 2.2 Level AA accessibility compliance testing
+
+**Triggers:**
+```yaml
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/accessibility-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/accessibility-ci.yml'
+```
+
+**Jobs:**
+
+| Job | Runs On | Purpose | Duration |
+|-----|---------|---------|----------|
+| `a11y-lint` | Ubuntu only | ESLint with jsx-a11y accessibility rules | ~2-3 min |
+| `a11y-unit-tests` | Ubuntu only | Vitest + axe-core component accessibility tests | ~2-3 min |
+| `lighthouse` | Ubuntu only | Lighthouse CI accessibility audit (≥90 score required) | ~3-5 min |
+| `a11y-summary` | Ubuntu only | Aggregates results and reports overall status | ~1 min |
+
+**Accessibility Testing Strategy:**
+
+| Layer | Tool | Coverage | What It Catches |
+|-------|------|----------|-----------------|
+| Static Analysis | eslint-plugin-jsx-a11y | ~30% | Missing alt text, invalid ARIA, semantic issues |
+| Component Tests | vitest-axe (axe-core) | ~50% | Color contrast, keyboard nav, focus management |
+| Full Page Audit | Lighthouse CI | ~70% | Overall accessibility score, performance impact |
+
+**Key Features:**
+- ✅ Three-layer testing approach for comprehensive coverage
+- ✅ Lighthouse accessibility score threshold (≥90 required to pass)
+- ✅ Job summary with pass/fail status for each check
+- ✅ Artifact upload for Lighthouse reports (14-day retention)
+- ✅ Path filtering (only runs when web/ files change)
+
+**WCAG 2.2 Level AA Rules Enforced:**
+- Alt text for images (`jsx-a11y/alt-text`)
+- Valid ARIA attributes (`jsx-a11y/aria-props`, `jsx-a11y/aria-proptypes`)
+- Keyboard accessibility (`jsx-a11y/click-events-have-key-events`)
+- Focus management (`jsx-a11y/interactive-supports-focus`)
+- Label associations (`jsx-a11y/label-has-associated-control`)
+- And 25+ additional accessibility rules
+
+---
+
+### 3. Platform Builds (`platform-builds.yml`)
 
 **Purpose:** Platform-specific builds, installers, and validations
 
@@ -174,7 +230,7 @@ on:
 
 ---
 
-### 3. Docs CI (`docs-ci.yml`)
+### 4. Docs CI (`docs-ci.yml`)
 
 **Purpose:** Documentation validation (unchanged from previous architecture)
 
@@ -216,28 +272,28 @@ on:
 │                    PUSH/PULL REQUEST                             │
 └─────────────────────────────────────────────────────────────────┘
                               │
-                 ┌────────────┼────────────┐
-                 ▼            ▼            ▼
-     ┌────────────────┐ ┌──────────────┐ ┌──────────────┐
-     │   Main CI      │ │  Platform    │ │  Docs CI     │
-     │  (PRIMARY)     │ │   Builds     │ │  (if docs)   │
-     └────────────────┘ └──────────────┘ └──────────────┘
-            │                  │                 │
-    ┌───────┴─────────┐        │                 │
-    ▼                 ▼        ▼                 ▼
-┌─────────┐     ┌─────────┐ ┌─────────┐    ┌─────────┐
-│ Backend │     │Frontend │ │ Windows │    │Markdown │
-│ Tests   │     │ Build   │ │ .exe    │    │ Lint    │
-│(3 OS x  │     │(Ubuntu) │ │(main    │    │         │
-│ 3 Py)   │     │         │ │ only)   │    │         │
-└────┬────┘     └─────────┘ └─────────┘    └─────────┘
+          ┌───────────────────┼───────────────────┐
+          │                   │                   │
+          ▼                   ▼                   ▼
+  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+  │   Main CI    │    │Accessibility │    │  Platform    │
+  │  (PRIMARY)   │    │     CI       │    │   Builds     │
+  └──────────────┘    └──────────────┘    └──────────────┘
+          │                   │                   │
+  ┌───────┴───────┐   ┌───────┴───────┐          │
+  ▼               ▼   ▼               ▼          ▼
+┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
+│ Backend │ │Frontend │ │ A11y    │ │Lighthouse│ │ Windows │
+│ Tests   │ │ Build   │ │ Lint    │ │  Audit  │ │ .exe    │
+│(3 OS)   │ │(Ubuntu) │ │(jsx-a11y)│ │ (≥90)   │ │         │
+└────┬────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘
      │
      ▼
-┌─────────────┐
-│ Linting     │
-│ Security    │
-│ API Tests   │
-└─────────────┘
+┌─────────────┐    ┌──────────────┐
+│ Linting     │    │  Docs CI     │
+│ Security    │    │  (if docs    │
+│ API Tests   │    │   changed)   │
+└─────────────┘    └──────────────┘
 ```
 
 ### Dependencies Between Jobs
@@ -246,6 +302,11 @@ on:
 - `security-scan` requires `backend-tests` to pass first
 - `api-integration` requires `backend-tests` to pass first
 - All other jobs run in parallel
+
+**Accessibility CI:**
+- `a11y-summary` requires all other jobs (`a11y-lint`, `a11y-unit-tests`, `lighthouse`) to complete
+- All test jobs run in parallel
+- Summary job fails if any check failed
 
 **Platform Builds:**
 - All jobs run independently and in parallel
@@ -286,6 +347,7 @@ on:
 | Workflow | Artifact Name | Contents | Retention |
 |----------|---------------|----------|-----------|
 | **Main CI** | _(none)_ | Coverage → Codecov only | N/A |
+| **Accessibility CI** | `lighthouse-results` | Lighthouse HTML reports and JSON data | 14 days |
 | **Platform Builds** | `windows-installer-<sha>` | WeatherApp.exe (production) | 7 days (PR) / 30 days (main) |
 | **Platform Builds** | `windows-installer-debug-<sha>` | WeatherApp_Debug.exe (with console) | 7 days (PR) / 30 days (main) |
 | **Platform Builds** | `macos-app-bundle-<sha>` | WeatherApp.app (production) | 7 days (PR) / 30 days (main) |
@@ -364,6 +426,9 @@ Require status checks to pass before merging: ✅
     - Main CI / backend-tests (ubuntu-latest, 3.11)
     - Main CI / backend-lint
     - Main CI / frontend-tests
+    - Accessibility CI / a11y-lint
+    - Accessibility CI / a11y-unit-tests
+    - Accessibility CI / lighthouse (recommended)
     - Platform Builds / windows-installer (optional)
     - Platform Builds / macos-app (optional)
 
@@ -371,7 +436,7 @@ Require branches to be up to date before merging: ✅
 Require pull request reviews before merging: ✅ (1 reviewer)
 ```
 
-**Note:** Platform builds are optional (can merge even if they fail), but Main CI must pass.
+**Note:** Platform builds are optional (can merge even if they fail), but Main CI and Accessibility CI must pass.
 
 ---
 
@@ -386,6 +451,9 @@ Require pull request reviews before merging: ✅ (1 reviewer)
 | Frontend build fails | TypeScript error, dependency | `main-ci.yml` → frontend-tests |
 | Linting fails | Code style violation | `main-ci.yml` → backend-lint |
 | Security scan fails | Vulnerable dependency | `main-ci.yml` → security-scan |
+| A11y lint fails | Missing alt text, invalid ARIA | `accessibility-ci.yml` → a11y-lint |
+| A11y unit tests fail | axe-core violations | `accessibility-ci.yml` → a11y-unit-tests |
+| Lighthouse fails | Accessibility score < 90 | `accessibility-ci.yml` → lighthouse |
 | Windows installer fails | PyInstaller config | `platform-builds.yml` → windows-installer |
 | macOS build fails | macOS-specific issue | `platform-builds.yml` → macos-app |
 
@@ -452,6 +520,7 @@ needs: [backend-tests]  # From main-ci.yml
 **New badges:**
 ```markdown
 [![Main CI](https://github.com/USER/Weather-App/actions/workflows/main-ci.yml/badge.svg)](https://github.com/USER/Weather-App/actions/workflows/main-ci.yml)
+[![Accessibility CI](https://github.com/USER/Weather-App/actions/workflows/accessibility-ci.yml/badge.svg)](https://github.com/USER/Weather-App/actions/workflows/accessibility-ci.yml)
 [![Platform Builds](https://github.com/USER/Weather-App/actions/workflows/platform-builds.yml/badge.svg)](https://github.com/USER/Weather-App/actions/workflows/platform-builds.yml)
 [![Docs CI](https://github.com/USER/Weather-App/actions/workflows/docs-ci.yml/badge.svg)](https://github.com/USER/Weather-App/actions/workflows/docs-ci.yml)
 ```
@@ -490,18 +559,24 @@ Before a PR can be merged to `main`, it must:
 
 1. **Pass all CI workflows** ✅
    - Main CI (all jobs: backend-tests, backend-lint, frontend-tests, security-scan, api-integration)
+   - Accessibility CI (all jobs: a11y-lint, a11y-unit-tests, lighthouse)
    - Platform Builds (optional: windows-installer, macos-app)
    - Documentation CI (if docs changed)
 
-2. **Code coverage** (recommended)
+2. **Accessibility requirements** ✅
+   - Lighthouse accessibility score ≥ 90
+   - No eslint-plugin-jsx-a11y errors
+   - All vitest-axe component tests pass
+
+3. **Code coverage** (recommended)
    - Backend: ≥80% coverage
    - Frontend: ≥80% coverage
 
-3. **Code review** (manual)
+4. **Code review** (manual)
    - At least one approval from code owner
    - All conversations resolved
 
-4. **No security vulnerabilities**
+5. **No security vulnerabilities**
    - Safety and Bandit scans pass or warnings are reviewed/accepted
 
 ---
@@ -538,10 +613,16 @@ cd web
 # Install dependencies
 npm ci
 
-# Run tests
+# Run tests (includes accessibility tests)
 npm run test
 
-# Run linting
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run linting (includes jsx-a11y accessibility rules)
 npm run lint
 
 # Type check
@@ -552,6 +633,28 @@ npm run build
 
 # Auto-fix formatting
 npm run lint -- --fix
+```
+
+#### Accessibility Tests
+```bash
+cd web
+
+# Run all component accessibility tests
+npm run test
+
+# The test suite includes vitest-axe assertions that check:
+# - WCAG 2.2 Level AA violations
+# - Color contrast ratios
+# - ARIA attribute validity
+# - Keyboard accessibility
+# - Screen reader compatibility
+
+# ESLint jsx-a11y rules are enforced during linting
+npm run lint
+
+# For manual Lighthouse testing locally:
+npm run build
+npx lighthouse-ci http://localhost:4173 --accessibility
 ```
 
 #### Documentation Checks
@@ -662,6 +765,46 @@ npm run build
 2. Fix legitimate issues (SQL injection, hardcoded secrets, etc.)
 3. Add `# nosec` comment with justification for false positives
 
+#### Accessibility Issues
+
+**Issue:** "jsx-a11y lint errors"
+**Cause:** Accessibility rule violations
+**Fix:**
+```bash
+cd web
+npm run lint  # See specific violations
+# Common fixes:
+# - Add alt="" to decorative images
+# - Add aria-label to icon buttons
+# - Ensure form inputs have associated labels
+# - Add keyboard handlers to click events
+```
+
+**Issue:** "vitest-axe test failed"
+**Cause:** axe-core detected WCAG violations in component
+**Fix:**
+```bash
+cd web
+npm run test  # See failing test details
+# Common fixes:
+# - Check color contrast ratios (4.5:1 for normal text)
+# - Ensure focusable elements have visible focus indicators
+# - Add proper ARIA roles and attributes
+# - Verify heading hierarchy (h1 → h2 → h3)
+```
+
+**Issue:** "Lighthouse accessibility score < 90"
+**Cause:** Page-level accessibility issues
+**Fix:**
+1. Download Lighthouse report artifact from CI
+2. Review "Accessibility" section for specific issues
+3. Common fixes:
+   - Add `lang` attribute to `<html>` tag
+   - Ensure all images have alt text
+   - Fix color contrast issues
+   - Add skip links for keyboard users
+   - Ensure proper heading structure
+
 #### Documentation Issues
 
 **Issue:** "Broken links in documentation"
@@ -742,5 +885,5 @@ gh run watch <run-id>
 ---
 
 **Last Updated:** January 7, 2026
-**Architecture Version:** 2.2 (Simplified - Debug Builds for Both Platforms)
+**Architecture Version:** 2.3 (Added Accessibility CI Workflow)
 **Status:** ✅ Production Ready
