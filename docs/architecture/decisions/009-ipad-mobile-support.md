@@ -1,8 +1,8 @@
 # ADR-009: iPad/Mobile Support Options
 
-**Status:** Proposed (Not Yet Decided)
+**Status:** Accepted
 **Date:** 2026-01-07
-**Deciders:** TBD
+**Deciders:** Project Owner
 
 ---
 
@@ -264,12 +264,34 @@ web/
 
 ## Decision
 
-**Status: Proposed** - No decision made yet. This ADR documents options for future reference.
+**Status: Accepted** - Option 1 (PWA) has been implemented.
 
-When ready to proceed:
-1. Update status to "Accepted"
-2. Document chosen option
-3. Create implementation tasks
+### Chosen Option: Progressive Web App (PWA)
+
+**Rationale:**
+- Zero additional infrastructure cost ($0 vs $99/year Apple Developer account)
+- No App Store review process required
+- Validates user demand before investing in native app development
+- Single codebase - web and "app" are the same
+- Non-technical users can install via Safari's "Add to Home Screen"
+
+### Implementation Details
+
+**Files added:**
+- `web/public/manifest.json` - Web app manifest for PWA installation
+- `web/public/icons/` - App icons for iPad home screen and splash screens
+- `scripts/generate_pwa_icons.py` - Script to regenerate icons if needed
+
+**Files modified:**
+- `web/index.html` - Added iOS meta tags for PWA support
+- `web/vite.config.ts` - Added vite-plugin-pwa for service worker generation
+- `web/package.json` - Added vite-plugin-pwa and workbox-window dependencies
+
+**User guide:** See [docs/guides/ipad-setup.md](../../guides/ipad-setup.md)
+
+### Future Considerations
+
+If users request features that PWA cannot provide (push notifications, background refresh), consider upgrading to **Capacitor** (Option 4) which would wrap the existing web app in a native iOS container while preserving 90-95% code reuse
 
 ---
 
