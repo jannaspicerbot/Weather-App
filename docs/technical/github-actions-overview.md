@@ -104,16 +104,15 @@ matrix:
       python-version: '3.12'
 ```
 
-**Path Filtering:**
-- Only runs if backend files changed (weather_app/, tests/, requirements.txt, pyproject.toml)
-- Frontend tests only run if web/ directory changed
-- Skips unnecessary runs (e.g., doc-only changes)
+**Execution:**
+- Runs on all pushes to main/develop and all pull requests
+- All jobs execute in parallel for fast feedback
 
 **Key Features:**
 - ✅ Parallel execution (all jobs run simultaneously)
-- ✅ Smart path filtering
 - ✅ Coverage reporting to Codecov (Ubuntu + Python 3.11 only)
 - ✅ DuckDB and FastAPI validation on all platforms
+- ✅ Codecov configuration in `.github/codecov.yml`
 
 ---
 
@@ -391,26 +390,11 @@ gh run download <run-id> -n macos-app-bundle-debug-<sha>
 
 ## Path Filtering Details
 
-### Main CI Path Filters
+### Main CI
 
-**Backend Tests:**
-```yaml
-if: |
-  contains(github.event.head_commit.modified, 'weather_app/') ||
-  contains(github.event.head_commit.modified, 'tests/') ||
-  contains(github.event.head_commit.modified, 'requirements.txt') ||
-  contains(github.event.head_commit.modified, 'pyproject.toml') ||
-  github.event_name == 'pull_request'
-```
+Main CI jobs run on all pushes to `main`/`develop` and all pull requests. Path filtering is handled at the workflow trigger level in other workflows (Accessibility CI, Platform Builds, Docs CI) rather than at the job level in Main CI.
 
-**Frontend Tests:**
-```yaml
-if: |
-  contains(github.event.head_commit.modified, 'web/') ||
-  github.event_name == 'pull_request'
-```
-
-**Effect:** CI only runs if relevant files changed, saving Actions minutes.
+**Note:** Previously, Main CI used `contains(github.event.head_commit.modified, ...)` job-level conditions, but these were removed because `github.event.head_commit.modified` is not a valid GitHub Actions property. The workflows now run reliably on all relevant events.
 
 ---
 
@@ -827,13 +811,13 @@ npm run test  # See failing test details
 **Solution:** Old workflow was removed. Update references to use `main-ci.yml` or `platform-builds.yml`
 
 **Issue:** Path filtering not working
-**Solution:** Ensure you're using `github.event_name == 'pull_request'` fallback in `if:` conditions
+**Solution:** Use path filters in the `on:` trigger section (like Accessibility CI and Platform Builds do), not job-level `if:` conditions
 
 **Issue:** Platform builds not triggering
 **Solution:** Check that your changes touch files in the path filter (weather_app/, installer/, web/, etc.)
 
 **Issue:** Tests running even though I only changed docs
-**Solution:** Check path filter syntax in `if:` conditions. Docs-only changes should only trigger `docs-ci.yml`
+**Solution:** Main CI runs on all PRs. Only Accessibility CI, Platform Builds, and Docs CI use path filtering. This is expected behavior.
 
 **Issue:** Job stuck "waiting for a runner"
 **Solution:** GitHub Actions queue is full. Wait or cancel other running workflows to free up runners.
