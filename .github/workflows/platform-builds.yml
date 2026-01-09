@@ -121,6 +121,29 @@ jobs:
             Write-Host "✅ Debug spec file found" -ForegroundColor Green
           }
 
+      # -----------------------------------------------------------------------
+      # BUILD FRONTEND FOR EMBEDDING
+      # -----------------------------------------------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build Frontend for Embedding
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+          Write-Host "✅ Frontend built for embedding in Windows installer" -ForegroundColor Green
+          if (Test-Path "dist/index.html") {
+            Write-Host "✅ Frontend dist/index.html verified" -ForegroundColor Green
+          } else {
+            Write-Host "❌ Frontend build failed - dist/index.html not found" -ForegroundColor Red
+            exit 1
+          }
+
       - name: Build Windows Installer (Production)
         working-directory: installer/windows
         run: |
@@ -217,6 +240,16 @@ jobs:
           python -c "from pathlib import Path; print(f'Current directory: {Path.cwd()}')"
 
       # -----------------------------------------------------------------------
+      # SETUP NODE.JS FOR FRONTEND BUILD
+      # -----------------------------------------------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      # -----------------------------------------------------------------------
       # MACOS APP BUNDLE BUILD (PyInstaller)
       # -----------------------------------------------------------------------
       - name: Install PyInstaller
@@ -246,6 +279,12 @@ jobs:
           npm ci
           npm run build
           echo "✅ Frontend built for embedding in app bundle"
+          if [ -f "dist/index.html" ]; then
+            echo "✅ Frontend dist/index.html verified"
+          else
+            echo "❌ Frontend build failed - dist/index.html not found"
+            exit 1
+          fi
 
       - name: Generate macOS Icon (.icns)
         run: |
