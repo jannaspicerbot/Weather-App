@@ -11,6 +11,7 @@ Tests cover:
 """
 
 import csv
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -19,6 +20,9 @@ import pytest
 from click.testing import CliRunner
 
 from weather_app.cli.cli import cli
+
+# Get reference to the cli module (not the cli Click group)
+cli_module = sys.modules["weather_app.cli.cli"]
 
 # =============================================================================
 # FIXTURES
@@ -128,7 +132,7 @@ class TestInitDbCommand:
         """init_db should create a new database."""
         db_path = temp_db_dir / "test.duckdb"
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(cli, ["init-db"])
 
         assert result.exit_code == 0
@@ -141,7 +145,7 @@ class TestInitDbCommand:
         db_path = temp_db_dir / "test.duckdb"
         db_path.touch()  # Create empty file
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(cli, ["init-db"])
 
         assert result.exit_code == 1
@@ -153,7 +157,7 @@ class TestInitDbCommand:
         db_path = temp_db_dir / "test.duckdb"
         db_path.touch()  # Create empty file
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(cli, ["init-db", "--force"])
 
         assert result.exit_code == 0
@@ -173,7 +177,7 @@ class TestFetchCommand:
         """fetch should fail without API credentials."""
         db_path = temp_db_dir / "test.duckdb"
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             with patch.dict("os.environ", {}, clear=True):
                 result = runner.invoke(cli, ["fetch"])
 
@@ -185,7 +189,7 @@ class TestFetchCommand:
         """fetch should fail if database doesn't exist."""
         db_path = temp_db_dir / "nonexistent.duckdb"
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             with patch.dict(
                 "os.environ",
                 {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"},
@@ -215,7 +219,7 @@ class TestFetchCommand:
         mock_api.__enter__ = MagicMock(return_value=mock_api)
         mock_api.__exit__ = MagicMock(return_value=False)
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             with patch.dict(
                 "os.environ",
                 {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"},
@@ -245,7 +249,7 @@ class TestFetchCommand:
         mock_api.__enter__ = MagicMock(return_value=mock_api)
         mock_api.__exit__ = MagicMock(return_value=False)
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             with patch.dict(
                 "os.environ",
                 {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"},
@@ -279,7 +283,7 @@ class TestBackfillCommand:
         """backfill should validate date format."""
         db_path = temp_db_dir / "test.duckdb"
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             with patch.dict(
                 "os.environ",
                 {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"},
@@ -296,7 +300,7 @@ class TestBackfillCommand:
         """backfill should validate start date is before end date."""
         db_path = temp_db_dir / "test.duckdb"
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             with patch.dict(
                 "os.environ",
                 {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"},
@@ -313,7 +317,7 @@ class TestBackfillCommand:
         """backfill should fail without API credentials."""
         db_path = temp_db_dir / "test.duckdb"
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             with patch.dict("os.environ", {}, clear=True):
                 result = runner.invoke(
                     cli, ["backfill", "--start", "2024-01-01", "--end", "2024-01-31"]
@@ -344,7 +348,7 @@ class TestExportCommand:
         db_path = temp_db_dir / "nonexistent.duckdb"
         output_path = temp_db_dir / "output.csv"
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(cli, ["export", "-o", str(output_path)])
 
         assert result.exit_code == 1
@@ -369,7 +373,7 @@ class TestExportCommand:
                 }
             )
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(cli, ["export", "-o", str(output_path)])
 
         assert result.exit_code == 0
@@ -407,7 +411,7 @@ class TestExportCommand:
                 ]
             )
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(
                 cli,
                 [
@@ -457,7 +461,7 @@ class TestExportCommand:
                 ]
             )
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(
                 cli, ["export", "-o", str(output_path), "--limit", "2"]
             )
@@ -479,7 +483,7 @@ class TestExportCommand:
         with WeatherDatabase(str(db_path)) as db:
             pass  # Empty database
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(cli, ["export", "-o", str(output_path)])
 
         assert result.exit_code == 0
@@ -499,7 +503,7 @@ class TestInfoCommand:
         """info should show configuration details."""
         db_path = temp_db_dir / "test.duckdb"
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(cli, ["info"])
 
         assert result.exit_code == 0
@@ -522,7 +526,7 @@ class TestInfoCommand:
                 }
             )
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(cli, ["info"])
 
         assert result.exit_code == 0
@@ -534,7 +538,7 @@ class TestInfoCommand:
         """info should handle missing database gracefully."""
         db_path = temp_db_dir / "nonexistent.duckdb"
 
-        with patch("weather_app.cli.cli.DB_PATH", str(db_path)):
+        with patch.object(cli_module, "DB_PATH", str(db_path)):
             result = runner.invoke(cli, ["info"])
 
         assert result.exit_code == 0
