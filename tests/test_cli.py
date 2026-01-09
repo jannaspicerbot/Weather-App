@@ -224,8 +224,8 @@ class TestFetchCommand:
                 "os.environ",
                 {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"},
             ):
-                with patch(
-                    "weather_app.cli.cli.AmbientWeatherAPI", return_value=mock_api
+                with patch.object(
+                    cli_module, "AmbientWeatherAPI", return_value=mock_api
                 ):
                     with patch("time.sleep"):  # Skip delays
                         result = runner.invoke(cli, ["fetch", "--limit", "2"])
@@ -254,8 +254,8 @@ class TestFetchCommand:
                 "os.environ",
                 {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"},
             ):
-                with patch(
-                    "weather_app.cli.cli.AmbientWeatherAPI", return_value=mock_api
+                with patch.object(
+                    cli_module, "AmbientWeatherAPI", return_value=mock_api
                 ):
                     result = runner.invoke(cli, ["fetch"])
 
