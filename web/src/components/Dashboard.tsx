@@ -16,6 +16,7 @@ import { DashboardGrid } from './dashboard/DashboardGrid';
 import { SortableChartCard } from './dashboard/SortableChartCard';
 import { useDashboardLayout } from '../hooks/useDashboardLayout';
 import { useMetricsLayout } from '../hooks/useMetricsLayout';
+import { InstallPrompt } from './InstallPrompt';
 
 export default function Dashboard() {
   const [latestWeather, setLatestWeather] = useState<WeatherData | null>(null);
@@ -203,13 +204,16 @@ export default function Dashboard() {
               </p>
             )}
           </div>
-          <button
-            onClick={handleResetAllLayouts}
-            className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px]"
-            aria-label="Reset dashboard layout to default order"
-          >
-            Reset Layout
-          </button>
+          <div className="flex items-center gap-3">
+            <InstallPrompt />
+            <button
+              onClick={handleResetAllLayouts}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px]"
+              aria-label="Reset dashboard layout to default order"
+            >
+              Reset Layout
+            </button>
+          </div>
         </div>
       </header>
 

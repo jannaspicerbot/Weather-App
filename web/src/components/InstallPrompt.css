@@ -1,0 +1,107 @@
+/**
+ * InstallPrompt Component Styles
+ *
+ * Uses semantic tokens from design-tokens.md
+ * Follows inclusive-design.md accessibility standards (44x44 touch target)
+ */
+
+.install-prompt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
+  min-height: 44px; /* WCAG 2.2 touch target */
+
+  background-color: var(--color-interactive);
+  color: var(--color-text-on-primary);
+  border: none;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.install-prompt:hover {
+  background-color: var(--color-water);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.install-prompt:active {
+  transform: scale(0.98);
+}
+
+.install-prompt:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.install-prompt:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.install-prompt:disabled:hover {
+  background-color: var(--color-interactive);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Compact mode (icon only) */
+.install-prompt--compact {
+  padding: var(--spacing-2);
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.install-prompt--compact .install-prompt__text {
+  display: none;
+}
+
+/* Icon styling */
+.install-prompt__icon {
+  flex-shrink: 0;
+}
+
+/* Text styling */
+.install-prompt__text {
+  white-space: nowrap;
+}
+
+/* Animation for installing state */
+.install-prompt:disabled .install-prompt__icon {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .install-prompt:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .install-prompt {
+    transition: none;
+  }
+
+  .install-prompt:disabled .install-prompt__icon {
+    animation: none;
+  }
+}

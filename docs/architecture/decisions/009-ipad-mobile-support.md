@@ -1,8 +1,8 @@
 # ADR-009: iPad/Mobile Support Options
 
-**Status:** Proposed (Not Yet Decided)
-**Date:** 2026-01-07
-**Deciders:** TBD
+**Status:** Accepted
+**Date:** 2026-01-09
+**Deciders:** Project Owner
 
 ---
 
@@ -264,12 +264,36 @@ web/
 
 ## Decision
 
-**Status: Proposed** - No decision made yet. This ADR documents options for future reference.
+**Status: Accepted** - Multi-Device Standalone PWA Strategy
 
-When ready to proceed:
-1. Update status to "Accepted"
-2. Document chosen option
-3. Create implementation tasks
+We have implemented **Option 1 (PWA)** with enhanced multi-platform support:
+
+### Accepted Decision (2026-01-09)
+
+We implemented a PWA strategy with `display: "standalone"` mode. This provides:
+
+- **Desktop App Experience**: Windows/macOS users get a separate window with dock/taskbar icon
+- **iPad Support**: Full-screen app via Safari's "Add to Home Screen"
+- **Unified Codebase**: Single web deployment serves all platforms
+- **Zero App Store Requirements**: No developer accounts or review processes
+
+### Implementation Details
+
+- **vite-plugin-pwa** configured with `registerType: 'autoUpdate'`
+- **Service Worker**: Workbox-based with NetworkFirst (API) and StaleWhileRevalidate (weather) caching
+- **Install Button**: Custom `InstallPrompt` component in dashboard header
+- **iOS Meta Tags**: Apple-specific meta tags and splash screens for iPad
+
+### Trade-offs Accepted
+
+- iPad requires HTTPS (documented in `docs/guides/local-https-setup.md`)
+- No push notifications (acceptable for local weather monitoring)
+- Safari PWA limitations on iOS (acceptable for our use case)
+
+### Documentation
+
+- [PWA Setup Guide](../../guides/pwa-setup.md) - Installation instructions
+- [Local HTTPS Setup](../../guides/local-https-setup.md) - iPad local network access
 
 ---
 
