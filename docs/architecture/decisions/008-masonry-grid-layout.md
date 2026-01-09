@@ -4,6 +4,8 @@
 **Date:** 2026-01-05
 **Deciders:** Janna Spicer, Architecture Review
 
+> **Update (2026-01-09):** This ADR references TailwindCSS which was later replaced with CSS Custom Properties (design tokens). The layout recommendations remain valid - CSS Grid and Flexbox work with any styling approach.
+
 ---
 
 ## Context

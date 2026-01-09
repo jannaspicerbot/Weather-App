@@ -42,12 +42,30 @@ The Weather Dashboard follows a responsive grid layout optimized for desktop and
 }
 ```
 
-### Tailwind CSS Implementation
+### Semantic CSS Implementation
 
 ```tsx
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 p-4 lg:p-6">
+<div className="dashboard-grid">
   {/* Chart cards */}
 </div>
+```
+
+```css
+/* In index.css */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-6);
+  padding: var(--spacing-4);
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-8);
+    padding: var(--spacing-6);
+  }
+}
 ```
 
 ---
@@ -137,33 +155,26 @@ function ChartCard({ title, children, description }: ChartCardProps) {
 }
 ```
 
-### Tailwind CSS Card Implementation
+### JSX + Semantic CSS Implementation
 
 ```tsx
 <article
-  className="
-    bg-[var(--color-bg-secondary)]
-    border border-[var(--color-border)]
-    rounded-xl
-    p-6
-    shadow-sm
-  "
+  className="chart-card"
   role="region"
   aria-labelledby="chart-heading"
 >
-  <header className="mb-4">
-    <h2
-      id="chart-heading"
-      className="text-lg font-semibold text-[var(--color-text-primary)]"
-    >
+  <header className="chart-card-header">
+    <h2 id="chart-heading" className="chart-card-title">
       Temperature
     </h2>
   </header>
-  <div className="min-h-[300px]">
+  <div className="chart-card-content">
     {/* Victory Chart */}
   </div>
 </article>
 ```
+
+The `.chart-card` styles are defined in the CSS section above, using design tokens for consistent theming.
 
 ---
 

@@ -640,7 +640,7 @@ This project uses **React Aria (Adobe)** as the official component library (see 
 
 **Why React Aria?**
 - Industry gold standard for accessibility (WCAG 2.2 Level AA compliant)
-- Headless hooks-based architecture - maximum flexibility with TailwindCSS
+- Headless hooks-based architecture - maximum flexibility with CSS custom properties
 - All WAI-ARIA 1.2 design patterns implemented correctly
 - Focus management, keyboard navigation, and screen reader support built-in
 - Touch, mouse, keyboard, and pen input handled automatically (iPad optimized)
@@ -648,7 +648,7 @@ This project uses **React Aria (Adobe)** as the official component library (see 
 
 **Alternatives considered:**
 - **Radix UI** - Excellent accessibility, component-based (easier API)
-- **Headless UI** - Tailwind-focused, limited component set
+- **Headless UI** - Utility CSS-focused, limited component set
 - **Chakra UI** - Pre-styled components, WCAG 2.0 baseline
 
 **Why use accessible component libraries?**
@@ -792,7 +792,7 @@ Reviewers must verify:
 
 - [React Aria (Adobe)](https://react-spectrum.adobe.com/react-aria/) - Accessible React hooks
 - [Radix UI](https://www.radix-ui.com/) - Unstyled accessible components
-- [Headless UI](https://headlessui.com/) - Tailwind's accessible components
+- [Headless UI](https://headlessui.com/) - Unstyled accessible components
 - [Chakra UI](https://chakra-ui.com/) - Full component library with accessibility
 
 ### Screen Readers

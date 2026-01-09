@@ -32,6 +32,7 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 | **Frontend Lang** | TypeScript | ✅ Phase 2 | Type safety, 96% industry adoption |
 | **Frontend Framework** | React 18 + Vite | ✅ Phase 2 | Modern build tools, fast dev server |
 | **Charting** | Victory | ✅ Phase 3 | WCAG 2.2 AA accessible, React-native |
+| **Styling** | CSS Custom Properties | ✅ Phase 3 | Semantic design tokens, no framework |
 | **UI Components** | React Aria (Adobe) | ✅ Phase 3 | Accessibility-first, unstyled primitives |
 | **CLI** | Click | ✅ Phase 1 | Elegant command-line interfaces |
 | **Validation** | Pydantic | ✅ Phase 1 | Runtime type validation |
@@ -47,7 +48,7 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 | Frontend | None (CLI only) | **React + TypeScript** | React + TypeScript |
 | Backend | Flask (planned) | **FastAPI** (OpenAPI) | FastAPI |
 | Charts | Plotly (planned) | Recharts (prototype) | **Victory** (accessible) |
-| UI Components | None | TailwindCSS only | **React Aria** (Adobe) |
+| UI Components | None | Utility CSS | **React Aria + CSS Tokens** |
 | Deployment | Manual | **Docker Compose** | Docker Compose |
 
 ---
@@ -103,8 +104,8 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 │  │  • React 18         │         │  • FastAPI          │    │
 │  │  • TypeScript       │         │  • Python 3.11+     │    │
 │  │  • Vite             │         │  • Uvicorn          │    │
-│  │  • Recharts         │         │  • Pydantic         │    │
-│  │  • TailwindCSS      │         │                      │    │
+│  │  • Victory          │         │  • Pydantic         │    │
+│  │  • CSS Tokens       │         │                      │    │
 │  │                     │         │  Ports:             │    │
 │  │  Port: 3000 (dev)   │         │  • 8000 (HTTP)      │    │
 │  │  Port: 80 (prod)    │         │                      │    │
@@ -336,7 +337,7 @@ User Browser
        │ render
        ▼
 ┌──────────────────────┐
-│  Recharts Component  │
+│  Victory Component   │
 │  (TemperatureChart)  │
 └──────────────────────┘
 ```

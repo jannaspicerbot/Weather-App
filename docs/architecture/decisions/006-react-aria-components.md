@@ -4,6 +4,8 @@
 **Date:** 2026-01-03
 **Deciders:** Janna Spicer, Architecture Review
 
+> **Update (2026-01-09):** This ADR references TailwindCSS which was later replaced with CSS Custom Properties (design tokens). React Aria remains the component library choice - it is unstyled and works well with any CSS approach.
+
 ---
 
 ## Context

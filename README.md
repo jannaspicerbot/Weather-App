@@ -142,7 +142,7 @@ The Weather App is built with modern, production-ready technologies:
 - **TypeScript** - Type-safe JavaScript
 - **Victory Charts** - Accessible, theme-aware data visualization
 - **React Aria** - WCAG 2.2 AA accessible components
-- **TailwindCSS** - Utility-first styling
+- **CSS Custom Properties** - Semantic design tokens
 - **Vite** - Fast build tool and dev server
 
 **Deployment:**

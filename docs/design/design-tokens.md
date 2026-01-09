@@ -837,4 +837,4 @@ export const weatherChartTheme = {
 - Switching default: ~2 minutes
 - User palette selector: ~1 hour
 
-This is the industry-standard approach used by design systems like Material-UI, Chakra UI, and Tailwind CSS.
+This is the industry-standard approach used by design systems like Material-UI, Chakra UI, and other modern CSS frameworks.

@@ -4,6 +4,8 @@
 **Date:** 2026-01-03
 **Deciders:** Janna Spicer, Architecture Review
 
+> **Update (2026-01-09):** This ADR references TailwindCSS and Recharts. TailwindCSS was later replaced with CSS Custom Properties (design tokens). Victory Charts decision stands - it is now the charting library in use.
+
 ---
 
 ## Context
@@ -12,7 +14,7 @@ The Weather App needs a charting library for visualizing time-series weather dat
 - Support WCAG 2.2 Level AA accessibility compliance
 - Work on desktop and iPad browsers (touch + keyboard + mouse)
 - Display time-series data with responsive design
-- Integrate with React + TypeScript + TailwindCSS stack
+- Integrate with React + TypeScript + CSS design tokens
 - Provide excellent user experience for all users (inclusive design)
 
 ### Current State (Phase 2)
