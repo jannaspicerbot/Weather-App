@@ -20,7 +20,6 @@ from fastapi.testclient import TestClient
 from weather_app.database.engine import WeatherDatabase
 from weather_app.web.app import create_app
 
-
 # =============================================================================
 # FIXTURES
 # =============================================================================

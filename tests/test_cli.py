@@ -12,15 +12,13 @@ Tests cover:
 
 import csv
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
 
-from weather_app.cli.cli import cli, export, fetch, info, init_db
-
+from weather_app.cli.cli import cli
 
 # =============================================================================
 # FIXTURES
@@ -379,7 +377,7 @@ class TestExportCommand:
         assert output_path.exists()
 
         # Verify CSV content
-        with open(output_path, "r") as f:
+        with open(output_path) as f:
             reader = csv.DictReader(f)
             rows = list(reader)
             assert len(rows) == 1
@@ -424,7 +422,7 @@ class TestExportCommand:
             )
 
         assert result.exit_code == 0
-        with open(output_path, "r") as f:
+        with open(output_path) as f:
             reader = csv.DictReader(f)
             rows = list(reader)
             assert len(rows) == 1
@@ -465,7 +463,7 @@ class TestExportCommand:
             )
 
         assert result.exit_code == 0
-        with open(output_path, "r") as f:
+        with open(output_path) as f:
             reader = csv.DictReader(f)
             rows = list(reader)
             assert len(rows) == 2

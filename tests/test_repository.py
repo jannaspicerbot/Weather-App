@@ -18,7 +18,6 @@ import pytest
 from weather_app.database.engine import WeatherDatabase
 from weather_app.database.repository import WeatherRepository
 
-
 # =============================================================================
 # FIXTURES
 # =============================================================================
