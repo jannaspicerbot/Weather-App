@@ -65,7 +65,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-6 text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Welcome to Weather Dashboard
         </h2>
@@ -78,39 +78,48 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
       {/* Progress indicator */}
       <div className="flex items-center mb-8">
-        <div
-          className={`flex items-center justify-center w-8 h-8 rounded-full ${
-            step === 'credentials'
-              ? 'bg-blue-600 text-white'
-              : 'bg-green-500 text-white'
-          }`}
-        >
-          {step === 'credentials' ? '1' : '✓'}
+        {/* Step 1 */}
+        <div className="flex flex-col items-center">
+          <div
+            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+              step === 'credentials'
+                ? 'bg-blue-600 text-white'
+                : 'bg-green-500 text-white'
+            }`}
+          >
+            {step === 'credentials' ? '1' : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+          <span className={`mt-2 text-sm ${step === 'credentials' ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+            Connect Account
+          </span>
         </div>
+
+        {/* Connector line */}
         <div
-          className={`flex-1 h-1 mx-2 ${
+          className={`flex-1 h-1 mx-4 mb-6 ${
             step === 'backfill' ? 'bg-blue-600' : 'bg-gray-200'
           }`}
         />
-        <div
-          className={`flex items-center justify-center w-8 h-8 rounded-full ${
-            step === 'backfill'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-500'
-          }`}
-        >
-          2
-        </div>
-      </div>
 
-      {/* Step labels */}
-      <div className="flex justify-between text-sm text-gray-500 mb-6 -mt-4">
-        <span className={step === 'credentials' ? 'text-blue-600 font-medium' : ''}>
-          Connect Account
-        </span>
-        <span className={step === 'backfill' ? 'text-blue-600 font-medium' : ''}>
-          Load Data
-        </span>
+        {/* Step 2 */}
+        <div className="flex flex-col items-center">
+          <div
+            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+              step === 'backfill'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-500'
+            }`}
+          >
+            2
+          </div>
+          <span className={`mt-2 text-sm ${step === 'backfill' ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+            Load Data
+          </span>
+        </div>
       </div>
 
       {/* Content */}

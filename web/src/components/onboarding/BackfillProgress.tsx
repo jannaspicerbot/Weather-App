@@ -33,13 +33,7 @@ export default function BackfillProgress({
       setLastUpdate(new Date());
       setError(null);
 
-      // Check if complete
-      if (data.status === 'completed') {
-        // Wait a moment before transitioning
-        setTimeout(() => {
-          onComplete();
-        }, 2000);
-      }
+      // Note: User must click the button to proceed to dashboard
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get progress');
     }
@@ -224,9 +218,15 @@ export default function BackfillProgress({
               <h3 className="text-lg font-semibold text-green-800 mb-1">
                 All Set!
               </h3>
-              <p className="text-green-700">
-                Your weather data has been loaded. Redirecting to dashboard...
+              <p className="text-green-700 mb-4">
+                Your weather data has been loaded successfully.
               </p>
+              <button
+                onClick={onComplete}
+                className="w-full py-3 px-4 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Go to Dashboard
+              </button>
             </div>
           )}
 
