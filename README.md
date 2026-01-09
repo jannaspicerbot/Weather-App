@@ -103,12 +103,25 @@ npm run dev
 
 ### Option 3: Desktop Installer
 
-Download standalone installers for Windows or macOS:
+Download standalone installers for Windows or macOS from [GitHub Actions](https://github.com/jannaspicerbot/Weather-App/actions/workflows/platform-builds.yml):
 
-- **Windows**: [WeatherAppSetup.exe](../../releases) (no Python required)
-- **macOS**: [WeatherApp.app](../../releases) (drag-and-drop installation)
+- **Windows**: Download `windows-installer-...` artifact (no Python required)
+- **macOS**: Download `macos-app-bundle-...` artifact (drag-and-drop installation)
+
+> **Windows users**: You may see a SmartScreen warning on first run. Click "More info" → "Run anyway". See [Windows Installation Guide](docs/guides/windows-installation.md) for details.
 
 See [installer/README.md](installer/README.md) for build instructions.
+
+### Option 4: Progressive Web App (PWA)
+
+Install as a standalone app directly from your browser:
+
+1. Start the backend (Docker or native installation)
+2. Open `http://localhost:8000` in Chrome, Edge, Firefox, or Safari
+3. Click the **"Install App"** button in the dashboard header
+4. The app installs to your Start Menu/Applications with its own window
+
+See [PWA Setup Guide](docs/guides/pwa-setup.md) for detailed instructions including iPad setup.
 
 ## 📖 Documentation
 
