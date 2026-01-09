@@ -8,6 +8,7 @@ coverage:
   precision: 2
   round: down
   # Range for coverage graph coloring (yellow to green)
+  # Using 40-80 range as project grows from 60% toward higher coverage
   range: "40...80"
 
   status:

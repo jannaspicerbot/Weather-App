@@ -140,6 +140,7 @@ matrix:
 - Runs on all pushes to main/develop and all pull requests
 - **Smart filtering:** Jobs only run if relevant files changed
 - **Concurrency:** Duplicate runs are automatically canceled
+- All jobs execute in parallel for fast feedback
 
 **Key Features:**
 - ✅ Smart change detection (skip irrelevant jobs)
