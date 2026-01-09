@@ -1,8 +1,8 @@
 # GitHub Actions CI/CD Overview
 
 **Status:** ✅ Streamlined (January 2026)
-**Last Updated:** January 7, 2026
-**Phase:** Phase 2 - Optimized Multi-Platform Testing
+**Last Updated:** January 9, 2026
+**Phase:** Phase 3 - Smart Change Detection & Optimized Builds
 
 ---
 
@@ -62,6 +62,9 @@ Benefits:
 ✅ Easier maintenance (update linting rules in one place)
 ✅ Path filtering (workflows only run if relevant files changed)
 ✅ Dedicated accessibility compliance verification
+✅ Smart change detection (skip irrelevant jobs)
+✅ Concurrency controls (cancel duplicate runs)
+✅ Platform builds only on main (not PRs)
 ```
 
 ---
@@ -76,20 +79,49 @@ Benefits:
 ```yaml
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 ```
 
 **Jobs:**
 
-| Job | Runs On | Purpose | Duration |
-|-----|---------|---------|----------|
-| `backend-tests` | Ubuntu, Windows, macOS (matrix) | Multi-platform Python testing | ~5-8 min |
-| `backend-lint` | Ubuntu only | Code quality (Ruff, Black, isort, mypy) | ~2-3 min |
-| `frontend-tests` | Ubuntu only | React/TypeScript lint, type check, build | ~3-4 min |
-| `security-scan` | Ubuntu only (after backend-tests) | Safety + Bandit security scans | ~2-3 min |
-| `api-integration` | Ubuntu only (after backend-tests) | FastAPI endpoint tests | ~2-3 min |
+| Job | Runs On | Purpose | Runs When | Duration |
+|-----|---------|---------|-----------|----------|
+| `changes` | Ubuntu | Detect which files changed | Always | ~10 sec |
+| `backend-tests` | Ubuntu, Windows, macOS (matrix) | Multi-platform Python testing | Backend or deps changed | ~5-8 min |
+| `backend-lint` | Ubuntu only | Code quality (Ruff, Black, isort, mypy) | Backend changed | ~2-3 min |
+| `frontend-tests` | Ubuntu only | React/TypeScript lint, type check, build | Frontend or deps changed | ~3-4 min |
+| `security-scan` | Ubuntu only | Safety + Bandit security scans | Backend or deps changed | ~2-3 min |
+| `api-integration` | Ubuntu only (after backend-tests) | FastAPI endpoint tests | Backend or deps changed | ~2-3 min |
+
+**Smart Change Detection:**
+```yaml
+# The 'changes' job detects which files changed
+changes:
+  outputs:
+    backend: ${{ steps.filter.outputs.backend }}
+    frontend: ${{ steps.filter.outputs.frontend }}
+    dependencies: ${{ steps.filter.outputs.dependencies }}
+  steps:
+    - uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          backend:
+            - 'weather_app/**'
+            - 'tests/**'
+          frontend:
+            - 'web/src/**'
+            - 'web/package.json'
+          dependencies:
+            - 'requirements.txt'
+            - 'web/package-lock.json'
+```
 
 **Matrix Strategy:**
 ```yaml
@@ -106,9 +138,12 @@ matrix:
 
 **Execution:**
 - Runs on all pushes to main/develop and all pull requests
-- All jobs execute in parallel for fast feedback
+- **Smart filtering:** Jobs only run if relevant files changed
+- **Concurrency:** Duplicate runs are automatically canceled
 
 **Key Features:**
+- ✅ Smart change detection (skip irrelevant jobs)
+- ✅ Concurrency controls (cancel duplicate runs)
 - ✅ Parallel execution (all jobs run simultaneously)
 - ✅ Coverage reporting to Codecov (Ubuntu + Python 3.11 only)
 - ✅ DuckDB and FastAPI validation on all platforms
@@ -177,55 +212,65 @@ on:
 ```yaml
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main]  # Only main branch - NOT PRs!
     paths:
       - 'weather_app/**'
       - 'installer/**'
-      - 'web/**'
+      - 'web/src/**'
+      - 'web/package.json'
       - 'requirements.txt'
       - 'setup.py'
       - 'pyproject.toml'
-      - 'package.json'
       - '.github/workflows/platform-builds.yml'
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      # Same paths as push
+  # Manual trigger for testing builds without merging to main
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        type: choice
+        options: [windows, macos, both]
+
+# Cancel in-progress runs (but not manual triggers)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 ```
+
+> **Important:** Platform builds no longer run on PRs. This saves ~10-15 minutes per PR. Use `workflow_dispatch` to manually trigger builds when needed.
 
 **Jobs:**
 
 | Job | Runs On | Purpose | Duration |
 |-----|---------|---------|----------|
-| `windows-installer` | Windows only | PyInstaller .exe builds (production + debug) + Windows-specific tests | ~8-12 min |
-| `macos-app` | macOS only | PyInstaller .app bundles (production + debug) + macOS-specific tests | ~8-12 min |
+| `windows-installer` | Windows only | PyInstaller .exe builds (production + debug) | ~8-12 min |
+| `macos-app` | macOS only | PyInstaller .app bundles (production + debug) | ~8-12 min |
 
 **Windows-Specific Validations:**
 - Console encoding tests (emoji support: ✅ 📊 🌡️ 💧)
 - System tray icon compatibility (PIL + pystray)
 - Windows path handling
 - PowerShell integration
-- **PyInstaller .exe builds** (production + debug, on all PRs and pushes)
+- **PyInstaller .exe builds** (production + debug)
 
 **macOS-Specific Validations:**
 - macOS system information (`sw_vers`)
 - File system compatibility
 - Native path handling
-- **PyInstaller .app bundle builds** (production + debug, on all PRs and pushes)
+- **PyInstaller .app bundle builds** (production + debug)
 
 **Installer Builds:**
-- Windows .exe builds on all PRs and pushes to main/develop
+- Windows .exe builds on pushes to main only (not PRs)
   - Production: `installer/windows/weather_app.spec` → `WeatherApp.exe`
   - Debug: `installer/windows/weather_app_debug.spec` → `WeatherApp_Debug.exe` (with console)
-- macOS .app bundle builds on all PRs and pushes to main/develop
+- macOS .app bundle builds on pushes to main only (not PRs)
   - Production: `installer/macos/weather_app.spec` → `WeatherApp.app`
   - Debug: `installer/macos/weather_app_debug.spec` → `WeatherApp_Debug.app` (with console)
 
 **Artifacts:**
-- `windows-installer-<sha>` - WeatherApp.exe production build (7 days for PRs, 30 days for main)
-- `windows-installer-debug-<sha>` - WeatherApp_Debug.exe with console (7 days for PRs, 30 days for main)
-- `macos-app-bundle-<sha>` - WeatherApp.app production build (7 days for PRs, 30 days for main)
-- `macos-app-bundle-debug-<sha>` - WeatherApp_Debug.app with console (7 days for PRs, 30 days for main)
+- `windows-installer-<sha>` - WeatherApp.exe production build (30 days retention)
+- `windows-installer-debug-<sha>` - WeatherApp_Debug.exe with console (14 days retention)
+- `macos-app-bundle-<sha>` - WeatherApp.app production build (30 days retention)
+- `macos-app-bundle-debug-<sha>` - WeatherApp_Debug.app with console (14 days retention)
 
 ---
 
@@ -319,23 +364,27 @@ on:
 
 | Scenario | Old Architecture | New Architecture | Savings |
 |----------|------------------|------------------|---------|
-| **Per PR (all tests)** | 150-300 minutes | 50-80 minutes | **60-70%** |
-| **Per PR (backend only)** | 100-150 minutes | 30-50 minutes | **65%** |
+| **Per PR (all tests)** | 150-300 minutes | 30-50 minutes | **75-85%** |
+| **Per PR (backend only)** | 100-150 minutes | 15-25 minutes | **80%** |
+| **Per PR (frontend only)** | 80-120 minutes | 10-15 minutes | **85%** |
 | **Per PR (docs only)** | 3-5 minutes | 3-5 minutes | 0% (unchanged) |
 
 ### Wall Clock Time
 
 | Scenario | Old Architecture | New Architecture |
 |----------|------------------|------------------|
-| **Full PR** | 25-40 minutes | 10-15 minutes |
-| **Backend only** | 15-25 minutes | 8-12 minutes |
+| **Full PR** | 25-40 minutes | 8-12 minutes |
+| **Backend only** | 15-25 minutes | 5-8 minutes |
+| **Frontend only** | 10-15 minutes | 3-5 minutes |
 | **Docs only** | 3-5 minutes | 3-5 minutes |
 
 **Why faster?**
 - No duplicate test runs
 - Better parallelization
-- Smarter path filtering
+- Smarter path filtering (jobs skip if files unchanged)
 - Linting runs once (not 2-3 times)
+- Platform builds only on main (not PRs)
+- Concurrency cancels duplicate runs
 
 ---
 
@@ -868,6 +917,6 @@ gh run watch <run-id>
 
 ---
 
-**Last Updated:** January 7, 2026
-**Architecture Version:** 2.3 (Added Accessibility CI Workflow)
+**Last Updated:** January 9, 2026
+**Architecture Version:** 3.0 (Smart Change Detection & Optimized Builds)
 **Status:** ✅ Production Ready
