@@ -2,16 +2,56 @@ name: Main CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+
+# =============================================================================
+# CONCURRENCY: Cancel in-progress runs for the same PR/branch
+# This saves CI minutes when pushing multiple commits quickly
+# =============================================================================
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  # ============================================================================
+  # CHANGE DETECTION - Determine which jobs need to run
+  # ============================================================================
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      dependencies: ${{ steps.filter.outputs.dependencies }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'weather_app/**'
+              - 'tests/**'
+              - 'pyproject.toml'
+              - 'setup.py'
+            frontend:
+              - 'web/src/**'
+              - 'web/package.json'
+              - 'web/vite.config.ts'
+              - 'web/tsconfig*.json'
+            dependencies:
+              - 'requirements.txt'
+              - 'web/package-lock.json'
+
   # ============================================================================
   # BACKEND TESTS - Multi-platform, multi-version Python testing
   # ============================================================================
   backend-tests:
     name: Backend Tests - ${{ matrix.os }} - Python ${{ matrix.python-version }}
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.dependencies == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -74,6 +114,8 @@ jobs:
   # ============================================================================
   backend-lint:
     name: Backend Linting & Type Check
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -110,6 +152,8 @@ jobs:
   # ============================================================================
   frontend-tests:
     name: Frontend Tests & Build
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.dependencies == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -144,12 +188,13 @@ jobs:
           echo "✅ Frontend build completed successfully"
 
   # ============================================================================
-  # SECURITY SCAN - Run once on Ubuntu after backend tests pass
+  # SECURITY SCAN - Run once on Ubuntu when dependencies change
   # ============================================================================
   security-scan:
     name: Security Vulnerability Scan
+    needs: changes
+    if: needs.changes.outputs.dependencies == 'true' || needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    needs: [backend-tests]
 
     steps:
       - name: Checkout Code
@@ -176,12 +221,17 @@ jobs:
         continue-on-error: true
 
   # ============================================================================
-  # API INTEGRATION TESTS - Run once on Ubuntu after backend tests pass
+  # API INTEGRATION TESTS - Run once on Ubuntu when backend changes
   # ============================================================================
   api-integration:
     name: FastAPI Integration Tests
+    needs: [changes, backend-tests]
+    # Run if backend changed AND backend-tests passed (or was skipped)
+    if: |
+      always() &&
+      (needs.changes.outputs.backend == 'true' || needs.changes.outputs.dependencies == 'true') &&
+      (needs.backend-tests.result == 'success' || needs.backend-tests.result == 'skipped')
     runs-on: ubuntu-latest
-    needs: [backend-tests]
 
     steps:
       - name: Checkout Code

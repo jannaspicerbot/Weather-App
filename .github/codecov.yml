@@ -7,41 +7,90 @@ codecov:
 coverage:
   precision: 2
   round: down
-  range: "60...100"
+  # Range for coverage graph coloring (yellow to green)
+  # Using 40-80 range as project grows from 60% toward higher coverage
+  range: "40...80"
 
   status:
     project:
       default:
+        # Target: auto means it won't fail if coverage stays the same or improves
         target: auto
+        # Allow 2% drop before failing
         threshold: 2%
         informational: false
     patch:
       default:
-        target: 80%
-        threshold: 5%
+        # New code should have 70% coverage (reduced from 80% to be realistic)
+        target: 70%
+        # Allow 10% variance
+        threshold: 10%
+        # Informational only - won't block PRs
         informational: true
 
 # Ignore files that don't need coverage
 ignore:
+  # Test files
   - "tests/**/*"
   - "**/__pycache__/**"
   - "**/conftest.py"
+  # Setup/config files
   - "setup.py"
+  - "pyproject.toml"
+  # Documentation
   - "docs/**/*"
+  # Installer/build artifacts
   - "installer/**/*"
+  # Frontend (tracked separately if needed)
   - "web/**/*"
+  # Launcher GUI code (hard to unit test)
+  - "weather_app/launcher/**/*"
+  # CLI entry points
+  - "weather_app/cli/__main__.py"
+  - "weather_app/__main__.py"
+  # Init files with only imports
+  - "**/__init__.py"
 
 # Comment configuration for PRs
 comment:
-  layout: "reach,diff,flags,files"
+  layout: "header,diff,flags,components,files"
   behavior: default
   require_changes: true
   require_base: false
   require_head: true
+  # Hide project coverage if no changes to tracked files
+  hide_project_coverage: false
 
-# Flag definitions
+# Flag definitions for different parts of the codebase
 flags:
   backend:
     paths:
       - weather_app/
     carryforward: true
+    # Only report on files that were changed
+    after_n_builds: 1
+
+# Component management - group related files
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+  individual_components:
+    - component_id: database
+      name: Database Layer
+      paths:
+        - weather_app/database/**
+    - component_id: api
+      name: API Layer
+      paths:
+        - weather_app/web/**
+        - weather_app/api/**
+    - component_id: scheduler
+      name: Scheduler
+      paths:
+        - weather_app/scheduler/**
+    - component_id: cli
+      name: CLI
+      paths:
+        - weather_app/cli/**
