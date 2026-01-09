@@ -338,7 +338,9 @@ class TestSchedulerStatus:
         # Use PropertyMock for the 'running' property
         with patch.object(scheduler.scheduler, "get_job", return_value=mock_job):
             with patch.object(
-                type(scheduler.scheduler), "running", new_callable=lambda: property(lambda self: True)
+                type(scheduler.scheduler),
+                "running",
+                new_callable=lambda: property(lambda self: True),
             ):
                 status = scheduler.get_status()
 

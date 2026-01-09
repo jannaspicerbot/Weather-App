@@ -139,7 +139,9 @@ class TestGetDevices:
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
-        with patch.object(api_client.session, "get", return_value=mock_response) as mock_get:
+        with patch.object(
+            api_client.session, "get", return_value=mock_response
+        ) as mock_get:
             api_client.get_devices()
 
             mock_get.assert_called_once()
@@ -154,7 +156,9 @@ class TestGetDevices:
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
-        with patch.object(api_client.session, "get", return_value=mock_response) as mock_get:
+        with patch.object(
+            api_client.session, "get", return_value=mock_response
+        ) as mock_get:
             api_client.get_devices()
 
             call_kwargs = mock_get.call_args[1]
@@ -224,7 +228,9 @@ class TestGetDeviceData:
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
-        with patch.object(api_client.session, "get", return_value=mock_response) as mock_get:
+        with patch.object(
+            api_client.session, "get", return_value=mock_response
+        ) as mock_get:
             api_client.get_device_data("AA:BB:CC:DD:EE:FF", limit=100)
 
             call_kwargs = mock_get.call_args[1]
@@ -237,7 +243,9 @@ class TestGetDeviceData:
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
-        with patch.object(api_client.session, "get", return_value=mock_response) as mock_get:
+        with patch.object(
+            api_client.session, "get", return_value=mock_response
+        ) as mock_get:
             api_client.get_device_data("AA:BB:CC:DD:EE:FF", end_date=1704110400000)
 
             call_kwargs = mock_get.call_args[1]
@@ -250,7 +258,9 @@ class TestGetDeviceData:
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
-        with patch.object(api_client.session, "get", return_value=mock_response) as mock_get:
+        with patch.object(
+            api_client.session, "get", return_value=mock_response
+        ) as mock_get:
             api_client.get_device_data("AA:BB:CC:DD:EE:FF")
 
             call_kwargs = mock_get.call_args[1]
@@ -263,7 +273,9 @@ class TestGetDeviceData:
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
-        with patch.object(api_client.session, "get", return_value=mock_response) as mock_get:
+        with patch.object(
+            api_client.session, "get", return_value=mock_response
+        ) as mock_get:
             api_client.get_device_data("AA:BB:CC:DD:EE:FF")
 
             call_args = mock_get.call_args[0]
@@ -333,7 +345,9 @@ class TestFetchAllHistoricalData:
     """Tests for fetch_all_historical_data method."""
 
     @pytest.mark.unit
-    def test_fetch_historical_returns_all_data(self, api_client, mock_device_data_response):
+    def test_fetch_historical_returns_all_data(
+        self, api_client, mock_device_data_response
+    ):
         """Should return all fetched data without batch_callback."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -348,7 +362,9 @@ class TestFetchAllHistoricalData:
         assert len(data) == 2
 
     @pytest.mark.unit
-    def test_fetch_historical_with_batch_callback(self, api_client, mock_device_data_response):
+    def test_fetch_historical_with_batch_callback(
+        self, api_client, mock_device_data_response
+    ):
         """Should call batch_callback with each batch."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -366,7 +382,9 @@ class TestFetchAllHistoricalData:
         assert result == (2, 2, 0)  # (total_fetched, total_inserted, total_skipped)
 
     @pytest.mark.unit
-    def test_fetch_historical_calls_progress_callback(self, api_client, mock_device_data_response):
+    def test_fetch_historical_calls_progress_callback(
+        self, api_client, mock_device_data_response
+    ):
         """Should call progress_callback with progress updates."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -385,7 +403,9 @@ class TestFetchAllHistoricalData:
         progress_callback.assert_any_call(2, 1)
 
     @pytest.mark.unit
-    def test_fetch_historical_handles_rate_limit(self, api_client, mock_device_data_response):
+    def test_fetch_historical_handles_rate_limit(
+        self, api_client, mock_device_data_response
+    ):
         """Should handle 429 rate limit by waiting and retrying."""
         mock_response_ok = MagicMock()
         mock_response_ok.status_code = 200
