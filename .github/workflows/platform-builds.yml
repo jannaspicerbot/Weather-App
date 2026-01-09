@@ -1,28 +1,41 @@
 name: Platform-Specific Builds
 
+# =============================================================================
+# TRIGGER STRATEGY:
+# - Full installer builds ONLY on pushes to main (after PR merge)
+# - Path filters ensure we skip builds for docs-only or test-only changes
+# - PRs do NOT trigger installer builds (use main-ci.yml for PR validation)
+# =============================================================================
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main]
     paths:
       - 'weather_app/**'
       - 'installer/**'
-      - 'web/**'
+      - 'web/src/**'
+      - 'web/package.json'
+      - 'web/vite.config.ts'
       - 'requirements.txt'
       - 'setup.py'
       - 'pyproject.toml'
-      - 'package.json'
       - '.github/workflows/platform-builds.yml'
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'weather_app/**'
-      - 'installer/**'
-      - 'web/**'
-      - 'requirements.txt'
-      - 'setup.py'
-      - 'pyproject.toml'
-      - 'package.json'
-      - '.github/workflows/platform-builds.yml'
+  # Manual trigger for testing builds without merging to main
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - windows
+          - macos
+          - both
+
+# Cancel in-progress runs for the same branch (but not for workflow_dispatch)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   # ============================================================================
@@ -33,8 +46,8 @@ jobs:
   windows-installer:
     name: Windows Installer Build
     runs-on: windows-latest
-    # Wait for main CI to pass before building
-    needs: []  # Will be triggered independently but can reference main-ci if needed
+    # Skip if workflow_dispatch specifies macos only
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_type != 'macos'
 
     steps:
       # -----------------------------------------------------------------------
@@ -142,14 +155,14 @@ jobs:
         with:
           name: windows-installer-${{ github.sha }}
           path: installer/windows/dist/WeatherApp/
-          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
+          retention-days: 30
 
       - name: Upload Windows Debug Installer
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer-debug-${{ github.sha }}
           path: installer/windows/dist/WeatherApp_Debug/
-          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
+          retention-days: 14
 
   # ============================================================================
   # MACOS APP BUNDLE BUILD
@@ -159,8 +172,8 @@ jobs:
   macos-app:
     name: macOS App Bundle Build
     runs-on: macos-latest
-    # Wait for main CI to pass before building
-    needs: []  # Will be triggered independently but can reference main-ci if needed
+    # Skip if workflow_dispatch specifies windows only
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_type != 'windows'
 
     steps:
       # -----------------------------------------------------------------------
@@ -282,11 +295,11 @@ jobs:
         with:
           name: macos-app-bundle-${{ github.sha }}
           path: installer/macos/dist/WeatherApp.app
-          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
+          retention-days: 30
 
       - name: Upload macOS Debug App Bundle
         uses: actions/upload-artifact@v4
         with:
           name: macos-app-bundle-debug-${{ github.sha }}
           path: installer/macos/dist/WeatherApp_Debug.app
-          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
+          retention-days: 14

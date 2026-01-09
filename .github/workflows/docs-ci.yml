@@ -2,19 +2,24 @@ name: Documentation CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'docs/**'
       - 'README.md'
       - '.claude/**'
       - '.github/workflows/docs-ci.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'docs/**'
       - 'README.md'
       - '.claude/**'
       - '.github/workflows/docs-ci.yml'
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   markdown-lint:

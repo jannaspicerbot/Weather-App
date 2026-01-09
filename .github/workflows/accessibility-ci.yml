@@ -12,6 +12,11 @@ on:
       - 'web/**'
       - '.github/workflows/accessibility-ci.yml'
 
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ============================================================================
   # ACCESSIBILITY LINTING - Static analysis with eslint-plugin-jsx-a11y
