@@ -44,7 +44,7 @@ export default function WeatherTest() {
 
   if (loading) {
     return (
-      <div className="p-4 text-gray-600">
+      <div className="weather-test__loading">
         Loading weather data...
       </div>
     );
@@ -52,53 +52,53 @@ export default function WeatherTest() {
 
   if (error) {
     return (
-      <div className="p-4 text-red-600">
+      <div className="weather-test__error">
         Error: {error}
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Weather Data (Type-Safe API Test)</h1>
+    <div className="weather-test">
+      <h1 className="weather-test__title">Weather Data (Type-Safe API Test)</h1>
 
       {/* Latest Weather */}
       {latestWeather && (
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">Latest Reading</h2>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="weather-test__card">
+          <h2 className="weather-test__card-title">Latest Reading</h2>
+          <div className="weather-test__grid">
             <div>
-              <p className="text-sm text-gray-600">Date</p>
-              <p className="text-lg font-medium">{latestWeather.date}</p>
+              <p className="weather-test__field-label">Date</p>
+              <p className="weather-test__field-value">{latestWeather.date}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Temperature</p>
+              <p className="weather-test__field-label">Temperature</p>
               {/* TypeScript knows tempf is number | null | undefined */}
-              <p className="text-lg font-medium">
+              <p className="weather-test__field-value">
                 {latestWeather.tempf?.toFixed(1) ?? 'N/A'}°F
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Feels Like</p>
-              <p className="text-lg font-medium">
+              <p className="weather-test__field-label">Feels Like</p>
+              <p className="weather-test__field-value">
                 {latestWeather.feelsLike?.toFixed(1) ?? 'N/A'}°F
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Humidity</p>
-              <p className="text-lg font-medium">
+              <p className="weather-test__field-label">Humidity</p>
+              <p className="weather-test__field-value">
                 {latestWeather.humidity ?? 'N/A'}%
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Wind Speed</p>
-              <p className="text-lg font-medium">
+              <p className="weather-test__field-label">Wind Speed</p>
+              <p className="weather-test__field-value">
                 {latestWeather.windspeedmph?.toFixed(1) ?? 'N/A'} mph
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Wind Gust</p>
-              <p className="text-lg font-medium">
+              <p className="weather-test__field-label">Wind Gust</p>
+              <p className="weather-test__field-value">
                 {latestWeather.windgustmph?.toFixed(1) ?? 'N/A'} mph
               </p>
             </div>
@@ -108,39 +108,39 @@ export default function WeatherTest() {
 
       {/* Database Stats */}
       {stats && (
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Database Statistics</h2>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="weather-test__card">
+          <h2 className="weather-test__card-title">Database Statistics</h2>
+          <div className="weather-test__grid">
             <div>
-              <p className="text-sm text-gray-600">Total Records</p>
-              <p className="text-lg font-medium">{stats.total_records.toLocaleString()}</p>
+              <p className="weather-test__field-label">Total Records</p>
+              <p className="weather-test__field-value">{stats.total_records.toLocaleString()}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Date Range</p>
-              <p className="text-lg font-medium">
+              <p className="weather-test__field-label">Date Range</p>
+              <p className="weather-test__field-value">
                 {stats.date_range_days ? `${stats.date_range_days} days` : 'N/A'}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Oldest Reading</p>
-              <p className="text-lg font-medium">{stats.min_date ?? 'N/A'}</p>
+              <p className="weather-test__field-label">Oldest Reading</p>
+              <p className="weather-test__field-value">{stats.min_date ?? 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Latest Reading</p>
-              <p className="text-lg font-medium">{stats.max_date ?? 'N/A'}</p>
+              <p className="weather-test__field-label">Latest Reading</p>
+              <p className="weather-test__field-value">{stats.max_date ?? 'N/A'}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Type Safety Demo */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
-        <h3 className="font-semibold text-blue-900 mb-2">✅ Type Safety Verified</h3>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• API response types auto-generated from FastAPI</li>
-          <li>• TypeScript autocomplete works for all fields</li>
-          <li>• Compile-time errors if API contract changes</li>
-          <li>• Zero manual type maintenance required</li>
+      <div className="weather-test__info">
+        <h3 className="weather-test__info-title">Type Safety Verified</h3>
+        <ul className="weather-test__info-list">
+          <li>API response types auto-generated from FastAPI</li>
+          <li>TypeScript autocomplete works for all fields</li>
+          <li>Compile-time errors if API contract changes</li>
+          <li>Zero manual type maintenance required</li>
         </ul>
       </div>
     </div>
