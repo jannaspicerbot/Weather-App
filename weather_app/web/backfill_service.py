@@ -319,7 +319,6 @@ class BackfillService:
 
             # Calculate estimated total based on ~288 records/day for 2 years
             estimated_total_requests = (730 * 288) // 288  # ~730 requests
-            start_time = time.time()
 
             def progress_callback(total_fetched: int, requests_made: int):
                 """Update progress during backfill."""
