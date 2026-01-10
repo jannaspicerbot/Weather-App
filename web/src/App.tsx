@@ -10,7 +10,13 @@ function App() {
   }, []);
 
   return (
-    <Dashboard />
+    <>
+      {/* Skip link for keyboard navigation (WCAG 2.4.1) */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      <Dashboard />
+    </>
   );
 }
 

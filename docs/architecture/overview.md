@@ -521,6 +521,118 @@ timestamp,temperature,humidity,...
 - Auto-generated OpenAPI schema at `/docs` (Swagger UI)
 - Frontend: TypeScript types generated from OpenAPI schema (planned)
 
+### Onboarding & Credentials Endpoints
+
+These endpoints support the browser-based onboarding flow for new users.
+
+#### Check Credential Status
+```
+GET /api/credentials/status
+
+Response 200 OK:
+{
+  "configured": true,
+  "has_api_key": true,
+  "has_app_key": true
+}
+```
+
+#### Validate Credentials
+```
+POST /api/credentials/validate
+
+Request Body:
+{
+  "api_key": "your-api-key",
+  "app_key": "your-app-key"
+}
+
+Response 200 OK:
+{
+  "valid": true,
+  "devices": [
+    {
+      "mac_address": "00:11:22:33:44:55",
+      "name": "Weather Station"
+    }
+  ],
+  "message": "Credentials validated successfully"
+}
+
+Response 400 Bad Request:
+{
+  "valid": false,
+  "devices": [],
+  "message": "Invalid API key or application key"
+}
+```
+
+#### Save Credentials
+```
+POST /api/credentials/save
+
+Request Body:
+{
+  "api_key": "your-api-key",
+  "app_key": "your-app-key"
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "message": "Credentials saved to .env file"
+}
+```
+
+### Backfill Endpoints
+
+These endpoints manage historical data synchronization.
+
+#### Start Backfill
+```
+POST /api/backfill/start
+
+Request Body:
+{
+  "api_key": "your-api-key",
+  "app_key": "your-app-key"
+}
+
+Response 200 OK:
+{
+  "started": true,
+  "message": "Backfill started in background"
+}
+```
+
+#### Get Backfill Progress
+```
+GET /api/backfill/progress
+
+Response 200 OK:
+{
+  "status": "in_progress",  // "idle" | "in_progress" | "completed" | "failed"
+  "message": "Loading historical data...",
+  "inserted_records": 15432,
+  "requests_made": 45,
+  "start_date": "2024-01-01",
+  "end_date": "2026-01-09",
+  "current_date": "2024-06-15",
+  "estimated_time_remaining_seconds": 3600
+}
+```
+
+#### Stop Backfill
+```
+POST /api/backfill/stop
+
+Response 200 OK:
+{
+  "stopped": true,
+  "message": "Backfill stopped"
+}
+```
+
 ---
 
 ## Deployment Architecture

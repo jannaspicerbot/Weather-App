@@ -64,48 +64,48 @@ export default function DateRangeSelector({ start, end, onChange, onExport }: Da
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Date Range</h3>
+    <div className="date-range">
+      <h3 className="date-range__title">Date Range</h3>
 
-      <div className="flex flex-wrap gap-4 items-end">
+      <div className="date-range__controls">
         {/* Quick Preset Buttons */}
-        <div className="flex gap-2">
+        <div className="date-range__presets">
           <button
             onClick={() => handlePreset('24h')}
-            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+            className={`date-range__preset ${
               activePreset === '24h'
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'date-range__preset--active'
+                : 'date-range__preset--inactive'
             }`}
           >
             Last 24h
           </button>
           <button
             onClick={() => handlePreset('7d')}
-            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+            className={`date-range__preset ${
               activePreset === '7d'
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'date-range__preset--active'
+                : 'date-range__preset--inactive'
             }`}
           >
             Last 7 Days
           </button>
           <button
             onClick={() => handlePreset('30d')}
-            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+            className={`date-range__preset ${
               activePreset === '30d'
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'date-range__preset--active'
+                : 'date-range__preset--inactive'
             }`}
           >
             Last 30 Days
           </button>
           <button
             onClick={() => handlePreset('1y')}
-            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+            className={`date-range__preset ${
               activePreset === '1y'
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'date-range__preset--active'
+                : 'date-range__preset--inactive'
             }`}
           >
             Last Year
@@ -113,9 +113,9 @@ export default function DateRangeSelector({ start, end, onChange, onExport }: Da
         </div>
 
         {/* Custom Date Inputs */}
-        <div className="flex gap-2 items-center">
-          <div>
-            <label htmlFor="start-date" className="block text-xs text-gray-600 mb-1">
+        <div className="date-range__custom">
+          <div className="date-range__field">
+            <label htmlFor="start-date" className="date-range__label">
               Start Date
             </label>
             <input
@@ -123,12 +123,12 @@ export default function DateRangeSelector({ start, end, onChange, onExport }: Da
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded text-sm"
+              className="date-range__input"
             />
           </div>
 
-          <div>
-            <label htmlFor="end-date" className="block text-xs text-gray-600 mb-1">
+          <div className="date-range__field">
+            <label htmlFor="end-date" className="date-range__label">
               End Date
             </label>
             <input
@@ -136,25 +136,25 @@ export default function DateRangeSelector({ start, end, onChange, onExport }: Da
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded text-sm"
+              className="date-range__input"
             />
           </div>
 
           <button
             onClick={handleApply}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
+            className="date-range__apply"
           >
             Apply
           </button>
         </div>
 
         {/* Export Button */}
-        <div className="ml-auto">
+        <div className="date-range__export">
           <button
             onClick={onExport}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
+            className="date-range__export-btn"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Export CSV

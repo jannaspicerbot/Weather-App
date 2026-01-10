@@ -63,13 +63,13 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+    <div className="onboarding">
       {/* Header */}
-      <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="onboarding__header">
+        <h2 className="onboarding__title">
           Welcome to Weather Dashboard
         </h2>
-        <p className="text-gray-600">
+        <p className="onboarding__subtitle">
           {step === 'credentials'
             ? 'Connect your Ambient Weather account to get started.'
             : 'Setting up your weather data...'}
@@ -77,46 +77,46 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       </div>
 
       {/* Progress indicator */}
-      <div className="flex items-center mb-8">
+      <div className="onboarding__steps">
         {/* Step 1 */}
-        <div className="flex flex-col items-center">
+        <div className="onboarding__step">
           <div
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+            className={`onboarding__step-circle ${
               step === 'credentials'
-                ? 'bg-blue-600 text-white'
-                : 'bg-green-500 text-white'
+                ? 'onboarding__step-circle--active'
+                : 'onboarding__step-circle--complete'
             }`}
           >
             {step === 'credentials' ? '1' : (
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             )}
           </div>
-          <span className={`mt-2 text-sm ${step === 'credentials' ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+          <span className={`onboarding__step-label ${step === 'credentials' ? 'onboarding__step-label--active' : ''}`}>
             Connect Account
           </span>
         </div>
 
         {/* Connector line */}
         <div
-          className={`flex-1 h-1 mx-4 mb-6 ${
-            step === 'backfill' ? 'bg-blue-600' : 'bg-gray-200'
+          className={`onboarding__step-connector ${
+            step === 'backfill' ? 'onboarding__step-connector--complete' : ''
           }`}
         />
 
         {/* Step 2 */}
-        <div className="flex flex-col items-center">
+        <div className="onboarding__step">
           <div
-            className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+            className={`onboarding__step-circle ${
               step === 'backfill'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-500'
+                ? 'onboarding__step-circle--active'
+                : 'onboarding__step-circle--pending'
             }`}
           >
             2
           </div>
-          <span className={`mt-2 text-sm ${step === 'backfill' ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+          <span className={`onboarding__step-label ${step === 'backfill' ? 'onboarding__step-label--active' : ''}`}>
             Load Data
           </span>
         </div>

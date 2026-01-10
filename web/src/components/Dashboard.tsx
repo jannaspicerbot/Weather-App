@@ -222,16 +222,17 @@ export default function Dashboard() {
   // Show loading while checking credentials
   if (checkingCredentials) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="dashboard__loading">
+        <div className="dashboard__loading-content">
           <svg
-            className="animate-spin h-8 w-8 text-blue-500 mx-auto mb-4"
+            className="dashboard__loading-spinner"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <circle
-              className="opacity-25"
+              opacity="0.25"
               cx="12"
               cy="12"
               r="10"
@@ -239,12 +240,12 @@ export default function Dashboard() {
               strokeWidth="4"
             />
             <path
-              className="opacity-75"
+              opacity="0.75"
               fill="currentColor"
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <p className="text-gray-600">Checking configuration...</p>
+          <p className="dashboard__loading-text">Checking configuration...</p>
         </div>
       </div>
     );
@@ -253,7 +254,7 @@ export default function Dashboard() {
   // Show onboarding flow for new users
   if (showOnboarding) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="dashboard__loading" style={{ padding: 'var(--spacing-4)' }}>
         <OnboardingFlow onComplete={handleOnboardingComplete} />
       </div>
     );
@@ -261,16 +262,16 @@ export default function Dashboard() {
 
   if (loading && !isBackfilling) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600 text-lg">Loading weather data...</div>
+      <div className="dashboard__loading">
+        <p className="dashboard__loading-text">Loading weather data...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-red-600 text-lg">Error: {error}</div>
+      <div className="dashboard__error">
+        <p className="dashboard__error-text">Error: {error}</p>
       </div>
     );
   }
@@ -284,24 +285,24 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dashboard">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+      <header className="dashboard__header">
+        <div className="dashboard__header-content">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Weather Dashboard</h1>
+            <h1 className="dashboard__title">Weather Dashboard</h1>
             {stats && (
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="dashboard__subtitle">
                 {stats.total_records.toLocaleString()} readings •
                 {stats.date_range_days ? ` ${stats.date_range_days} days` : ' No data'}
               </p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="dashboard__actions">
             <InstallPrompt />
             <button
               onClick={handleResetAllLayouts}
-              className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px]"
+              className="dashboard__button dashboard__button--secondary"
               aria-label="Reset dashboard layout to default order"
             >
               Reset Layout
@@ -310,8 +311,8 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      {/* Main Content - Skip link target */}
+      <main id="main-content" className="dashboard__main">
         {/* Backfill in progress indicator */}
         {isBackfilling && (
           <BackfillStatusBanner onComplete={() => setIsBackfilling(false)} />
@@ -319,14 +320,14 @@ export default function Dashboard() {
 
         {/* Empty State - only show if not backfilling and no data */}
         {stats && stats.total_records === 0 && !isBackfilling && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-blue-900 mb-2">No Weather Data Yet</h2>
-            <p className="text-blue-800 mb-4">
+          <div className="dashboard__empty">
+            <h2 className="dashboard__empty-title">No Weather Data Yet</h2>
+            <p className="dashboard__empty-text">
               Your weather dashboard is ready, but there's no data to display yet.
             </p>
             <button
               onClick={() => setShowOnboarding(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="dashboard__button dashboard__button--primary"
             >
               Connect Weather Station
             </button>
