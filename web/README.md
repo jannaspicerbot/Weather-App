@@ -9,7 +9,7 @@ React + TypeScript dashboard for visualizing weather data from your Ambient Weat
 - **Build Tool:** Vite 5 (fast HMR, optimized builds)
 - **Charts:** Victory Charts (accessible, theme-aware data visualization)
 - **Components:** React Aria (WCAG 2.2 AA accessible component hooks)
-- **Styling:** TailwindCSS 3 (utility-first CSS)
+- **Styling:** CSS Custom Properties (semantic design tokens)
 - **Routing:** React Router v6 (future)
 - **State:** React hooks (useState, useReducer, Context API)
 
@@ -70,15 +70,13 @@ web/
 │   ├── utils/              # Utility functions
 │   ├── App.tsx             # Main application component
 │   ├── main.tsx            # Application entry point
-│   └── index.css           # Global styles (Tailwind imports)
+│   └── index.css           # Global styles (design tokens)
 ├── public/                 # Static assets
 ├── dist/                   # Built files (generated, git-ignored)
 ├── index.html              # HTML entry point
 ├── vite.config.ts          # Vite configuration
 ├── tsconfig.json           # TypeScript configuration
 ├── tsconfig.node.json      # TypeScript config for Vite
-├── tailwind.config.js      # TailwindCSS configuration
-├── postcss.config.js       # PostCSS configuration
 └── package.json            # Dependencies and scripts
 ```
 
@@ -88,21 +86,34 @@ The Weather App uses a custom design system with semantic design tokens:
 
 - **Color Palette:** See [../docs/design/design-tokens.md](../docs/design/design-tokens.md)
 - **Typography:** System fonts with responsive scaling
-- **Spacing:** Tailwind's spacing scale (4px grid)
+- **Spacing:** Base-4 spacing scale (4px grid via CSS custom properties)
 - **Accessibility:** WCAG 2.2 Level AA compliance
 
 ### Theme Support
 
 The app supports both light and dark themes that respect the system preference:
 
-```typescript
-// Theme detection (automatic)
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+The app automatically respects the user's system preference for light or dark mode using the CSS `prefers-color-scheme` media query. This follows WCAG guidelines for respecting user preferences.
 
-// TailwindCSS dark mode classes
-<div className="bg-white dark:bg-gray-900">
-  <h1 className="text-gray-900 dark:text-white">Weather Dashboard</h1>
-</div>
+```css
+/* In index.css - theme switching is automatic via CSS custom properties */
+:root {
+  --color-bg-primary: #FAFBFC;    /* Light mode background */
+  --color-text-primary: #0F1419;  /* Light mode text */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg-primary: #0F1419;  /* Dark mode background */
+    --color-text-primary: #E8EBED; /* Dark mode text */
+  }
+}
+
+/* Components use semantic classes - theme changes automatically */
+.dashboard-container {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
 ```
 
 ## 🌐 API Integration
@@ -373,7 +384,6 @@ See [../docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md) for complete contribution
 - `react` & `react-dom` - UI framework
 - `victory` - Charting library
 - `react-aria` - Accessible component hooks
-- `tailwindcss` - CSS framework
 
 ### Development Dependencies
 
@@ -393,7 +403,7 @@ See [package.json](package.json) for the complete list.
 - **Vite Documentation:** https://vitejs.dev/
 - **Victory Charts:** https://commerce.nearform.com/open-source/victory/
 - **React Aria:** https://react-spectrum.adobe.com/react-aria/
-- **TailwindCSS:** https://tailwindcss.com/docs
+- **CSS Custom Properties:** https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties
 
 ---
 

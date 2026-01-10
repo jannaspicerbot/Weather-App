@@ -32,6 +32,7 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 | **Frontend Lang** | TypeScript | ✅ Phase 2 | Type safety, 96% industry adoption |
 | **Frontend Framework** | React 18 + Vite | ✅ Phase 2 | Modern build tools, fast dev server |
 | **Charting** | Victory | ✅ Phase 3 | WCAG 2.2 AA accessible, React-native |
+| **Styling** | CSS Custom Properties | ✅ Phase 3 | Semantic design tokens, no framework |
 | **UI Components** | React Aria (Adobe) | ✅ Phase 3 | Accessibility-first, unstyled primitives |
 | **CLI** | Click | ✅ Phase 1 | Elegant command-line interfaces |
 | **Validation** | Pydantic | ✅ Phase 1 | Runtime type validation |
@@ -47,7 +48,7 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 | Frontend | None (CLI only) | **React + TypeScript** | React + TypeScript |
 | Backend | Flask (planned) | **FastAPI** (OpenAPI) | FastAPI |
 | Charts | Plotly (planned) | Recharts (prototype) | **Victory** (accessible) |
-| UI Components | None | TailwindCSS only | **React Aria** (Adobe) |
+| UI Components | None | Utility CSS | **React Aria + CSS Tokens** |
 | Deployment | Manual | **Docker Compose** | Docker Compose |
 
 ---
@@ -103,8 +104,8 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 │  │  • React 18         │         │  • FastAPI          │    │
 │  │  • TypeScript       │         │  • Python 3.11+     │    │
 │  │  • Vite             │         │  • Uvicorn          │    │
-│  │  • Recharts         │         │  • Pydantic         │    │
-│  │  • TailwindCSS      │         │                      │    │
+│  │  • Victory          │         │  • Pydantic         │    │
+│  │  • CSS Tokens       │         │                      │    │
 │  │                     │         │  Ports:             │    │
 │  │  Port: 3000 (dev)   │         │  • 8000 (HTTP)      │    │
 │  │  Port: 80 (prod)    │         │                      │    │
@@ -336,7 +337,7 @@ User Browser
        │ render
        ▼
 ┌──────────────────────┐
-│  Recharts Component  │
+│  Victory Component   │
 │  (TemperatureChart)  │
 └──────────────────────┘
 ```
@@ -519,6 +520,118 @@ timestamp,temperature,humidity,...
 - Backend: Pydantic models validate request/response data
 - Auto-generated OpenAPI schema at `/docs` (Swagger UI)
 - Frontend: TypeScript types generated from OpenAPI schema (planned)
+
+### Onboarding & Credentials Endpoints
+
+These endpoints support the browser-based onboarding flow for new users.
+
+#### Check Credential Status
+```
+GET /api/credentials/status
+
+Response 200 OK:
+{
+  "configured": true,
+  "has_api_key": true,
+  "has_app_key": true
+}
+```
+
+#### Validate Credentials
+```
+POST /api/credentials/validate
+
+Request Body:
+{
+  "api_key": "your-api-key",
+  "app_key": "your-app-key"
+}
+
+Response 200 OK:
+{
+  "valid": true,
+  "devices": [
+    {
+      "mac_address": "00:11:22:33:44:55",
+      "name": "Weather Station"
+    }
+  ],
+  "message": "Credentials validated successfully"
+}
+
+Response 400 Bad Request:
+{
+  "valid": false,
+  "devices": [],
+  "message": "Invalid API key or application key"
+}
+```
+
+#### Save Credentials
+```
+POST /api/credentials/save
+
+Request Body:
+{
+  "api_key": "your-api-key",
+  "app_key": "your-app-key"
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "message": "Credentials saved to .env file"
+}
+```
+
+### Backfill Endpoints
+
+These endpoints manage historical data synchronization.
+
+#### Start Backfill
+```
+POST /api/backfill/start
+
+Request Body:
+{
+  "api_key": "your-api-key",
+  "app_key": "your-app-key"
+}
+
+Response 200 OK:
+{
+  "started": true,
+  "message": "Backfill started in background"
+}
+```
+
+#### Get Backfill Progress
+```
+GET /api/backfill/progress
+
+Response 200 OK:
+{
+  "status": "in_progress",  // "idle" | "in_progress" | "completed" | "failed"
+  "message": "Loading historical data...",
+  "inserted_records": 15432,
+  "requests_made": 45,
+  "start_date": "2024-01-01",
+  "end_date": "2026-01-09",
+  "current_date": "2024-06-15",
+  "estimated_time_remaining_seconds": 3600
+}
+```
+
+#### Stop Backfill
+```
+POST /api/backfill/stop
+
+Response 200 OK:
+{
+  "stopped": true,
+  "message": "Backfill stopped"
+}
+```
 
 ---
 

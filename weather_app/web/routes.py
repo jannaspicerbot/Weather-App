@@ -11,7 +11,17 @@ from fastapi.responses import JSONResponse
 from weather_app.config import get_db_info
 from weather_app.database import WeatherRepository
 from weather_app.logging_config import get_logger, log_api_request
-from weather_app.web.models import DatabaseStats, WeatherData
+from weather_app.web.backfill_service import backfill_service
+from weather_app.web.models import (
+    BackfillProgressResponse,
+    BackfillStartRequest,
+    CredentialStatusResponse,
+    CredentialValidationRequest,
+    CredentialValidationResponse,
+    DatabaseStats,
+    DeviceInfo,
+    WeatherData,
+)
 
 logger = get_logger(__name__)
 
@@ -253,6 +263,140 @@ def register_routes(app: FastAPI):
         from weather_app.web.app import scheduler
 
         return scheduler.get_status()
+
+    # ===========================================
+    # Onboarding & Credential Management Endpoints
+    # ===========================================
+
+    @app.get("/api/credentials/status", response_model=CredentialStatusResponse)
+    def get_credential_status():
+        """
+        Check if API credentials are configured.
+
+        Returns whether the .env file has API key and App key set.
+        Used by frontend to determine if onboarding is needed.
+        """
+        status = backfill_service.get_credential_status()
+        return CredentialStatusResponse(**status)
+
+    @app.post("/api/credentials/validate", response_model=CredentialValidationResponse)
+    def validate_credentials(request: CredentialValidationRequest):
+        """
+        Validate API credentials by testing them against Ambient Weather API.
+
+        Tests credentials by attempting to fetch the user's device list.
+        Does NOT save credentials - use /api/credentials/save for that.
+        """
+        valid, message, devices = backfill_service.validate_credentials(
+            request.api_key, request.app_key
+        )
+
+        device_infos = [DeviceInfo(**d) for d in devices]
+
+        return CredentialValidationResponse(
+            valid=valid,
+            message=message,
+            devices=device_infos,
+        )
+
+    @app.post("/api/credentials/save")
+    def save_credentials(request: CredentialValidationRequest):
+        """
+        Save credentials to the .env file.
+
+        Note: This does NOT re-validate credentials to avoid duplicate API calls.
+        Frontend should call /api/credentials/validate first.
+        """
+        # Save directly without re-validating (frontend already validated)
+        # This avoids duplicate calls to Ambient Weather API
+        success, save_message = backfill_service.save_credentials(
+            request.api_key, request.app_key
+        )
+
+        if not success:
+            raise HTTPException(status_code=500, detail=save_message)
+
+        return {"success": True, "message": save_message}
+
+    # ===========================================
+    # Backfill Management Endpoints
+    # ===========================================
+
+    @app.get("/api/backfill/progress", response_model=BackfillProgressResponse)
+    def get_backfill_progress():
+        """
+        Get current backfill progress.
+
+        Returns status, records processed, estimated time remaining, etc.
+        Poll this endpoint to update progress UI during backfill.
+        """
+        progress = backfill_service.get_progress()
+
+        return BackfillProgressResponse(
+            progress_id=progress.get("progress_id"),
+            status=progress.get("status", "idle"),
+            message=progress.get("message", ""),
+            total_records=progress.get("total_records", 0),
+            inserted_records=progress.get("inserted_records", 0),
+            skipped_records=progress.get("skipped_records", 0),
+            current_date=progress.get("current_date"),
+            start_date=progress.get("start_date"),
+            end_date=progress.get("end_date"),
+            estimated_time_remaining_seconds=progress.get(
+                "estimated_time_remaining_seconds"
+            ),
+            requests_made=progress.get("requests_made", 0),
+        )
+
+    @app.post("/api/backfill/start", response_model=BackfillProgressResponse)
+    def start_backfill(request: BackfillStartRequest = None):
+        """
+        Start background data backfill.
+
+        Automatically fetches current data first, then backfills historical data.
+        Uses credentials from request body or falls back to .env file.
+
+        The backfill runs in the background. Poll /api/backfill/progress to monitor.
+        """
+        api_key = request.api_key if request else None
+        app_key = request.app_key if request else None
+
+        started, message = backfill_service.start_backfill(api_key, app_key)
+
+        if not started:
+            # Return current progress if already running
+            progress = backfill_service.get_progress()
+            return BackfillProgressResponse(
+                progress_id=progress.get("progress_id"),
+                status=progress.get("status", "idle"),
+                message=message,
+                total_records=progress.get("total_records", 0),
+                inserted_records=progress.get("inserted_records", 0),
+                skipped_records=progress.get("skipped_records", 0),
+            )
+
+        # Return initial progress
+        return BackfillProgressResponse(
+            status="in_progress",
+            message=message,
+        )
+
+    @app.post("/api/backfill/stop")
+    def stop_backfill():
+        """
+        Stop the currently running backfill.
+
+        Data already fetched will be preserved.
+        """
+        if not backfill_service.is_running():
+            return {"success": False, "message": "No backfill in progress"}
+
+        backfill_service.stop()
+        return {"success": True, "message": "Backfill stop requested"}
+
+    # ===========================================
+    # Error Handlers
+    # ===========================================
 
     @app.exception_handler(404)
     async def not_found_handler(request, exc):

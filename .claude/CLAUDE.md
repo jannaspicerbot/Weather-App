@@ -787,43 +787,63 @@ export default function TemperatureChart({ data }) {
 
 ---
 
-## 🎨 Styling with Tailwind CSS
+## 🎨 Styling with CSS Custom Properties (Design Tokens)
+
+This project uses a **semantic design token system** with CSS custom properties instead of utility CSS frameworks. See [docs/design/design-tokens.md](../docs/design/design-tokens.md) for the full specification.
 
 ### Best Practices
-- Use **utility classes** for most styling
-- Create **component classes** for repeated patterns
-- Keep classes **organized and readable**
-- Use **responsive prefixes** (sm:, md:, lg:)
+- Use **semantic CSS classes** (e.g., `.weather-card`, `.stat-value`)
+- Reference **design tokens** via CSS custom properties (`var(--color-water)`)
+- Keep styles in **component-specific CSS files** or the global `index.css`
+- Use **CSS Grid and Flexbox** for layouts
+- Support **dark mode** via `@media (prefers-color-scheme: dark)`
 
 ```jsx
-// ✅ GOOD - Organized, responsive, semantic
-<div className="
-  container mx-auto px-4 py-8
-  max-w-6xl
-  bg-white dark:bg-gray-800
-  rounded-lg shadow-lg
-">
-  <h1 className="
-    text-3xl md:text-4xl lg:text-5xl
-    font-bold text-gray-900 dark:text-white
-    mb-6
-  ">
+// ✅ GOOD - Semantic classes with design tokens
+<div className="dashboard-container">
+  <h1 className="dashboard-title">
     Weather Dashboard
   </h1>
-  
-  <div className="
-    grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3
-    gap-6
-  ">
+
+  <div className="card-grid">
     {/* Cards here */}
   </div>
 </div>
 
-// ❌ BAD - Inline styles, not responsive
+// ✅ GOOD - Using design tokens in CSS
+// In index.css or component CSS:
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-4);
+  background: var(--color-bg-primary);
+}
+
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-6);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-4);
+}
+
+// ❌ BAD - Inline styles with hardcoded values
 <div style={{width: '800px', background: '#fff', padding: '20px'}}>
   <h1 style={{fontSize: '32px', fontWeight: 'bold'}}>Weather</h1>
 </div>
 ```
+
+### Design Token Reference
+- **Colors:** `--color-water`, `--color-growth`, `--color-text-primary`, `--color-bg-secondary`
+- **Spacing:** `--spacing-1` (4px) through `--spacing-12` (48px)
+- **Charts:** `--chart-line-water`, `--chart-grid`, `--chart-axis`
+
+See `web/src/index.css` for the complete token definitions.
 
 ---
 
@@ -1140,8 +1160,8 @@ source venv/bin/activate  # or: venv\Scripts\activate on Windows
 # Create React app with Vite
 npm create vite@latest frontend -- --template react
 
-# Install dependencies
-npm install recharts tailwindcss axios
+# Install dependencies (see package.json for current list)
+npm install victory axios @react-aria/button
 
 # Keep package.json clean
 npm install --save <package>  # Production dependency

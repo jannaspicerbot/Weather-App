@@ -218,7 +218,7 @@ docs/
 ### Phase 2 ✅ Complete (January 2026)
 - FastAPI backend with OpenAPI schema
 - React + TypeScript frontend
-- Interactive charts with Recharts
+- Interactive charts with Victory
 - Docker Compose deployment
 - End-to-end type safety
 - **Current Version:** 2.0
@@ -387,7 +387,7 @@ Historical documentation from Phase 1-2 is available in [archive/](archive/) for
 - [Vite Documentation](https://vitejs.dev/) - Build tool and dev server
 - [React Aria Documentation](https://react-spectrum.adobe.com/react-aria/) - Accessible component hooks (Adobe)
 - [Victory Charts Documentation](https://commerce.nearform.com/open-source/victory/) - Accessible charting library
-- [TailwindCSS Documentation](https://tailwindcss.com/docs) - CSS framework
+- [MDN CSS Custom Properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties) - Design token system
 
 **DevOps & Tools**
 - [Docker Documentation](https://docs.docker.com/) - Containerization
