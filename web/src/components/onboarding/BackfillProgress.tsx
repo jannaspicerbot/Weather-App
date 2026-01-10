@@ -37,19 +37,21 @@ export default function BackfillProgress({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get progress');
     }
-  }, [onComplete]);
+  }, []);
 
   useEffect(() => {
-    // Initial fetch
-    fetchProgress();
+    // Use IIFE to avoid direct setState in effect body
+    void (async () => {
+      await fetchProgress();
+    })();
 
     // Poll for updates - more frequently at first, then every minute
-    const quickInterval = setInterval(fetchProgress, 2000); // Every 2 seconds initially
+    const quickInterval = setInterval(() => void fetchProgress(), 2000); // Every 2 seconds initially
 
     // After 30 seconds, switch to minute updates
     const switchToMinuteUpdates = setTimeout(() => {
       clearInterval(quickInterval);
-      const minuteInterval = setInterval(fetchProgress, 60000);
+      const minuteInterval = setInterval(() => void fetchProgress(), 60000);
       return () => clearInterval(minuteInterval);
     }, 30000);
 

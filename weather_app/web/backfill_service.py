@@ -138,7 +138,7 @@ class BackfillService:
             # Read existing .env content
             existing_lines = []
             if ENV_FILE.exists():
-                with open(ENV_FILE, "r") as f:
+                with open(ENV_FILE) as f:
                     existing_lines = f.readlines()
 
             # Update or add API keys
@@ -329,9 +329,6 @@ class BackfillService:
                 # Calculate ETA based on rate limit (1 request/second)
                 remaining_requests = max(0, estimated_total_requests - requests_made)
                 eta_seconds = remaining_requests  # 1 second per request
-
-                elapsed = time.time() - start_time
-                actual_rate = requests_made / elapsed if elapsed > 0 else 1.0
 
                 self._update_progress(
                     total_records=total_fetched,

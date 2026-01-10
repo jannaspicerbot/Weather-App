@@ -30,6 +30,8 @@ import { DefaultService } from '../api';
 import { getCredentialStatus, getBackfillProgress } from '../services/onboardingApi';
 
 const mockWeatherData = {
+  id: 1,
+  dateutc: 1704628800000,
   date: '2024-01-07T12:00:00',
   tempf: 72.5,
   feelsLike: 70.0,
@@ -52,8 +54,22 @@ describe('Dashboard', () => {
     vi.clearAllMocks();
 
     // Default: credentials configured, no backfill running
-    vi.mocked(getCredentialStatus).mockResolvedValue({ configured: true });
-    vi.mocked(getBackfillProgress).mockResolvedValue({ status: 'idle' });
+    vi.mocked(getCredentialStatus).mockResolvedValue({ configured: true, has_api_key: true, has_app_key: true });
+    vi.mocked(getBackfillProgress).mockResolvedValue({
+      status: 'idle',
+      progress_id: null,
+      message: 'No backfill in progress',
+      total_records: 0,
+      inserted_records: 0,
+      skipped_records: 0,
+      current_date: null,
+      start_date: null,
+      end_date: null,
+      estimated_time_remaining_seconds: null,
+      requests_made: 0,
+      requests_per_second: 0,
+      records_per_request: 0,
+    });
     vi.mocked(DefaultService.getDatabaseStatsWeatherStatsGet).mockResolvedValue(mockStats);
     vi.mocked(DefaultService.getLatestWeatherWeatherLatestGet).mockResolvedValue(mockWeatherData);
     vi.mocked(DefaultService.getWeatherDataWeatherGet).mockResolvedValue([mockWeatherData]);
@@ -147,7 +163,7 @@ describe('Dashboard', () => {
     });
 
     it('should show onboarding when credentials not configured', async () => {
-      vi.mocked(getCredentialStatus).mockResolvedValue({ configured: false });
+      vi.mocked(getCredentialStatus).mockResolvedValue({ configured: false, has_api_key: false, has_app_key: false });
 
       render(<Dashboard />);
 

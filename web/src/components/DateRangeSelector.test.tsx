@@ -125,7 +125,7 @@ describe('DateRangeSelector', () => {
 
     it('should highlight active preset button', async () => {
       const user = userEvent.setup();
-      const { container } = render(<DateRangeSelector {...defaultProps} />);
+      render(<DateRangeSelector {...defaultProps} />);
 
       // Initially 24h is active (default)
       const button24h = screen.getByRole('button', { name: 'Last 24h' });

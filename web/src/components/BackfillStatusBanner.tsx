@@ -42,9 +42,12 @@ export default function BackfillStatusBanner({ onComplete }: BackfillStatusBanne
   }, [onComplete]);
 
   useEffect(() => {
-    fetchProgress();
+    // Use IIFE to avoid direct setState in effect body
+    void (async () => {
+      await fetchProgress();
+    })();
     // Poll every 30 seconds
-    const interval = setInterval(fetchProgress, 30000);
+    const interval = setInterval(() => void fetchProgress(), 30000);
     return () => clearInterval(interval);
   }, [fetchProgress]);
 
