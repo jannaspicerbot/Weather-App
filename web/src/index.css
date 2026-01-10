@@ -1188,6 +1188,159 @@ button:focus-visible {
 }
 
 /* ============================================
+   BACKFILL STATUS BANNER
+   Compact banner shown at top of dashboard during background sync
+   ============================================ */
+
+.backfill-banner {
+  margin-bottom: var(--spacing-6);
+  border-radius: 8px;
+  padding: var(--spacing-4);
+}
+
+.backfill-banner--loading {
+  background-color: var(--color-water-10);
+  border: 1px solid var(--color-water-15);
+}
+
+.backfill-banner--complete {
+  background-color: var(--color-growth-10);
+  border: 1px solid var(--color-growth);
+}
+
+.backfill-banner--failed {
+  background-color: rgba(211, 47, 47, 0.1);
+  border: 1px solid var(--color-error);
+}
+
+.backfill-banner__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2);
+}
+
+.backfill-banner__title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.backfill-banner__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.backfill-banner__icon--loading {
+  color: var(--color-interactive);
+  animation: spin 1s linear infinite;
+}
+
+.backfill-banner__icon--complete {
+  color: var(--color-success);
+}
+
+.backfill-banner__icon--failed {
+  color: var(--color-error);
+}
+
+.backfill-banner__text {
+  font-weight: 500;
+}
+
+.backfill-banner__text--loading {
+  color: var(--color-water);
+}
+
+.backfill-banner__text--complete {
+  color: var(--color-success);
+}
+
+.backfill-banner__text--failed {
+  color: var(--color-error);
+}
+
+.backfill-banner__minimize {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--color-interactive);
+  cursor: pointer;
+  min-width: auto;
+  min-height: auto;
+}
+
+.backfill-banner__minimize:hover {
+  background: none;
+  border: none;
+  color: var(--color-water);
+}
+
+.backfill-banner__bar {
+  height: 8px;
+  background-color: var(--color-water-15);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-2);
+}
+
+.backfill-banner__bar-fill {
+  height: 100%;
+  background-color: var(--color-interactive);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.backfill-banner__stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--color-water);
+}
+
+.backfill-banner__message {
+  font-size: 0.875rem;
+}
+
+.backfill-banner__message--complete {
+  color: var(--color-growth);
+}
+
+.backfill-banner__message--failed {
+  color: var(--color-error);
+}
+
+/* Minimized floating button */
+.backfill-banner__minimized {
+  position: fixed;
+  bottom: var(--spacing-4);
+  right: var(--spacing-4);
+  background-color: var(--color-interactive);
+  color: var(--color-text-on-primary);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: 9999px;
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  z-index: 50;
+  transition: background-color 0.2s ease;
+}
+
+.backfill-banner__minimized:hover {
+  background-color: var(--color-water);
+}
+
+.backfill-banner__minimized-icon {
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
    DASHBOARD LAYOUT
    ============================================ */
 
