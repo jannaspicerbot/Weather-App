@@ -68,7 +68,9 @@ class BackfillService:
         """Request backfill to stop."""
         self._stop_requested = True
 
-    def validate_credentials(self, api_key: str, app_key: str) -> tuple[bool, str, list]:
+    def validate_credentials(
+        self, api_key: str, app_key: str
+    ) -> tuple[bool, str, list]:
         """
         Validate API credentials by attempting to fetch devices.
 
@@ -114,11 +116,23 @@ class BackfillService:
             self._cached_devices = None
             error_msg = str(e)
             if "401" in error_msg or "Unauthorized" in error_msg:
-                return False, "Invalid API credentials. Please check your API key and App key.", []
+                return (
+                    False,
+                    "Invalid API credentials. Please check your API key and App key.",
+                    [],
+                )
             elif "403" in error_msg or "Forbidden" in error_msg:
-                return False, "Access denied. Please verify your credentials have proper permissions.", []
+                return (
+                    False,
+                    "Access denied. Please verify your credentials have proper permissions.",
+                    [],
+                )
             elif "429" in error_msg:
-                return False, "Rate limit exceeded. Please wait a moment and try again.", []
+                return (
+                    False,
+                    "Rate limit exceeded. Please wait a moment and try again.",
+                    [],
+                )
             else:
                 logger.error("credential_validation_error", error=error_msg)
                 return False, f"Failed to validate credentials: {error_msg}", []
@@ -193,7 +207,9 @@ class BackfillService:
             "has_app_key": bool(app_key),
         }
 
-    def start_backfill(self, api_key: str = None, app_key: str = None) -> tuple[bool, str]:
+    def start_backfill(
+        self, api_key: str = None, app_key: str = None
+    ) -> tuple[bool, str]:
         """
         Start background backfill process.
 
@@ -344,7 +360,9 @@ class BackfillService:
                     # Update current date from newest record in batch
                     if batch_data:
                         newest = max(batch_data, key=lambda x: x.get("dateutc", 0))
-                        current_date = newest.get("date", "")[:10] if newest.get("date") else None
+                        current_date = (
+                            newest.get("date", "")[:10] if newest.get("date") else None
+                        )
 
                         with self._lock:
                             self._progress["inserted_records"] += inserted
@@ -355,14 +373,16 @@ class BackfillService:
                     return inserted, skipped
 
             try:
-                total_fetched, total_inserted, total_skipped = api.fetch_all_historical_data(
-                    mac_address,
-                    start_date=start_date,
-                    end_date=end_date,
-                    batch_size=288,
-                    delay=1.0,  # Respect rate limit
-                    progress_callback=progress_callback,
-                    batch_callback=batch_callback,
+                total_fetched, total_inserted, total_skipped = (
+                    api.fetch_all_historical_data(
+                        mac_address,
+                        start_date=start_date,
+                        end_date=end_date,
+                        batch_size=288,
+                        delay=1.0,  # Respect rate limit
+                        progress_callback=progress_callback,
+                        batch_callback=batch_callback,
+                    )
                 )
 
                 self._update_progress(

@@ -342,7 +342,9 @@ def register_routes(app: FastAPI):
             current_date=progress.get("current_date"),
             start_date=progress.get("start_date"),
             end_date=progress.get("end_date"),
-            estimated_time_remaining_seconds=progress.get("estimated_time_remaining_seconds"),
+            estimated_time_remaining_seconds=progress.get(
+                "estimated_time_remaining_seconds"
+            ),
             requests_made=progress.get("requests_made", 0),
         )
 
