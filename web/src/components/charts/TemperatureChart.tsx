@@ -5,7 +5,13 @@
  * Uses semantic design tokens from design-tokens.md.
  */
 
-import { VictoryChart, VictoryLine, VictoryAxis, VictoryLegend } from 'victory';
+import {
+  VictoryChart,
+  VictoryLine,
+  VictoryAxis,
+  VictoryLegend,
+  VictoryContainer,
+} from 'victory';
 import { type WeatherData } from '../../api';
 import { ChartCard } from './ChartCard';
 
@@ -48,7 +54,16 @@ export default function TemperatureChart({ data }: TemperatureChartProps) {
           No data available for selected date range
         </div>
       ) : (
-        <VictoryChart height={CHART_HEIGHT} padding={{ top: 30, bottom: 35, left: 50, right: 20 }}>
+        <VictoryChart
+          height={CHART_HEIGHT}
+          padding={{ top: 30, bottom: 35, left: 50, right: 20 }}
+          containerComponent={
+            <VictoryContainer
+              title="Temperature Chart"
+              desc="Line chart showing temperature and feels-like temperature over time"
+            />
+          }
+        >
           <VictoryLegend
             x={60}
             y={0}

@@ -5,7 +5,7 @@
  * Uses semantic design tokens from design-tokens.md.
  */
 
-import { VictoryChart, VictoryLine, VictoryAxis } from 'victory';
+import { VictoryChart, VictoryLine, VictoryAxis, VictoryContainer } from 'victory';
 import { type WeatherData } from '../../api';
 import { ChartCard } from './ChartCard';
 
@@ -39,7 +39,16 @@ export default function HumidityChart({ data }: HumidityChartProps) {
           No data available for selected date range
         </div>
       ) : (
-        <VictoryChart height={CHART_HEIGHT} padding={{ top: 15, bottom: 35, left: 50, right: 20 }}>
+        <VictoryChart
+          height={CHART_HEIGHT}
+          padding={{ top: 15, bottom: 35, left: 50, right: 20 }}
+          containerComponent={
+            <VictoryContainer
+              title="Humidity Chart"
+              desc="Line chart showing humidity percentage over time"
+            />
+          }
+        >
           <VictoryAxis
             tickFormat={(t) => {
               const date = new Date(t);

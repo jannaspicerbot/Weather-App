@@ -72,14 +72,7 @@ describe('Dashboard', () => {
         expect(screen.getByRole('heading', { name: 'Weather Dashboard' })).toBeInTheDocument();
       });
 
-      // Note: Victory charts add role="img" to SVGs without alt text, which is a library limitation.
-      // The ChartCard wrapper provides proper accessibility via aria-labelledby on the figure element.
-      // We exclude svg-img-alt rule since the parent figure provides the accessible name.
-      const results = await axe(container, {
-        rules: {
-          'svg-img-alt': { enabled: false },
-        },
-      });
+      const results = await axe(container);
       expect(results).toHaveNoViolations();
     });
 
@@ -208,8 +201,9 @@ describe('Dashboard', () => {
     it('should have header, main content areas', async () => {
       const { container } = render(<Dashboard />);
 
+      // Wait for dashboard to fully load
       await waitFor(() => {
-        expect(screen.queryByText('Checking configuration...')).not.toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Weather Dashboard' })).toBeInTheDocument();
       });
 
       expect(container.querySelector('header')).toBeInTheDocument();
