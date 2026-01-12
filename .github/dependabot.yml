@@ -1,13 +1,15 @@
+# yaml-language-server: $schema=https://json.schemastore.org/dependabot-2.0.json
+
 # To get started with Dependabot version updates, you'll need to specify which
 # package ecosystems to update and where the package manifests are located.
 # Please see the documentation for all configuration options:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
-version: 3
+version: 2
 updates:
   # 1. Python Backend Dependencies
   - package-ecosystem: "pip"
-    directory: "/weather-app" # Location of requirements.txt
+    directory: "/" # Location of requirements.txt
     schedule:
       interval: "weekly"
       day: "monday"
@@ -19,24 +21,24 @@ updates:
 
   # 2. TypeScript Frontend Dependencies
   - package-ecosystem: "npm"
-    directory: "/web" # Location of package.json as per architecture
+    directory: "/web" # Location of package.json
     schedule:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
     groups:
-      python-dependencies:
+      npm-dependencies:
         patterns:
-          - "*" # Groups all python updates into one PR
+          - "*" # Groups all npm updates into one PR
 
   # 3. Docker Dependencies
   - package-ecosystem: "docker"
-    directory: "/weather-app" # Location of your Dockerfile/docker-compose.yml
+    directory: "/" # Location of Dockerfile and docker-compose.yml
     schedule:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
     groups:
-      python-dependencies:
+      docker-dependencies:
         patterns:
-          - "*" # Groups all python updates into one PR
+          - "*" # Groups all docker updates into one PR
