@@ -54,7 +54,11 @@ ENV_FILE = BASE_DIR / ".env"
 load_dotenv(ENV_FILE)
 
 # Database configuration
-# Set USE_TEST_DB environment variable to "true" to use test database
+# USE_TEST_DB: Set to "true" to use test database (development only)
+# NOTE: In packaged builds (EXE/APP), this is FORCED by runtime hooks:
+#   - Production build: Always "false" (uses production DB)
+#   - Debug build: Always "true" (uses test DB)
+# Only developers running from source can override this via environment variable
 USE_TEST_DB = os.getenv("USE_TEST_DB", "false").lower() == "true"
 
 # Database engine - DuckDB for high-performance analytics
