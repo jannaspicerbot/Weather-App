@@ -12,7 +12,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-
 # =============================================================================
 # Register Frontend Tests (Phase 2 Coverage)
 # =============================================================================
@@ -36,9 +35,7 @@ class TestRegisterFrontend:
                 # Also mock the static_dir.exists() check
                 with patch.object(Path, "exists", return_value=True):
                     # StaticFiles is imported inside register_frontend, so patch it there
-                    with patch(
-                        "fastapi.staticfiles.StaticFiles"
-                    ) as mock_static_files:
+                    with patch("fastapi.staticfiles.StaticFiles") as mock_static_files:
                         from weather_app.web.app import register_frontend
 
                         register_frontend(app)
@@ -59,9 +56,7 @@ class TestRegisterFrontend:
         # Ensure sys.frozen is False (development mode)
         with patch.object(sys, "frozen", False, create=True):
             with patch.object(Path, "exists", return_value=True):
-                with patch(
-                    "fastapi.staticfiles.StaticFiles"
-                ) as mock_static_files:
+                with patch("fastapi.staticfiles.StaticFiles") as mock_static_files:
                     from weather_app.web.app import register_frontend
 
                     register_frontend(app)
@@ -106,9 +101,7 @@ class TestRegisterFrontend:
 
         with patch.object(sys, "frozen", False, create=True):
             with patch.object(Path, "exists", return_value=True):
-                with patch(
-                    "fastapi.staticfiles.StaticFiles"
-                ) as mock_static_files:
+                with patch("fastapi.staticfiles.StaticFiles") as mock_static_files:
                     mock_static_instance = MagicMock()
                     mock_static_files.return_value = mock_static_instance
 

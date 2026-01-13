@@ -342,7 +342,9 @@ class TestSaveCredentials:
         content = temp_env_file.read_text()
         assert "AMBIENT_DEVICE_MAC" not in content
 
-    def test_save_credentials_preserves_other_vars(self, backfill_service, temp_env_file):
+    def test_save_credentials_preserves_other_vars(
+        self, backfill_service, temp_env_file
+    ):
         """Preserves other environment variables."""
         temp_env_file.write_text("OTHER_VAR=value\nAMBIENT_API_KEY=old\n")
 
@@ -685,7 +687,9 @@ class TestRunBackfill:
                     "weather_app.web.backfill_service.WeatherDatabase"
                 ) as mock_db:
                     mock_db_instance = MagicMock()
-                    mock_db_instance.__enter__ = MagicMock(return_value=mock_db_instance)
+                    mock_db_instance.__enter__ = MagicMock(
+                        return_value=mock_db_instance
+                    )
                     mock_db_instance.__exit__ = MagicMock(return_value=False)
                     mock_db_instance.insert_data.return_value = (1, 0)
                     mock_db.return_value = mock_db_instance
@@ -743,7 +747,9 @@ class TestRunBackfill:
                     "weather_app.web.backfill_service.WeatherDatabase"
                 ) as mock_db:
                     mock_db_instance = MagicMock()
-                    mock_db_instance.__enter__ = MagicMock(return_value=mock_db_instance)
+                    mock_db_instance.__enter__ = MagicMock(
+                        return_value=mock_db_instance
+                    )
                     mock_db_instance.__exit__ = MagicMock(return_value=False)
                     mock_db_instance.insert_data.return_value = (1, 0)
                     mock_db.return_value = mock_db_instance
@@ -887,9 +893,7 @@ class TestRunBackfillBatchCallback:
             mock_instance = MagicMock()
             mock_instance.get_devices.return_value = devices
             mock_instance.get_device_data.return_value = []
-            mock_instance.fetch_all_historical_data.side_effect = (
-                capture_batch_callback
-            )
+            mock_instance.fetch_all_historical_data.side_effect = capture_batch_callback
             mock_api.return_value = mock_instance
 
             with patch("weather_app.web.app.api_queue"):
@@ -897,7 +901,9 @@ class TestRunBackfillBatchCallback:
                     "weather_app.web.backfill_service.WeatherDatabase"
                 ) as mock_db:
                     mock_db_instance = MagicMock()
-                    mock_db_instance.__enter__ = MagicMock(return_value=mock_db_instance)
+                    mock_db_instance.__enter__ = MagicMock(
+                        return_value=mock_db_instance
+                    )
                     mock_db_instance.__exit__ = MagicMock(return_value=False)
                     mock_db_instance.insert_data.return_value = (3, 0)
                     mock_db.return_value = mock_db_instance
@@ -937,9 +943,7 @@ class TestRunBackfillBatchCallback:
             mock_instance = MagicMock()
             mock_instance.get_devices.return_value = devices
             mock_instance.get_device_data.return_value = []
-            mock_instance.fetch_all_historical_data.side_effect = (
-                capture_batch_callback
-            )
+            mock_instance.fetch_all_historical_data.side_effect = capture_batch_callback
             mock_api.return_value = mock_instance
 
             with patch("weather_app.web.app.api_queue"):
@@ -947,7 +951,9 @@ class TestRunBackfillBatchCallback:
                     "weather_app.web.backfill_service.WeatherDatabase"
                 ) as mock_db:
                     mock_db_instance = MagicMock()
-                    mock_db_instance.__enter__ = MagicMock(return_value=mock_db_instance)
+                    mock_db_instance.__enter__ = MagicMock(
+                        return_value=mock_db_instance
+                    )
                     mock_db_instance.__exit__ = MagicMock(return_value=False)
                     mock_db_instance.insert_data.return_value = (0, 0)
                     mock_db.return_value = mock_db_instance
@@ -986,9 +992,7 @@ class TestRunBackfillBatchCallback:
             mock_instance = MagicMock()
             mock_instance.get_devices.return_value = devices
             mock_instance.get_device_data.return_value = []
-            mock_instance.fetch_all_historical_data.side_effect = (
-                capture_batch_callback
-            )
+            mock_instance.fetch_all_historical_data.side_effect = capture_batch_callback
             mock_api.return_value = mock_instance
 
             with patch("weather_app.web.app.api_queue"):
@@ -996,7 +1000,9 @@ class TestRunBackfillBatchCallback:
                     "weather_app.web.backfill_service.WeatherDatabase"
                 ) as mock_db:
                     mock_db_instance = MagicMock()
-                    mock_db_instance.__enter__ = MagicMock(return_value=mock_db_instance)
+                    mock_db_instance.__enter__ = MagicMock(
+                        return_value=mock_db_instance
+                    )
                     mock_db_instance.__exit__ = MagicMock(return_value=False)
                     mock_db_instance.insert_data.return_value = (2, 0)
                     mock_db.return_value = mock_db_instance

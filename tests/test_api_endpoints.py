@@ -687,9 +687,7 @@ class TestBackfillEndpoints:
             "weather_app.web.routes.backfill_service.is_running"
         ) as mock_running:
             mock_running.return_value = True
-            with patch(
-                "weather_app.web.routes.backfill_service.stop"
-            ) as mock_stop:
+            with patch("weather_app.web.routes.backfill_service.stop") as mock_stop:
                 response = client.post("/api/backfill/stop")
 
         assert response.status_code == 200
@@ -750,9 +748,7 @@ class TestDeviceEndpoints:
     @pytest.mark.unit
     def test_get_devices_no_credentials(self, client):
         """GET /api/devices returns error if credentials not configured."""
-        with patch.dict(
-            "os.environ", {"AMBIENT_API_KEY": "", "AMBIENT_APP_KEY": ""}
-        ):
+        with patch.dict("os.environ", {"AMBIENT_API_KEY": "", "AMBIENT_APP_KEY": ""}):
             response = client.get("/api/devices")
 
         assert response.status_code == 400
@@ -953,9 +949,7 @@ class TestRouteErrorHandling:
     @pytest.mark.unit
     def test_get_stats_runtime_error(self, client):
         """GET /weather/stats handles RuntimeError."""
-        with patch(
-            "weather_app.web.routes.WeatherRepository.get_stats"
-        ) as mock_get:
+        with patch("weather_app.web.routes.WeatherRepository.get_stats") as mock_get:
             mock_get.side_effect = RuntimeError("Database error")
 
             response = client.get("/weather/stats")
@@ -1001,9 +995,7 @@ class TestRouteErrorHandling:
     @pytest.mark.unit
     def test_api_get_stats_runtime_error(self, client):
         """GET /api/weather/stats handles RuntimeError."""
-        with patch(
-            "weather_app.web.routes.WeatherRepository.get_stats"
-        ) as mock_get:
+        with patch("weather_app.web.routes.WeatherRepository.get_stats") as mock_get:
             mock_get.side_effect = RuntimeError("Database error")
 
             response = client.get("/api/weather/stats")

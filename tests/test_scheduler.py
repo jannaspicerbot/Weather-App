@@ -427,7 +427,8 @@ class TestSchedulerEdgeCases:
 
         with patch("weather_app.scheduler.scheduler.DB_PATH", temp_db_path):
             with patch(
-                "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+                "weather_app.scheduler.scheduler.AmbientWeatherAPI",
+                return_value=mock_api,
             ):
                 with patch(
                     "weather_app.scheduler.scheduler.AMBIENT_DEVICE_MAC",
@@ -492,9 +493,7 @@ class TestSchedulerEdgeCases:
             with patch(
                 "weather_app.scheduler.scheduler.WeatherDatabase"
             ) as mock_db_class:
-                mock_db_class.return_value.__enter__.side_effect = Exception(
-                    "DB Error"
-                )
+                mock_db_class.return_value.__enter__.side_effect = Exception("DB Error")
 
                 # Should NOT raise exception
                 scheduler.fetch_weather_job()
@@ -517,7 +516,8 @@ class TestSchedulerEdgeCases:
 
         with patch("weather_app.scheduler.scheduler.DB_PATH", temp_db_path):
             with patch(
-                "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+                "weather_app.scheduler.scheduler.AmbientWeatherAPI",
+                return_value=mock_api,
             ):
                 with patch(
                     "weather_app.scheduler.scheduler.AMBIENT_DEVICE_MAC",
@@ -548,11 +548,10 @@ class TestSchedulerEdgeCases:
 
         with patch("weather_app.scheduler.scheduler.DB_PATH", temp_db_path):
             with patch(
-                "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+                "weather_app.scheduler.scheduler.AmbientWeatherAPI",
+                return_value=mock_api,
             ):
-                with patch(
-                    "weather_app.scheduler.scheduler.AMBIENT_DEVICE_MAC", None
-                ):
+                with patch("weather_app.scheduler.scheduler.AMBIENT_DEVICE_MAC", None):
                     scheduler.fetch_weather_job()
 
         # Should have used the first device
@@ -617,7 +616,8 @@ class TestSchedulerEdgeCases:
 
         with patch("weather_app.scheduler.scheduler.DB_PATH", temp_db_path):
             with patch(
-                "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+                "weather_app.scheduler.scheduler.AmbientWeatherAPI",
+                return_value=mock_api,
             ) as mock_api_class:
                 scheduler.fetch_weather_job()
 
