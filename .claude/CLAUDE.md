@@ -128,7 +128,7 @@ What are you working on?
 | **UI component** | ACCESSIBILITY.md → REACT-STANDARDS.md | Keyboard nav, screen reader, contrast |
 | **Database query** | DATABASE-PATTERNS.md → query-patterns.md | Parameterized queries, indexes |
 | **Tests** | TESTING.md | Fixtures, mocks, assertions |
-| **Deployment** | docs/guides/deployment.md | Docker, env vars |
+| **Deployment** | docs/technical/deployment-guide.md | Docker, env vars |
 
 ---
 

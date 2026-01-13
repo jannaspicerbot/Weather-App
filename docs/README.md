@@ -38,6 +38,19 @@ docs/
 │   ├── database-schema.md             # Database schema & queries
 │   ├── deployment-guide.md            # Installation & deployment
 │   └── github-actions-overview.md     # CI/CD automation & testing
+├── guides/                            # How-to guides
+│   ├── adding-endpoints.md            # Step-by-step API guide
+│   ├── adding-components.md           # Step-by-step UI guide
+│   ├── PERFORMANCE.md                 # Performance optimization
+│   └── test-data.md                   # Test data generation
+├── testing/                           # Test plans & checklists
+│   ├── linting-checklist.md           # Code quality checklist
+│   └── refactoring-test-plan.md       # Refactoring test plans
+├── troubleshooting/                   # Issue resolution guides
+│   ├── ambient-weather-debugging.md   # API debugging
+│   └── api-rate-limiting-resolution.md # Rate limiting fixes
+├── audits/                            # Documentation & code audits
+│   └── 2026-01-13-documentation-audit.md
 └── archive/                           # Historical docs (Phase 1-2)
 ```
 
@@ -207,6 +220,49 @@ docs/
 
 ---
 
+### 6. Guides & How-To Documentation
+
+**Purpose:** Step-by-step tutorials for common tasks
+
+**[Adding API Endpoints](guides/adding-endpoints.md)**
+- Step-by-step guide for adding new FastAPI routes
+- Type safety and validation requirements
+
+**[Adding UI Components](guides/adding-components.md)**
+- Step-by-step guide for adding React components
+- Accessibility checklist integration
+
+**[Performance Optimization](guides/PERFORMANCE.md)**
+- Profiling and benchmarking
+- Common optimization strategies
+
+**[Test Data Generation](guides/test-data.md)**
+- Creating synthetic weather data
+- Database switching for testing
+
+**When to read:** You want step-by-step instructions for common development tasks
+
+---
+
+### 7. Testing & Troubleshooting
+
+**Purpose:** Test plans, checklists, and issue resolution
+
+**Testing Documentation** ([testing/](testing/))
+- [Linting Checklist](testing/linting-checklist.md) - Code quality verification
+- [Refactoring Test Plan](testing/refactoring-test-plan.md) - Test strategies for refactoring
+
+**Troubleshooting Guides** ([troubleshooting/](troubleshooting/))
+- [Ambient Weather Debugging](troubleshooting/ambient-weather-debugging.md) - API connection issues
+- [Rate Limiting Resolution](troubleshooting/api-rate-limiting-resolution.md) - Handling API limits
+
+**Audits** ([audits/](audits/))
+- [Documentation Audit](audits/2026-01-13-documentation-audit.md) - Documentation completeness review
+
+**When to read:** You're running tests, troubleshooting issues, or reviewing documentation quality
+
+---
+
 ## 🎯 Use Cases
 
 ### "I want to install and run the Weather App"
@@ -283,6 +339,11 @@ docs/
 | **Dashboard Layout** | [Frontend Guidelines - Dashboard Section](design/frontend-guidelines.md#dashboard-layout--architecture) |
 | **Accessibility** | [Accessibility Standards](standards/ACCESSIBILITY.md) |
 | **Design Tokens** | [Design Token System](design/design-tokens.md) |
+| **Adding API Endpoints** | [Adding Endpoints Guide](guides/adding-endpoints.md) |
+| **Adding UI Components** | [Adding Components Guide](guides/adding-components.md) |
+| **Performance** | [Performance Guide](guides/PERFORMANCE.md) |
+| **Test Data** | [Test Data Guide](guides/test-data.md) |
+| **Troubleshooting** | [Troubleshooting Guides](troubleshooting/) |
 
 ### By Role
 

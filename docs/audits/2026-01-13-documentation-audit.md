@@ -248,13 +248,13 @@ docs/
 - [x] Create `docs/guides/PERFORMANCE.md`
 - [x] Create `docs/guides/adding-endpoints.md`
 - [x] Create `docs/guides/adding-components.md`
-- [ ] Fix deployment.md path (CLAUDE.md or create file)
-- [ ] Archive `docs/guides/api-reference.md`
-- [ ] Consolidate test-data.md files
-- [ ] Update `docs/standards/README.md` cross-references
-- [ ] Update `docs/documentation-strategy.md` cross-references
-- [ ] Add orphaned docs to `docs/README.md` index
-- [ ] Delete empty `docs/design/icons/` folder
+- [x] Fix deployment.md path (CLAUDE.md updated to point to docs/technical/deployment-guide.md)
+- [x] Archive `docs/guides/api-reference.md` (moved to docs/archive/guides/)
+- [x] Consolidate test-data.md files (archived docs/development/test-data.md, kept docs/guides/test-data.md)
+- [x] Update `docs/standards/README.md` cross-references
+- [x] Update `docs/documentation-strategy.md` cross-references
+- [x] Add orphaned docs to `docs/README.md` index (added guides/, testing/, troubleshooting/, audits/)
+- [x] ~~Delete empty `docs/design/icons/` folder~~ (NOT EMPTY - contains icon files)
 
 ---
 

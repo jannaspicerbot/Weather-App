@@ -200,7 +200,7 @@ Layer 4: Pull request template
 1. Load CLAUDE.md (always)
 2. Identify domain: API endpoints
 3. Load API-STANDARDS.md (contextual)
-4. Load docs/examples/api-export-patterns.md (specific pattern)
+4. Load docs/examples/api-patterns.md (specific patterns)
 5. Implement following all three sources
 ```
 

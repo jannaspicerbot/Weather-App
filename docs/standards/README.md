@@ -24,7 +24,8 @@ docs/
 │   └── decisions/                   ADRs
 └── guides/
     ├── adding-endpoints.md          Step-by-step guides
-    └── deployment.md                Deployment instructions
+    ├── adding-components.md         Step-by-step UI guide
+    └── PERFORMANCE.md               Performance optimization
 ```
 
 ---
@@ -215,8 +216,10 @@ Step-by-step guide for adding new API endpoints
 ### adding-components.md
 Step-by-step guide for adding new UI components
 
-### deployment.md
-Deployment instructions and configuration
+### PERFORMANCE.md
+Performance optimization guide
+
+**Note:** For deployment instructions, see [docs/technical/deployment-guide.md](../technical/deployment-guide.md)
 
 ---
 
