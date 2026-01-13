@@ -246,8 +246,8 @@ docs/
 - [x] Create `docs/examples/query-patterns.md`
 - [x] Create `docs/standards/SECURITY.md`
 - [x] Create `docs/guides/PERFORMANCE.md`
-- [ ] Create `docs/guides/adding-endpoints.md`
-- [ ] Create `docs/guides/adding-components.md`
+- [x] Create `docs/guides/adding-endpoints.md`
+- [x] Create `docs/guides/adding-components.md`
 - [ ] Fix deployment.md path (CLAUDE.md or create file)
 - [ ] Archive `docs/guides/api-reference.md`
 - [ ] Consolidate test-data.md files
