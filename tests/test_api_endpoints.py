@@ -845,9 +845,9 @@ class TestAppFactory:
     @pytest.mark.unit
     def test_register_frontend_frozen_executable(self, tmp_path):
         """Uses correct path for PyInstaller frozen app."""
-        from fastapi import FastAPI
-        from unittest.mock import MagicMock
         import sys
+
+        from fastapi import FastAPI
 
         # Create a test app
         test_app = FastAPI()
@@ -873,7 +873,6 @@ class TestAppFactory:
     def test_register_frontend_not_found(self, tmp_path):
         """Logs warning if frontend static files not found."""
         from fastapi import FastAPI
-        import sys
 
         test_app = FastAPI()
 
@@ -892,9 +891,10 @@ class TestAppFactory:
     @pytest.mark.unit
     def test_create_app_returns_fastapi(self):
         """create_app returns a FastAPI instance."""
-        from weather_app.web.app import create_app
-        from weather_app.config import API_TITLE
         from fastapi import FastAPI
+
+        from weather_app.config import API_TITLE
+        from weather_app.web.app import create_app
 
         app = create_app()
 
