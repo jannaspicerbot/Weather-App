@@ -8,13 +8,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { DefaultService, type WeatherData, type DatabaseStats } from '../api';
 import CurrentConditions from './CurrentConditions';
-import TemperatureChart from './charts/TemperatureChart';
-import HumidityChart from './charts/HumidityChart';
-import WindChart from './charts/WindChart';
-import PrecipitationChart from './charts/PrecipitationChart';
-import DateRangeSelector from './DateRangeSelector';
-import { DashboardGrid } from './dashboard/DashboardGrid';
-import { SortableChartCard } from './dashboard/SortableChartCard';
+import HistoricalConditions from './HistoricalConditions';
 import { useDashboardLayout } from '../hooks/useDashboardLayout';
 import { useMetricsLayout } from '../hooks/useMetricsLayout';
 import { InstallPrompt } from './InstallPrompt';
@@ -277,14 +271,6 @@ export default function Dashboard() {
     );
   }
 
-  // Chart component mapping
-  const chartComponents = {
-    temperature: <TemperatureChart data={historicalData} />,
-    humidity: <HumidityChart data={historicalData} />,
-    wind: <WindChart data={historicalData} />,
-    precipitation: <PrecipitationChart data={historicalData} />,
-  };
-
   return (
     <div className="dashboard">
       {/* Header */}
@@ -345,22 +331,15 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Date Range Selector */}
-        <DateRangeSelector
-          start={dateRange.start}
-          end={dateRange.end}
-          onChange={handleDateRangeChange}
-          onExport={handleExportCSV}
+        {/* Historical Conditions (Date Range + Charts) */}
+        <HistoricalConditions
+          dateRange={dateRange}
+          historicalData={historicalData}
+          chartOrder={chartOrder}
+          onDateRangeChange={handleDateRangeChange}
+          onExportCSV={handleExportCSV}
+          onChartReorder={setChartOrder}
         />
-
-        {/* Charts Grid with Drag-and-Drop */}
-        <DashboardGrid chartOrder={chartOrder} onReorder={setChartOrder}>
-          {chartOrder.map((chartId) => (
-            <SortableChartCard key={chartId} id={chartId}>
-              {chartComponents[chartId]}
-            </SortableChartCard>
-          ))}
-        </DashboardGrid>
       </main>
     </div>
   );

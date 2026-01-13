@@ -248,6 +248,36 @@ body {
   color: var(--color-text-secondary);
 }
 
+/* ============================================
+   HISTORICAL CONDITIONS SECTION
+   ============================================ */
+
+.historical-conditions {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .historical-conditions {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.historical-conditions__header {
+  margin-bottom: var(--spacing-6);
+}
+
+.historical-conditions__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
 /* Responsive masonry grid */
 .current-conditions__grid {
   display: grid;
@@ -1761,17 +1791,8 @@ button:focus-visible {
    ============================================ */
 
 .date-range {
-  background-color: var(--color-bg-secondary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  padding: var(--spacing-6);
+  /* Removed background and shadow - now nested in historical-conditions */
   margin-bottom: var(--spacing-6);
-}
-
-@media (prefers-color-scheme: dark) {
-  .date-range {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
 }
 
 .date-range__title {

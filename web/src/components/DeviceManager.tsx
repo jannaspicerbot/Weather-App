@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getDevices, selectDevice, type DeviceInfo } from '../services/onboardingApi';
 
 /**
@@ -52,7 +52,7 @@ export default function DeviceManager() {
       setDevices(response.devices);
 
       // Find currently selected device
-      const selected = response.devices.find(d => d.mac_address === response.selected_device);
+      const selected = response.devices.find(d => d.mac_address === response.selected_device_mac);
       setCurrentDevice(selected || response.devices[0] || null);
     } catch (err) {
       console.error('Failed to load devices:', err);

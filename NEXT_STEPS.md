@@ -1,266 +1,294 @@
-# Device Selection Feature - Next Steps
+# UI Enhancements - Device Management Feature
 
-## ✅ Completed (Committed to feature/ui-enhancements branch)
+## ✅ Completed Features (Branch: feature/ui-enhancements)
 
-### Backend Implementation
-- ✅ Added `AMBIENT_DEVICE_MAC` config variable in `weather_app/config.py`
-- ✅ Updated `backfill_service.py` to use selected device or fall back to first
-- ✅ Updated `scheduler.py` to respect device selection
-- ✅ Added `save_device_selection()` method to BackfillService
-- ✅ Updated `save_credentials()` to accept optional `device_mac` parameter
-- ✅ Added API endpoints in `routes.py`:
+### 1. Device Selection During Onboarding
+**Commit:** `a017526` (January 11, 2026)
+
+**Backend:**
+- Added `AMBIENT_DEVICE_MAC` config variable
+- Updated scheduler and backfill service to use selected device
+- Added API endpoints:
   - `GET /api/devices` - List all devices with selected device indicator
   - `POST /api/devices/select` - Save device selection
-  - Updated `POST /api/credentials/save` - Now accepts optional device_mac
+  - Updated `POST /api/credentials/save` - Accepts optional device_mac
 
-### Frontend Implementation
-- ✅ Created `DeviceSelector.tsx` component with:
-  - Single device auto-confirm view
-  - Multiple device radio selection list
-  - Device name, MAC address, last data display
-  - Loading states and error handling
-- ✅ Updated `OnboardingFlow.tsx` to 3-step process:
-  - Step 1: Enter credentials
-  - Step 2: Select device (NEW!)
-  - Step 3: Load data
-- ✅ Updated `onboardingApi.ts` service:
-  - `saveCredentials()` - Now accepts optional deviceMac parameter
-  - `getDevices()` - Fetch device list
-  - `selectDevice()` - Save device selection
-- ✅ Added comprehensive CSS styles in `index.css`:
-  - Device selector styling
-  - Single/multiple device views
-  - Dark mode support
-  - Responsive design
-
-### Commit Info
-- **Branch:** `feature/ui-enhancements`
-- **Commit:** `a017526`
-- **Files changed:** 9 files (822 insertions, 28 deletions)
+**Frontend:**
+- Created `DeviceSelector.tsx` component:
+  - Single device: auto-confirm view
+  - Multiple devices: radio selection list
+  - Displays device name, MAC address, last data
+- Updated `OnboardingFlow.tsx` to 3-step process:
+  1. Enter credentials
+  2. **Select device** (NEW!)
+  3. Load data
+- Added onboarding API functions: `getDevices()`, `selectDevice()`
 
 ---
 
-## ✅ Device Manager Component - COMPLETE! (January 12, 2026)
+### 2. DeviceManager Component (Dashboard Header)
+**Commit:** `4e2f50e` (January 12, 2026)
 
-### New Feature: Dashboard Device Switcher
-
-**Component:** `DeviceManager.tsx` - Post-onboarding device management
-
-**Features Implemented:**
-- 📡 Shows currently selected device in dashboard header
-- Dropdown menu to view all available devices
-- One-click device switching
-- Auto-reloads dashboard data after switch
-- Loading states and error handling
-- Dark mode support
-- Mobile responsive
-
-**Files Added/Modified:**
-1. `web/src/components/DeviceManager.tsx` - NEW! Complete device switcher component
-2. `web/src/index.css` - Added `.device-manager__*` styles (lines 1458-1692)
-3. `web/src/components/Dashboard.tsx` - Integrated into header actions
-
-**Component Features:**
-- Dropdown with all devices listed
-- Current device highlighted with "✓ Active" badge
-- Device info: name, MAC (last 4 octets), last data timestamp
-- Relative time display ("5m ago", "2h ago", "3d ago")
+**Features:**
+- 📡 Device switcher button in dashboard header
+- Dropdown shows all available devices
+- Current device marked with "✓ Active" badge
+- One-click device switching with auto-reload
+- Loading states, error handling
 - Click-outside to close dropdown
-- Smooth transitions and hover states
+- Dark mode + mobile responsive
 
-**API Integration:**
-- Uses existing `getDevices()` from onboardingApi
-- Uses existing `selectDevice(mac)` from onboardingApi
-- Reloads page after switch to refresh all data
+**Files:**
+- `web/src/components/DeviceManager.tsx` - NEW! (217 lines)
+- `web/src/index.css` - Added `.device-manager__*` styles (235 lines)
+- `web/src/components/Dashboard.tsx` - Integrated into header
 
----
-
-## 🔄 Current Status: Feature Complete & Testing
-
-### Backend Server
-- ✅ FastAPI server running on http://localhost:8000
-- Background task ID: `b9c894a`
-- Swagger UI available at: http://localhost:8000/docs
-
-### Frontend Server
-- ✅ Vite dev server running on http://localhost:5174
-- Background task ID: `b747fa4`
-- **NEW:** DeviceManager component live in dashboard header
-
-### What to Test
-
-1. **NEW: Device Manager Component (Dashboard Header)**
-   - Visit http://localhost:5174
-   - Look for 📡 device button in dashboard header (top-right area)
-   - Click the button - dropdown should open
-   - Verify current device is marked with "✓ Active" badge
-   - Verify device info displays: name, MAC (last 4 chars), last data time
-   - Click a different device (if you have multiple)
-   - Should reload page and show new device's data
-   - Test click-outside dropdown to close
-   - Test mobile responsive (resize browser window)
-
-2. **Backend API Endpoints (Swagger UI)**
-   - Test `GET /api/devices` - Should list devices
-   - Test `POST /api/devices/select` - Should save device selection
-   - Test `POST /api/credentials/save` - Should accept device_mac parameter
-
-3. **Frontend Onboarding Flow**
-   - Start frontend: `cd web && npm run dev`
-   - Clear `.env` credentials to test fresh onboarding
-   - Go through onboarding flow:
-     - Enter API credentials
-     - **New step: Select device**
-     - Verify device info displays correctly
-     - Complete selection
-     - Verify backfill starts with selected device
-
-4. **Verification Steps**
-   - Check `.env` file contains `AMBIENT_DEVICE_MAC=XX:XX:XX:XX:XX:XX`
-   - Check backend logs for device selection messages:
-     - `using_configured_device` - When using selected device
-     - `using_first_device` - When no selection saved
-   - Verify scheduler uses selected device for periodic fetches
-   - After switching device in dashboard, verify `.env` updates
+**Display Format:**
+- Device name (from Ambient Weather)
+- MAC address (last 4 octets)
+- Relative timestamp ("5m ago", "2h ago")
 
 ---
 
-## 📋 Next Steps (Optional Enhancements)
+### 3. Location Display Enhancement
+**Commits:** `c6a89c7`, `a415e56` (January 12, 2026)
 
-### 1. Device Switcher for Dashboard ✅ IMPLEMENTED!
-**Status:** Complete! See "Device Manager Component" section above.
+**Problem Solved:**
+Users couldn't easily identify devices by MAC address alone. Many devices have default names like "Default" or similar generic names.
 
-**What Was Built:**
-- ✅ `DeviceManager.tsx` component in dashboard header
-- ✅ Shows currently selected device with 📡 icon
-- ✅ Dropdown menu to switch to different device
-- ✅ Calls `selectDevice()` API on change
-- ✅ Auto-refreshes dashboard data after switch (page reload)
+**Solution:**
+Extract and display device location (city) from Ambient Weather API.
 
-**Location:** Dashboard header, between title and InstallPrompt button
+**Backend Changes:**
+- Added `location` field to `DeviceInfo` Pydantic model
+- Extract location from `device.info.coords.location` or fallback to `coords.address`
+- Updated `/api/devices` endpoint to return location
 
-**Testing:**
-1. Visit http://localhost:5174
-2. Click the device button in header (shows current device name/MAC)
-3. Dropdown opens with all devices
-4. Click a different device to switch
-5. Page reloads with new device's data
+**Frontend Changes:**
+- Updated `DeviceInfo` TypeScript interface with location field
+- Display location in `DeviceManager.tsx` dropdown
+- Display location in `DeviceSelector.tsx` (onboarding)
+- Added CSS styles for `.device-manager__location` and `.device-selector__option-location`
 
-### 2. Settings Page (Future Enhancement)
-Centralized settings management:
+**Display Format:**
+```
+Device Name
+Location • MAC • Last Data
+
+Example:
+Backyard WS-5000
+Portland • A3:10:36:F4 • Just now
+```
+
+**Design Compliance:**
+- ✅ Uses design tokens (`--color-*`, `--spacing-*`)
+- ✅ BEM-style CSS naming
+- ✅ Dark mode support
+- ✅ Mobile responsive
+
+---
+
+### 4. Historical Conditions UI Enhancement
+**Commit:** TBD (January 13, 2026)
+
+**Problem Solved:**
+The dashboard layout lacked visual cohesion - the date range selector and charts were separate from each other, creating a fragmented appearance.
+
+**Solution:**
+Created a unified "Historical Conditions" section that wraps the date range selector and all charts in a single white card, matching the visual structure of "Current Conditions".
+
+**Changes:**
+- **NEW Component:** `HistoricalConditions.tsx` - Wraps date range + charts in unified container
+- **Updated:** `DateRangeSelector.tsx` - Removed standalone title/background (now nested)
+- **Updated:** `Dashboard.tsx` - Replaced separate components with unified HistoricalConditions
+- **Updated:** `index.css` - Added `.historical-conditions` styles matching `.current-conditions`
+- **Fixed:** TypeScript errors in `DeviceManager.tsx` (unused React import, type error)
+
+**Visual Structure:**
+```
+┌─ Current Conditions ──────────────┐
+│ [Temperature] [Humidity] [Wind]   │
+└───────────────────────────────────┘
+
+┌─ Historical Conditions ───────────┐
+│ Date Range: [controls]            │
+│ ┌─ Temperature ─┐ ┌─ Humidity ─┐ │
+│ │   [chart]     │ │  [chart]   │ │
+│ └───────────────┘ └────────────┘ │
+│ ┌─ Wind ────────┐ ┌─ Precip. ──┐ │
+│ │   [chart]     │ │  [chart]   │ │
+│ └───────────────┘ └────────────┘ │
+└───────────────────────────────────┘
+```
+
+**Design Compliance:**
+- ✅ Matches Current Conditions styling
+- ✅ Uses design tokens (`--color-*`, `--spacing-*`)
+- ✅ BEM-style CSS naming
+- ✅ Improved visual hierarchy
+- ✅ Dark mode support
+
+---
+
+## 📊 Current Status
+
+### Pull Request
+- **PR #61:** https://github.com/jannaspicerbot/Weather-App/pull/61
+- **Branch:** `feature/ui-enhancements`
+- **Base:** `main`
+- **Status:** Open, awaiting review
+- **Commits:** 5 commits (device selection, device manager, location display, cleanup, historical conditions UI)
+
+### Running Services
+- **Backend:** http://localhost:8000 (FastAPI + APScheduler)
+- **Frontend:** http://localhost:5174 (Vite dev server)
+
+### Testing Completed
+- ✅ Device selection during onboarding (single + multiple devices)
+- ✅ DeviceManager dropdown in dashboard header
+- ✅ Device switching functionality
+- ✅ Location display in all components
+- ✅ Historical Conditions unified UI layout
+- ✅ Dark mode rendering
+- ✅ Mobile responsive layout
+- ✅ API endpoints (`/api/devices`, `/api/devices/select`)
+
+---
+
+## 🎯 What's Next (After PR Merge)
+
+### Option A: Settings Page
+Create centralized settings UI:
 - View/edit API credentials
-- Select/switch device
-- Configure scheduler settings
-- Manage data retention
-- Theme preferences
+- Manage device selection
+- Configure scheduler (fetch interval)
+- Theme preferences (when multi-theme support added)
+- Data export options
 
-### 3. Multi-Device Support (Phase 3)
-Allow tracking multiple devices simultaneously:
-- Select multiple devices during onboarding
-- Store as comma-separated list or JSON array
-- Dashboard shows data from all selected devices
-- Switch between devices or view combined data
-- Device-specific charts and comparisons
+### Option B: Multi-Device Dashboard
+Support for viewing multiple weather stations simultaneously:
+- Split-screen comparison view
+- Device tabs for switching views
+- Aggregated statistics across all devices
+- Side-by-side charts
 
-### 4. Device Metadata Display
-Show more device information:
-- Device model/type
-- Firmware version
-- Battery status
-- Signal strength
-- Location (if available)
+### Option C: Enhanced Device Management
+- Device rename functionality (currently done on ambientweather.net)
+- Device grouping/favorites
+- Device-specific alert thresholds
+- Historical device switching (track which device was active when)
 
----
+### Option D: Data Export & Sharing
+- CSV export for selected date ranges
+- JSON export with raw sensor data
+- Shareable dashboard links
+- Embedded widget generation
 
-## 🐛 Known Issues / Edge Cases
+### Option E: Advanced Visualizations
+- Historical trends (week/month/year views)
+- Heatmaps for temperature/humidity patterns
+- Wind rose diagrams
+- Precipitation accumulation charts
+- Comparison to historical averages
 
-### To Test:
-- [ ] What happens if configured device is removed from account?
-  - Currently falls back to first device with warning
-- [ ] What if user has no devices?
-  - DeviceSelector shows "No devices found" message
-- [ ] What if API credentials become invalid after onboarding?
-  - Need to test credential re-validation flow
-- [ ] What if user changes device mid-backfill?
-  - Backfill should continue with original device, new fetches use new device
-
-### To Consider:
-- Device naming: Some users may not name their devices (shows as null/empty)
-- MAC address display: Currently showing first 8-12 chars for privacy/brevity
-- Caching: Device list could be cached to avoid API calls
-- Validation: Should verify selected MAC exists in user's device list
+### Option F: PWA Enhancements
+- Offline support with service worker
+- Background sync for data updates
+- Push notifications for weather alerts
+- App icon and splash screen
+- Install prompts
 
 ---
 
-## 📁 File Reference
+## 📁 Files Modified in This Session
 
-### Backend Files Modified
-- `weather_app/config.py` - Added AMBIENT_DEVICE_MAC
-- `weather_app/scheduler/scheduler.py` - Device selection logic
-- `weather_app/web/backfill_service.py` - Device selection methods
-- `weather_app/web/models.py` - DeviceSelectionRequest, DeviceListResponse
-- `weather_app/web/routes.py` - New device management endpoints
+### Backend (Python)
+- `weather_app/web/models.py` - Added location field to DeviceInfo
+- `weather_app/web/routes.py` - Extract location from API, added debug logging (removed)
 
-### Frontend Files Modified
-- `web/src/components/onboarding/OnboardingFlow.tsx` - 3-step flow
-- `web/src/components/onboarding/DeviceSelector.tsx` - Onboarding device selector
-- `web/src/components/DeviceManager.tsx` - **NEW!** Dashboard device switcher
-- `web/src/components/Dashboard.tsx` - Integrated DeviceManager into header
-- `web/src/services/onboardingApi.ts` - Device management functions
-- `web/src/index.css` - Device selector + Device manager styles (lines 1458-1692)
+### Frontend (TypeScript/React)
+- `web/src/components/HistoricalConditions.tsx` - NEW! Unified historical section wrapper
+- `web/src/components/DeviceManager.tsx` - Device switcher component (fixed TypeScript errors)
+- `web/src/components/Dashboard.tsx` - Integrated DeviceManager + HistoricalConditions
+- `web/src/components/DateRangeSelector.tsx` - Removed standalone styling (now nested)
+- `web/src/components/onboarding/DeviceSelector.tsx` - Added location display
+- `web/src/services/onboardingApi.ts` - Added location to DeviceInfo type
 
----
+### Styles (CSS)
+- `web/src/index.css` - Added DeviceManager styles + location styles + HistoricalConditions styles
 
-## 🎯 Decision Point
-
-**Choose next action:**
-
-### Option A: Test Current Implementation
-- Test backend API endpoints in Swagger UI
-- Test frontend onboarding flow
-- Verify device selection saves to .env
-- Check scheduler logs for device usage
-- Fix any bugs found
-
-### Option B: Add Device Switcher to Dashboard
-- Implement device management UI in dashboard
-- Allow users to switch devices post-onboarding
-- Add to header or settings area
-
-### Option C: Create Settings Page
-- Build comprehensive settings UI
-- Include device management, credentials, scheduler config
-- Centralized configuration management
-
-### Option D: Other UI Enhancements
-- Focus on other dashboard improvements
-- Charts, metrics, visualizations
-- Performance optimization
-- PWA features
+### Documentation
+- `NEXT_STEPS.md` - This file (updated)
 
 ---
 
-## 💡 Implementation Notes
+## 🔧 Technical Notes
 
-### Backend Design Decisions
-- Device MAC stored in `.env` as single value
-- Falls back to first device if configured device not found
-- Scheduler and backfill use same device selection logic
-- Device list fetched fresh from API (not cached)
+### API Response Structure (Ambient Weather)
+```json
+{
+  "macAddress": "C8:C9:A3:10:36:F4",
+  "info": {
+    "name": "Backyard WS-5000",
+    "coords": {
+      "location": "Portland",
+      "address": "2557 SW Nevada Ct, Portland, OR 97219, USA"
+    }
+  },
+  "lastData": {
+    "date": "2026-01-13T04:35:00.000Z",
+    "tempf": 45.3,
+    "humidity": 82
+    // ... other sensor data
+  }
+}
+```
 
-### Frontend Design Decisions
-- Device selection is step 2 of 3-step onboarding
-- Smart UI: Single device shows confirm screen, multiple shows selection list
-- Credentials stored in component state until device selected
-- All saved together to avoid partial configuration
+### Device Identification Priority
+1. **Device name** (user-set on ambientweather.net)
+2. **Location** (city from GPS coords)
+3. **MAC address** (last 4 octets)
 
-### API Design Decisions
-- `GET /api/devices` requires configured credentials
-- `POST /api/devices/select` saves to .env and updates runtime env
-- `POST /api/credentials/save` optionally accepts device_mac in body
-- Device list response includes currently selected device MAC
+### Known Limitations
+- Device names must be set on ambientweather.net (not in-app)
+- Location extracted from Ambient Weather API (no manual override)
+- Product type/model not available in API response
+- Single device selection at a time (no multi-device views yet)
 
 ---
 
-**Last Updated:** January 12, 2026
-**Status:** Testing Phase - Feature complete, ready for validation
+## 💡 Development Tips
+
+### Starting Local Servers
+```bash
+# Backend
+cd weather_app
+python -m uvicorn web.app:create_app --factory --host 127.0.0.1 --port 8000 --reload
+
+# Frontend
+cd web
+npm run dev
+
+# Access
+# Dashboard: http://localhost:5174
+# API Docs: http://localhost:8000/docs
+```
+
+### Testing Device Management
+1. Rename device on ambientweather.net for better identification
+2. Check location is set correctly (GPS-based)
+3. Test with multiple devices if available
+4. Verify device switching updates `.env` file
+
+### Debugging Tips
+- Clear Python `__pycache__` if models not updating: `find weather_app -name "*.pyc" -delete`
+- Check API response: `curl http://localhost:8000/api/devices | jq`
+- Check OpenAPI schema: `curl http://localhost:8000/openapi.json | jq '.components.schemas.DeviceInfo'`
+- Browser DevTools Console for frontend errors
+
+---
+
+**Last Updated:** January 13, 2026
+**Session:** UI Enhancements - Device Management Feature
+**Branch:** `feature/ui-enhancements`
+**PR:** #61 (Open)
