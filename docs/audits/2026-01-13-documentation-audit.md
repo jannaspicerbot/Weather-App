@@ -244,8 +244,8 @@ docs/
 - [x] Create `docs/examples/api-patterns.md`
 - [x] Create `docs/examples/component-patterns.md`
 - [x] Create `docs/examples/query-patterns.md`
-- [ ] Create `docs/standards/SECURITY.md`
-- [ ] Create `docs/guides/PERFORMANCE.md`
+- [x] Create `docs/standards/SECURITY.md`
+- [x] Create `docs/guides/PERFORMANCE.md`
 - [ ] Create `docs/guides/adding-endpoints.md`
 - [ ] Create `docs/guides/adding-components.md`
 - [ ] Fix deployment.md path (CLAUDE.md or create file)
