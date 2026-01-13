@@ -23,7 +23,7 @@ RUN npm run build
 # =============================================================================
 # STAGE 2: Build Backend (Python + FastAPI)
 # =============================================================================
-FROM python:3.11-slim AS backend-builder
+FROM python:3.14-slim AS backend-builder
 
 WORKDIR /app
 
@@ -48,7 +48,7 @@ RUN pip install -e .
 # =============================================================================
 # STAGE 3: Final Production Image
 # =============================================================================
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
@@ -58,7 +58,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python dependencies from builder
-COPY --from=backend-builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=backend-builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
 COPY --from=backend-builder /usr/local/bin /usr/local/bin
 
 # Copy backend application
