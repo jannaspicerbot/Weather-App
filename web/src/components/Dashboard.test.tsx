@@ -84,7 +84,6 @@ describe('Dashboard', () => {
           mac_address: 'AA:BB:CC:DD:EE:FF',
           name: 'Test Weather Station',
           last_data: '2024-01-07T12:00:00Z',
-          is_selected: true,
           location: 'Test City',
         },
       ],
@@ -247,7 +246,8 @@ describe('Dashboard', () => {
       render(<Dashboard />);
 
       await waitFor(() => {
-        expect(screen.getByText('Date Range')).toBeInTheDocument();
+        // DateRangeSelector renders these preset buttons
+        expect(screen.getByText('Last 24h')).toBeInTheDocument();
       });
     });
   });

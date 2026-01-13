@@ -164,6 +164,7 @@ export default function DeviceSelector({
               checked={selectedMac === device.mac_address}
               onChange={(e) => setSelectedMac(e.target.value)}
               className="device-selector__radio"
+              aria-label={`Select ${device.name || 'Weather Station'}`}
             />
             <div className="device-selector__option-content">
               <div className="device-selector__option-header">
