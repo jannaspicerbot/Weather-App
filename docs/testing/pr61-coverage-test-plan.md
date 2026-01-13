@@ -3,7 +3,20 @@
 **Date:** January 13, 2026
 **Last Updated:** January 13, 2026
 **Target:** Improve patch coverage from 94.79% to 100%
-**Status:** **PHASE 2 COMPLETE**
+**Status:** **PHASE 2 COMPLETE** + Pre-commit hooks added
+
+---
+
+## Pre-commit Hooks (NEW)
+
+Added automated linting to prevent CI failures. See [linting-checklist.md](linting-checklist.md).
+
+```bash
+# Setup (one-time)
+pip install pre-commit && pre-commit install
+```
+
+Now every `git commit` auto-runs: ruff, black, isort, security checks.
 
 ---
 
