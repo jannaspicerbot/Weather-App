@@ -2,6 +2,12 @@
 
 This guide shows you how to generate and use synthetic weather data for testing and development.
 
+**Note:** This guide is for **development/source code** usage only. If you're using the packaged executables:
+- **Production build** (`WeatherApp.exe`) → Always uses production database (immutable)
+- **Debug build** (`WeatherApp_Debug.exe`) → Always uses test database (immutable)
+
+Database selection cannot be changed in packaged builds for safety reasons.
+
 ## Quick Start
 
 ### 1. Generate Test Data
