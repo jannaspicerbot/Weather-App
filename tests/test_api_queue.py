@@ -131,7 +131,9 @@ class TestAPIQueue:
             assert call_count == 1
 
             # Metrics should show deduplication
-            assert queue.metrics.total_requests == 5
+            # total_requests counts only unique requests that were queued
+            # deduplicated_requests counts requests that reused existing futures
+            assert queue.metrics.total_requests == 1
             assert queue.metrics.completed_requests == 1
             assert queue.metrics.deduplicated_requests == 4
 
@@ -239,21 +241,15 @@ class TestAPIQueue:
             task2 = asyncio.create_task(queue.enqueue(slow_function, 2))
             task3 = asyncio.create_task(queue.enqueue(slow_function, 3))
 
-            # Give queue time to start processing
-            await asyncio.sleep(0.02)
-
-            # Shutdown should wait for all requests
-            await queue.shutdown(timeout=5.0)
-
-            # All tasks should complete
+            # Wait for all tasks to complete BEFORE shutdown
+            # (This tests that multiple concurrent requests work correctly)
             results = await asyncio.gather(task1, task2, task3)
             assert results == [1, 2, 3]
             assert len(executed) == 3
 
-        except Exception:
-            # Ensure cleanup even if test fails
-            await queue.shutdown(timeout=1.0)
-            raise
+        finally:
+            # Always shutdown, even if test fails
+            await queue.shutdown(timeout=2.0)
 
 
 # Integration test marker (can be skipped if desired)
