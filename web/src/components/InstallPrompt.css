@@ -2,7 +2,7 @@
  * InstallPrompt Component Styles
  *
  * Uses semantic tokens from design-tokens.md
- * Follows inclusive-design.md accessibility standards (44x44 touch target)
+ * Follows ACCESSIBILITY.md standards (44x44 touch target)
  */
 
 .install-prompt {

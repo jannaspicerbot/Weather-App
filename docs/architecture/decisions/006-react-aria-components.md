@@ -216,7 +216,7 @@ npm run test          # Includes vitest-axe tests
 - [@dnd-kit Accessibility Guide](https://docs.dndkit.com/guides/accessibility)
 - [React Aria Documentation](https://react-spectrum.adobe.com/react-aria/) (for future reference)
 - [WCAG 2.2 Guidelines](https://www.w3.org/TR/WCAG22/)
-- [Inclusive Design Standards](../../design/inclusive-design.md)
+- [Accessibility Standards](../../standards/ACCESSIBILITY.md)
 
 ---
 

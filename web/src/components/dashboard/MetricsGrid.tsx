@@ -8,7 +8,7 @@
  * - Touch support for iPad (200ms delay to distinguish from scrolling)
  * - Mouse support for desktop
  *
- * Follows same patterns as DashboardGrid for charts, per docs/design/inclusive-design.md
+ * Follows same patterns as DashboardGrid for charts, per docs/standards/ACCESSIBILITY.md
  */
 
 import {
@@ -55,7 +55,7 @@ const METRIC_NAMES: Record<MetricId, string> = {
 export function MetricsGrid({ metricsOrder, onReorder, children }: MetricsGridProps) {
   const [activeId, setActiveId] = useState<MetricId | null>(null);
 
-  // Configure sensors for multi-modal accessibility per inclusive-design.md
+  // Configure sensors for multi-modal accessibility per ACCESSIBILITY.md
   const sensors = useSensors(
     // Pointer (mouse) sensor with activation constraint to prevent accidental drags
     useSensor(PointerSensor, {

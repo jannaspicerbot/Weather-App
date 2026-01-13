@@ -294,7 +294,7 @@ While automated tests catch 30-40% of accessibility issues, **manual testing is 
 - [ ] Zoom to 200% (no horizontal scrolling, all content accessible)
 - [ ] Touch target verification on iPad (44×44px minimum)
 
-See [docs/design/inclusive-design.md](../design/inclusive-design.md) for complete testing checklist.
+See [docs/standards/ACCESSIBILITY.md](../standards/ACCESSIBILITY.md) for complete testing checklist.
 
 ---
 
@@ -375,7 +375,7 @@ git commit --amend --no-edit
 
 #### "ESLint jsx-a11y errors"
 **Cause:** Accessibility violations in React components
-**Fix:** Review [docs/design/inclusive-design.md](../design/inclusive-design.md) and fix violations:
+**Fix:** Review [docs/standards/ACCESSIBILITY.md](../standards/ACCESSIBILITY.md) and fix violations:
 ```bash
 cd frontend
 npm run lint:a11y -- --fix  # Auto-fix some issues
@@ -387,7 +387,7 @@ npm run lint:a11y           # Review remaining issues
 **Fix:**
 1. Run tests locally: `npm run test:a11y`
 2. Review violation details in test output
-3. Fix accessibility issues (see [Inclusive Design Standards](../design/inclusive-design.md))
+3. Fix accessibility issues (see [Accessibility Standards](../standards/ACCESSIBILITY.md))
 4. Re-run tests to verify
 
 #### "Lighthouse accessibility score <95"
@@ -507,7 +507,7 @@ Add these badges to `README.md` to show CI status:
 
 - [ADR-006: React Aria Components](../architecture/decisions/006-react-aria-components.md) - Accessibility testing requirements
 - [ADR-007: Victory Charts](../architecture/decisions/007-victory-charts.md) - Chart accessibility validation
-- [Inclusive Design Standards](../design/inclusive-design.md) - Manual accessibility testing checklist
+- [Accessibility Standards](../standards/ACCESSIBILITY.md) - Manual accessibility testing checklist
 - [Deployment Guide](deployment-guide.md) - Production deployment process
 
 ---

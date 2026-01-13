@@ -894,7 +894,7 @@ When implementing dashboard widgets, verify:
 
 **See Also:**
 - [Design Token System](design-tokens.md) - Complete color token architecture
-- [Inclusive Design](inclusive-design.md) - WCAG 2.2 AA compliance and chart accessibility
+- [Accessibility Standards](../standards/ACCESSIBILITY.md) - WCAG 2.2 AA compliance and chart accessibility
 
 ---
 
@@ -903,7 +903,7 @@ When implementing dashboard widgets, verify:
 - [Design Token System](design-tokens.md) - Complete token architecture
 - [Color Palette Options](color-palette-options.md) - All available palettes
 - [Color Palette Testing](color-palette-testing.md) - Accessibility validation
-- [Inclusive Design](inclusive-design.md) - WCAG 2.2 AA standards and chart accessibility
+- [Accessibility Standards](../standards/ACCESSIBILITY.md) - WCAG 2.2 AA standards and chart accessibility
 - [ADR-003: TypeScript Frontend](../architecture/decisions/003-typescript-frontend.md) - TypeScript standards
 - [WCAG 2.2 Guidelines](https://www.w3.org/WAI/WCAG22/quickref/) - Accessibility reference
 - [Victory Charts Documentation](https://formidable.com/open-source/victory/) - Charting library

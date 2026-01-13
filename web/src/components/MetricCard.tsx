@@ -2,7 +2,7 @@
  * MetricCard Component
  *
  * Individual weather metric display following design-tokens.md specifications.
- * Uses semantic tokens for colors and follows inclusive-design.md accessibility standards.
+ * Uses semantic tokens for colors and follows ACCESSIBILITY.md standards.
  *
  * Design specs from docs/design/dashboard-layout.md:
  * - Card Surface: var(--color-bg-secondary)

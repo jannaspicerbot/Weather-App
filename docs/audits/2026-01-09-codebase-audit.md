@@ -11,7 +11,7 @@
 
 Audit comparing current implementation against:
 - [docs/architecture/overview.md](../architecture/overview.md)
-- [docs/design/inclusive-design.md](../design/inclusive-design.md)
+- [docs/standards/ACCESSIBILITY.md](../standards/ACCESSIBILITY.md)
 
 **Overall Grade: A (94/100)** - Excellent implementation with minor documentation drift.
 
@@ -136,7 +136,7 @@ All primary audit tasks are complete. The codebase now fully aligns with the arc
 ## References
 
 - [Architecture Overview](../architecture/overview.md)
-- [Inclusive Design Standards](../design/inclusive-design.md)
+- [Accessibility Standards](../standards/ACCESSIBILITY.md)
 - [ADR-006: React Aria Components](../architecture/decisions/006-react-aria-components.md)
 - [ADR-007: Victory Charts](../architecture/decisions/007-victory-charts.md)
 - [Design Tokens](../design/design-tokens.md)
