@@ -75,6 +75,11 @@ export default function DeviceSelector({
             <p className="device-selector__single-name">
               {device.name || 'Weather Station'}
             </p>
+            {device.location && (
+              <p className="device-selector__single-location">
+                {device.location}
+              </p>
+            )}
             <p className="device-selector__single-mac">
               Device ID: {device.mac_address.slice(0, 8)}...
             </p>
@@ -182,14 +187,24 @@ export default function DeviceSelector({
                   </svg>
                 )}
               </div>
-              <span className="device-selector__option-mac">
-                Device ID: {device.mac_address.slice(0, 12)}...
-              </span>
-              {device.last_data && (
-                <span className="device-selector__option-date">
-                  Last data: {new Date(device.last_data).toLocaleDateString()}
+              <div className="device-selector__option-details">
+                {device.location && (
+                  <span className="device-selector__option-location">
+                    {device.location}
+                  </span>
+                )}
+                <span className="device-selector__option-mac">
+                  {device.location ? '•' : 'Device ID:'} {device.mac_address.slice(0, 12)}...
                 </span>
-              )}
+                {device.last_data && (
+                  <>
+                    <span className="device-selector__option-divider">•</span>
+                    <span className="device-selector__option-date">
+                      Last data: {new Date(device.last_data).toLocaleDateString()}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </label>
         ))}

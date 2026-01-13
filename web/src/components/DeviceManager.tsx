@@ -192,6 +192,14 @@ export default function DeviceManager() {
                   </div>
 
                   <div className="device-manager__option-details">
+                    {device.location && (
+                      <>
+                        <span className="device-manager__location">
+                          {device.location}
+                        </span>
+                        <span className="device-manager__divider">•</span>
+                      </>
+                    )}
                     <span className="device-manager__mac">
                       {formatMacAddress(device.mac_address)}
                     </span>

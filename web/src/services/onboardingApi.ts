@@ -12,6 +12,7 @@ export interface DeviceInfo {
   mac_address: string;
   name: string | null;
   last_data: string | null;
+  location: string | null;
 }
 
 export interface CredentialStatus {

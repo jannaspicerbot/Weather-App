@@ -1632,6 +1632,10 @@ button:focus-visible {
   color: var(--color-text-secondary);
 }
 
+.device-manager__location {
+  font-weight: 500;
+}
+
 .device-manager__mac {
   font-family: 'Courier New', monospace;
 }
@@ -2068,6 +2072,12 @@ button:focus-visible {
   margin: 0 0 var(--spacing-1) 0;
 }
 
+.device-selector__single-location {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: var(--spacing-1) 0;
+}
+
 .device-selector__single-mac {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
@@ -2154,6 +2164,14 @@ button:focus-visible {
   flex-shrink: 0;
 }
 
+.device-selector__option-details {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.device-selector__option-location,
 .device-selector__option-mac,
 .device-selector__option-date {
   font-size: 0.875rem;
@@ -2162,6 +2180,10 @@ button:focus-visible {
 
 .device-selector__option-mac {
   font-family: 'Courier New', monospace;
+}
+
+.device-selector__option-divider {
+  color: var(--color-border);
 }
 
 /* Submit Button */

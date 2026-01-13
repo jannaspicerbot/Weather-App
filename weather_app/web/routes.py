@@ -433,10 +433,17 @@ def register_routes(app: FastAPI):
             # Convert to response model
             device_infos = []
             for device in devices:
+                # Extract location from coords (prefer location over full address)
+                coords = device.get("info", {}).get("coords", {})
+                location = coords.get("location") or coords.get("address")
+
+                print(f"DEBUG: location={location}, coords_keys={list(coords.keys()) if coords else None}")
+
                 device_infos.append(DeviceInfo(
                     mac_address=device.get("macAddress", ""),
                     name=device.get("info", {}).get("name"),
-                    last_data=device.get("lastData", {}).get("date")
+                    last_data=device.get("lastData", {}).get("date"),
+                    location=location
                 ))
 
             # Get currently selected device

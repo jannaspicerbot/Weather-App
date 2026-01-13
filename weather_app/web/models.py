@@ -60,6 +60,7 @@ class DeviceInfo(BaseModel):
     mac_address: str
     name: str | None = None
     last_data: str | None = None
+    location: str | None = None
 
 
 class CredentialValidationResponse(BaseModel):
