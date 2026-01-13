@@ -64,3 +64,13 @@ Thumbs.db
 config.py
 secrets.py
 .env
+
+# Testing & Coverage
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+
+# Temporary files
+*.tmp
+nul
