@@ -4,7 +4,6 @@ Ambient Weather API client with request queue integration
 
 import asyncio
 import time
-from typing import Optional
 
 import requests
 

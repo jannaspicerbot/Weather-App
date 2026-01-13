@@ -413,6 +413,7 @@ def register_routes(app: FastAPI):
         Requires valid API credentials to be configured.
         """
         import os
+
         from weather_app.api.client import AmbientWeatherAPI
 
         # Get credentials from environment

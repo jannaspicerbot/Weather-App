@@ -21,9 +21,9 @@ Usage:
 
 import asyncio
 import time
-from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 from weather_app.logging_config import get_logger
 
@@ -79,7 +79,7 @@ class AmbientAPIQueue:
         self.rate_limit_seconds = rate_limit_seconds
         self.queue: asyncio.Queue = asyncio.Queue()
         self.metrics = QueueMetrics()
-        self.worker_task: Optional[asyncio.Task] = None
+        self.worker_task: asyncio.Task | None = None
         self.running = False
         self.last_request_time: float = 0.0
 
@@ -271,8 +271,10 @@ class AmbientAPIQueue:
                         result = await request.func(*request.args, **request.kwargs)
                     else:
                         loop = asyncio.get_event_loop()
+                        # Bind request to lambda parameter to avoid late binding issues
                         result = await loop.run_in_executor(
-                            None, lambda: request.func(*request.args, **request.kwargs)
+                            None,
+                            lambda req=request: req.func(*req.args, **req.kwargs),
                         )
 
                     # Calculate wait time and update metrics
