@@ -146,42 +146,17 @@ export default function Dashboard() {
       // Calculate number of days in range
       const daysDiff = Math.ceil((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
 
-      // Ambient Weather records every 5 minutes = ~288 records/day
-      const recordsPerDay = 288;
-      const estimatedTotal = daysDiff * recordsPerDay;
+      // Get optimal sample size based on date range
       const targetPoints = getOptimalSampleSize(daysDiff);
 
-      if (estimatedTotal <= targetPoints) {
-        // Fetch all data - no sampling needed
-        const data = await DefaultService.getWeatherDataWeatherGet(
-          estimatedTotal,
-          undefined,
-          startDateStr,
-          endDateStr,
-          'asc'
-        );
-        setHistoricalData(data);
-      } else {
-        // Large range - fetch data with strategic sampling
-        // Fetch multiple pages with offsets to get evenly distributed samples
-        const pages = Math.min(Math.ceil(targetPoints / 2000), 8); // Max 8 API calls
-        const recordsPerPage = Math.floor(targetPoints / pages);
+      // Use the new /api/weather/range endpoint which supports up to 10,000 records
+      const data = await DefaultService.apiGetWeatherRangeApiWeatherRangeGet(
+        startDateStr,
+        endDateStr,
+        targetPoints
+      );
 
-        const allData: typeof historicalData = [];
-        for (let i = 0; i < pages; i++) {
-          const offset = Math.floor((estimatedTotal / pages) * i);
-          const pageData = await DefaultService.getWeatherDataWeatherGet(
-            recordsPerPage,
-            offset,
-            startDateStr,
-            endDateStr,
-            'asc'
-          );
-          allData.push(...pageData);
-        }
-
-        setHistoricalData(allData);
-      }
+      setHistoricalData(data);
     } catch (err) {
       console.error('Failed to fetch historical data:', err);
       setHistoricalData([]);
