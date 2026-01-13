@@ -1,7 +1,7 @@
 # Weather App Backend Dockerfile
 # Multi-stage build for optimized production image
 
-FROM python:3.11-slim as base
+FROM python:3.14-slim as base
 
 # Set working directory
 WORKDIR /app
