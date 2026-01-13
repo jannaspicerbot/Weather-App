@@ -1,8 +1,10 @@
 """
-Ambient Weather API client
+Ambient Weather API client with request queue integration
 """
 
+import asyncio
 import time
+from typing import Optional
 
 import requests
 
@@ -14,17 +16,19 @@ logger = get_logger(__name__)
 class AmbientWeatherAPI:
     """Client for interacting with Ambient Weather API"""
 
-    def __init__(self, api_key, application_key):
+    def __init__(self, api_key, application_key, request_queue=None):
         """
         Initialize API client
 
         Args:
             api_key: Ambient Weather API key
             application_key: Ambient Weather Application key
+            request_queue: Optional AmbientAPIQueue for rate limiting
         """
         self.api_key = api_key
         self.application_key = application_key
         self.base_url = "https://api.ambientweather.net/v1"
+        self.request_queue = request_queue
 
         # FIX #2: Use session for connection pooling and custom headers
         self.session = requests.Session()
@@ -38,9 +42,9 @@ class AmbientWeatherAPI:
         # FIX #1: Default timeout for all requests
         self.timeout = 30
 
-    def get_devices(self):
+    def _get_devices_impl(self):
         """
-        Get list of user's weather devices
+        Internal implementation: Get list of user's weather devices
 
         Returns:
             List of device dictionaries
@@ -79,9 +83,35 @@ class AmbientWeatherAPI:
             )
             raise
 
-    def get_device_data(self, mac_address, end_date=None, limit=288):
+    def get_devices(self):
         """
-        Get weather data for a specific device
+        Get list of user's weather devices
+
+        If request_queue is configured, requests are rate-limited.
+        Otherwise, requests are made directly (legacy behavior).
+
+        Returns:
+            List of device dictionaries
+        """
+        if self.request_queue:
+            # Use async queue - run in event loop
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # No event loop in current thread, create one
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+            return loop.run_until_complete(
+                self.request_queue.enqueue(self._get_devices_impl)
+            )
+        else:
+            # Direct call (legacy behavior)
+            return self._get_devices_impl()
+
+    def _get_device_data_impl(self, mac_address, end_date=None, limit=288):
+        """
+        Internal implementation: Get weather data for a specific device
 
         Args:
             mac_address: Device MAC address
@@ -137,6 +167,39 @@ class AmbientWeatherAPI:
                 duration_ms=round(duration_ms, 2),
             )
             raise
+
+    def get_device_data(self, mac_address, end_date=None, limit=288):
+        """
+        Get weather data for a specific device
+
+        If request_queue is configured, requests are rate-limited.
+        Otherwise, requests are made directly (legacy behavior).
+
+        Args:
+            mac_address: Device MAC address
+            end_date: End date in milliseconds (Unix timestamp * 1000)
+            limit: Number of records to fetch (max 288)
+
+        Returns:
+            List of weather data records
+        """
+        if self.request_queue:
+            # Use async queue - run in event loop
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # No event loop in current thread, create one
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+            return loop.run_until_complete(
+                self.request_queue.enqueue(
+                    self._get_device_data_impl, mac_address, end_date, limit
+                )
+            )
+        else:
+            # Direct call (legacy behavior)
+            return self._get_device_data_impl(mac_address, end_date, limit)
 
     def fetch_all_historical_data(
         self,

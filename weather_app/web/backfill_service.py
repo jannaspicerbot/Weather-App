@@ -85,7 +85,10 @@ class BackfillService:
             Tuple of (valid: bool, message: str, devices: list)
         """
         try:
-            api = AmbientWeatherAPI(api_key, app_key)
+            # Use API queue for rate limiting
+            from weather_app.web.app import api_queue
+
+            api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)
             devices = api.get_devices()
 
             # Track when we made this API call
@@ -137,7 +140,9 @@ class BackfillService:
                 logger.error("credential_validation_error", error=error_msg)
                 return False, f"Failed to validate credentials: {error_msg}", []
 
-    def save_credentials(self, api_key: str, app_key: str, device_mac: str = None) -> tuple[bool, str]:
+    def save_credentials(
+        self, api_key: str, app_key: str, device_mac: str = None
+    ) -> tuple[bool, str]:
         """
         Save credentials and optionally device MAC to the .env file.
 
@@ -195,7 +200,11 @@ class BackfillService:
             if device_mac:
                 os.environ["AMBIENT_DEVICE_MAC"] = device_mac
 
-            logger.info("credentials_saved", env_file=str(ENV_FILE), has_device_mac=bool(device_mac))
+            logger.info(
+                "credentials_saved",
+                env_file=str(ENV_FILE),
+                has_device_mac=bool(device_mac),
+            )
             return True, "Credentials saved successfully"
 
         except Exception as e:
@@ -241,7 +250,11 @@ class BackfillService:
             # Update environment variable for current process
             os.environ["AMBIENT_DEVICE_MAC"] = device_mac
 
-            logger.info("device_selection_saved", device_mac=device_mac[:8], env_file=str(ENV_FILE))
+            logger.info(
+                "device_selection_saved",
+                device_mac=device_mac[:8],
+                env_file=str(ENV_FILE),
+            )
             return True, "Device selection saved successfully"
 
         except Exception as e:
@@ -322,18 +335,17 @@ class BackfillService:
                 error=None,
             )
 
-            api = AmbientWeatherAPI(api_key, app_key)
+            # Use API queue for rate limiting
+            from weather_app.web.app import api_queue
+
+            api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)
 
             # Use cached devices from validation if available (avoid redundant API call)
             devices = self._cached_devices
             if devices:
                 logger.info("backfill_using_cached_devices")
             else:
-                # Ensure we respect rate limit before making API call
-                time_since_last_call = time.time() - self._last_api_call_time
-                if time_since_last_call < 1.0:
-                    time.sleep(1.0 - time_since_last_call)
-
+                # No manual rate limiting needed - queue handles it
                 logger.info("backfill_getting_devices")
                 devices = api.get_devices()
                 self._last_api_call_time = time.time()
@@ -355,19 +367,27 @@ class BackfillService:
                 for device in devices:
                     if device.get("macAddress") == AMBIENT_DEVICE_MAC:
                         mac_address = device.get("macAddress")
-                        device_name = device.get("info", {}).get("name", "Weather Station")
-                        logger.info("using_configured_device", mac=mac_address[:8], name=device_name)
+                        device_name = device.get("info", {}).get(
+                            "name", "Weather Station"
+                        )
+                        logger.info(
+                            "using_configured_device",
+                            mac=mac_address[:8],
+                            name=device_name,
+                        )
                         break
 
                 if not mac_address:
                     logger.warning(
                         "configured_device_not_found",
                         configured_mac=AMBIENT_DEVICE_MAC[:8],
-                        available_count=len(devices)
+                        available_count=len(devices),
                     )
                     # Fall back to first device
                     mac_address = devices[0].get("macAddress")
-                    device_name = devices[0].get("info", {}).get("name", "Weather Station")
+                    device_name = (
+                        devices[0].get("info", {}).get("name", "Weather Station")
+                    )
                     logger.info("falling_back_to_first_device", mac=mac_address[:8])
             else:
                 # No device configured, use first device

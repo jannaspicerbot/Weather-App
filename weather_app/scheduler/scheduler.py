@@ -29,11 +29,17 @@ class WeatherScheduler:
     Ambient Weather API and store it in the local database.
     """
 
-    def __init__(self):
-        """Initialize the scheduler with configuration from environment variables"""
+    def __init__(self, api_queue=None):
+        """
+        Initialize the scheduler with configuration from environment variables
+
+        Args:
+            api_queue: Optional AmbientAPIQueue for rate-limited API requests
+        """
         self.scheduler = BackgroundScheduler()
         self.api_key = os.getenv("AMBIENT_API_KEY")
         self.app_key = os.getenv("AMBIENT_APP_KEY")
+        self.api_queue = api_queue
         self.fetch_interval_minutes = int(
             os.getenv("SCHEDULER_FETCH_INTERVAL_MINUTES", 5)
         )
@@ -43,6 +49,7 @@ class WeatherScheduler:
             "scheduler_initialized",
             enabled=self.enabled,
             fetch_interval_minutes=self.fetch_interval_minutes,
+            has_api_queue=api_queue is not None,
         )
 
     def fetch_weather_job(self):
@@ -65,8 +72,10 @@ class WeatherScheduler:
                 )
                 return
 
-            # Initialize API client
-            api = AmbientWeatherAPI(self.api_key, self.app_key)
+            # Initialize API client (with rate limiting via queue if available)
+            api = AmbientWeatherAPI(
+                self.api_key, self.app_key, request_queue=self.api_queue
+            )
 
             # Get devices
             devices = api.get_devices()
@@ -84,14 +93,18 @@ class WeatherScheduler:
                     if device.get("macAddress") == AMBIENT_DEVICE_MAC:
                         mac_address = device.get("macAddress")
                         device_name = device.get("info", {}).get("name", "Unknown")
-                        logger.info("using_configured_device", mac=mac_address[:8], name=device_name)
+                        logger.info(
+                            "using_configured_device",
+                            mac=mac_address[:8],
+                            name=device_name,
+                        )
                         break
 
                 if not mac_address:
                     # Configured device not found, fall back to first
                     logger.warning(
                         "configured_device_not_found_in_scheduler",
-                        configured_mac=AMBIENT_DEVICE_MAC[:8]
+                        configured_mac=AMBIENT_DEVICE_MAC[:8],
                     )
                     device = devices[0]
                     mac_address = device.get("macAddress")

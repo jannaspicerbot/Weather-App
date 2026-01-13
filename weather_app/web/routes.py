@@ -421,13 +421,14 @@ def register_routes(app: FastAPI):
 
         if not api_key or not app_key:
             raise HTTPException(
-                status_code=400,
-                detail="API credentials not configured"
+                status_code=400, detail="API credentials not configured"
             )
 
         try:
-            # Fetch devices from API
-            api = AmbientWeatherAPI(api_key, app_key)
+            # Fetch devices from API (with rate limiting via queue)
+            from weather_app.web.app import api_queue
+
+            api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)
             devices = api.get_devices()
 
             # Convert to response model
@@ -437,25 +438,25 @@ def register_routes(app: FastAPI):
                 coords = device.get("info", {}).get("coords", {})
                 location = coords.get("location") or coords.get("address")
 
-                device_infos.append(DeviceInfo(
-                    mac_address=device.get("macAddress", ""),
-                    name=device.get("info", {}).get("name"),
-                    last_data=device.get("lastData", {}).get("date"),
-                    location=location
-                ))
+                device_infos.append(
+                    DeviceInfo(
+                        mac_address=device.get("macAddress", ""),
+                        name=device.get("info", {}).get("name"),
+                        last_data=device.get("lastData", {}).get("date"),
+                        location=location,
+                    )
+                )
 
             # Get currently selected device
             selected_mac = os.getenv("AMBIENT_DEVICE_MAC")
 
             return DeviceListResponse(
-                devices=device_infos,
-                selected_device_mac=selected_mac
+                devices=device_infos, selected_device_mac=selected_mac
             )
 
         except Exception as e:
             raise HTTPException(
-                status_code=500,
-                detail=f"Failed to fetch devices: {str(e)}"
+                status_code=500, detail=f"Failed to fetch devices: {str(e)}"
             )
 
     @app.post("/api/devices/select")
