@@ -89,7 +89,7 @@ Portland • A3:10:36:F4 • Just now
 ---
 
 ### 4. Historical Conditions UI Enhancement
-**Commit:** TBD (January 13, 2026)
+**Commit:** `36633b1` (January 13, 2026)
 
 **Problem Solved:**
 The dashboard layout lacked visual cohesion - the date range selector and charts were separate from each other, creating a fragmented appearance.
