@@ -8,18 +8,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { DefaultService, type WeatherData, type DatabaseStats } from '../api';
 import CurrentConditions from './CurrentConditions';
-import TemperatureChart from './charts/TemperatureChart';
-import HumidityChart from './charts/HumidityChart';
-import WindChart from './charts/WindChart';
-import PrecipitationChart from './charts/PrecipitationChart';
-import DateRangeSelector from './DateRangeSelector';
-import { DashboardGrid } from './dashboard/DashboardGrid';
-import { SortableChartCard } from './dashboard/SortableChartCard';
+import HistoricalConditions from './HistoricalConditions';
 import { useDashboardLayout } from '../hooks/useDashboardLayout';
 import { useMetricsLayout } from '../hooks/useMetricsLayout';
 import { InstallPrompt } from './InstallPrompt';
 import { OnboardingFlow } from './onboarding';
 import BackfillStatusBanner from './BackfillStatusBanner';
+import DeviceManager from './DeviceManager';
 import { getCredentialStatus, getBackfillProgress } from '../services/onboardingApi';
 
 export default function Dashboard() {
@@ -123,6 +118,24 @@ export default function Dashboard() {
     }
   };
 
+  /**
+   * Calculate optimal number of data points based on date range
+   * Backend API limit is 10,000 records max
+   */
+  const getOptimalSampleSize = (days: number): number => {
+    const MAX_API_LIMIT = 10000;
+
+    if (days <= 30) {
+      // ≤30 days: Show ALL points for smooth, high-fidelity charts
+      // Up to 8,640 points (30 days × 288 records/day)
+      return Math.min(days * 288, MAX_API_LIMIT);
+    } else {
+      // >30 days: Request max allowed by API
+      // Backend will return evenly sampled data
+      return MAX_API_LIMIT;
+    }
+  };
+
   const fetchHistoricalData = async () => {
     try {
       const startDateStr = dateRange.start.toISOString().split('T')[0];
@@ -131,43 +144,17 @@ export default function Dashboard() {
       // Calculate number of days in range
       const daysDiff = Math.ceil((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
 
-      // Ambient Weather records every 5 minutes = ~288 records/day
-      // Use pagination to fetch data in chunks and sample evenly
-      const recordsPerDay = 288;
-      const estimatedTotal = daysDiff * recordsPerDay;
-      const targetPoints = 1000; // Target number of points for charts
+      // Get optimal sample size based on date range
+      const targetPoints = getOptimalSampleSize(daysDiff);
 
-      if (estimatedTotal <= targetPoints) {
-        // Small range - fetch all data
-        const data = await DefaultService.getWeatherDataWeatherGet(
-          1000,
-          undefined,
-          startDateStr,
-          endDateStr,
-          'asc'
-        );
-        setHistoricalData(data);
-      } else {
-        // Large range - fetch data with strategic sampling
-        // Fetch multiple pages with offsets to get evenly distributed samples
-        const pages = Math.min(Math.ceil(targetPoints / 200), 5); // Max 5 API calls
-        const recordsPerPage = Math.floor(targetPoints / pages);
+      // Use the new /api/weather/range endpoint which supports up to 10,000 records
+      const data = await DefaultService.apiGetWeatherRangeApiWeatherRangeGet(
+        startDateStr,
+        endDateStr,
+        targetPoints
+      );
 
-        const allData: typeof historicalData = [];
-        for (let i = 0; i < pages; i++) {
-          const offset = Math.floor((estimatedTotal / pages) * i);
-          const pageData = await DefaultService.getWeatherDataWeatherGet(
-            recordsPerPage,
-            offset,
-            startDateStr,
-            endDateStr,
-            'asc'
-          );
-          allData.push(...pageData);
-        }
-
-        setHistoricalData(allData);
-      }
+      setHistoricalData(data);
     } catch (err) {
       console.error('Failed to fetch historical data:', err);
       setHistoricalData([]);
@@ -276,14 +263,6 @@ export default function Dashboard() {
     );
   }
 
-  // Chart component mapping
-  const chartComponents = {
-    temperature: <TemperatureChart data={historicalData} />,
-    humidity: <HumidityChart data={historicalData} />,
-    wind: <WindChart data={historicalData} />,
-    precipitation: <PrecipitationChart data={historicalData} />,
-  };
-
   return (
     <div className="dashboard">
       {/* Header */}
@@ -299,6 +278,7 @@ export default function Dashboard() {
             )}
           </div>
           <div className="dashboard__actions">
+            <DeviceManager />
             <InstallPrompt />
             <button
               onClick={handleResetAllLayouts}
@@ -343,22 +323,15 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Date Range Selector */}
-        <DateRangeSelector
-          start={dateRange.start}
-          end={dateRange.end}
-          onChange={handleDateRangeChange}
-          onExport={handleExportCSV}
+        {/* Historical Conditions (Date Range + Charts) */}
+        <HistoricalConditions
+          dateRange={dateRange}
+          historicalData={historicalData}
+          chartOrder={chartOrder}
+          onDateRangeChange={handleDateRangeChange}
+          onExportCSV={handleExportCSV}
+          onChartReorder={setChartOrder}
         />
-
-        {/* Charts Grid with Drag-and-Drop */}
-        <DashboardGrid chartOrder={chartOrder} onReorder={setChartOrder}>
-          {chartOrder.map((chartId) => (
-            <SortableChartCard key={chartId} id={chartId}>
-              {chartComponents[chartId]}
-            </SortableChartCard>
-          ))}
-        </DashboardGrid>
       </main>
     </div>
   );

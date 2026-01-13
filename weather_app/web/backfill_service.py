@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timedelta
 
 from weather_app.api.client import AmbientWeatherAPI
-from weather_app.config import ENV_FILE
+from weather_app.config import AMBIENT_DEVICE_MAC, ENV_FILE
 from weather_app.database import WeatherDatabase
 from weather_app.logging_config import get_logger
 
@@ -85,7 +85,10 @@ class BackfillService:
             Tuple of (valid: bool, message: str, devices: list)
         """
         try:
-            api = AmbientWeatherAPI(api_key, app_key)
+            # Use API queue for rate limiting
+            from weather_app.web.app import api_queue
+
+            api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)
             devices = api.get_devices()
 
             # Track when we made this API call
@@ -137,13 +140,16 @@ class BackfillService:
                 logger.error("credential_validation_error", error=error_msg)
                 return False, f"Failed to validate credentials: {error_msg}", []
 
-    def save_credentials(self, api_key: str, app_key: str) -> tuple[bool, str]:
+    def save_credentials(
+        self, api_key: str, app_key: str, device_mac: str = None
+    ) -> tuple[bool, str]:
         """
-        Save credentials to the .env file.
+        Save credentials and optionally device MAC to the .env file.
 
         Args:
             api_key: Ambient Weather API key
             app_key: Ambient Weather Application key
+            device_mac: Optional device MAC address to use
 
         Returns:
             Tuple of (success: bool, message: str)
@@ -155,10 +161,11 @@ class BackfillService:
                 with open(ENV_FILE) as f:
                     existing_lines = f.readlines()
 
-            # Update or add API keys
+            # Update or add API keys and device MAC
             new_lines = []
             api_key_found = False
             app_key_found = False
+            device_mac_found = False
 
             for line in existing_lines:
                 if line.startswith("AMBIENT_API_KEY="):
@@ -167,6 +174,11 @@ class BackfillService:
                 elif line.startswith("AMBIENT_APP_KEY="):
                     new_lines.append(f"AMBIENT_APP_KEY={app_key}\n")
                     app_key_found = True
+                elif line.startswith("AMBIENT_DEVICE_MAC="):
+                    if device_mac:
+                        new_lines.append(f"AMBIENT_DEVICE_MAC={device_mac}\n")
+                        device_mac_found = True
+                    # If device_mac is None, skip this line (remove it)
                 else:
                     new_lines.append(line)
 
@@ -175,6 +187,8 @@ class BackfillService:
                 new_lines.append(f"AMBIENT_API_KEY={api_key}\n")
             if not app_key_found:
                 new_lines.append(f"AMBIENT_APP_KEY={app_key}\n")
+            if device_mac and not device_mac_found:
+                new_lines.append(f"AMBIENT_DEVICE_MAC={device_mac}\n")
 
             # Write back to file
             with open(ENV_FILE, "w") as f:
@@ -183,13 +197,69 @@ class BackfillService:
             # Update environment variables for current process
             os.environ["AMBIENT_API_KEY"] = api_key
             os.environ["AMBIENT_APP_KEY"] = app_key
+            if device_mac:
+                os.environ["AMBIENT_DEVICE_MAC"] = device_mac
 
-            logger.info("credentials_saved", env_file=str(ENV_FILE))
+            logger.info(
+                "credentials_saved",
+                env_file=str(ENV_FILE),
+                has_device_mac=bool(device_mac),
+            )
             return True, "Credentials saved successfully"
 
         except Exception as e:
             logger.error("save_credentials_error", error=str(e))
             return False, f"Failed to save credentials: {str(e)}"
+
+    def save_device_selection(self, device_mac: str) -> tuple[bool, str]:
+        """
+        Save device MAC address selection to .env file.
+
+        Args:
+            device_mac: Device MAC address to save
+
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        try:
+            # Read existing .env content
+            existing_lines = []
+            if ENV_FILE.exists():
+                with open(ENV_FILE) as f:
+                    existing_lines = f.readlines()
+
+            # Update or add device MAC
+            new_lines = []
+            device_mac_found = False
+
+            for line in existing_lines:
+                if line.startswith("AMBIENT_DEVICE_MAC="):
+                    new_lines.append(f"AMBIENT_DEVICE_MAC={device_mac}\n")
+                    device_mac_found = True
+                else:
+                    new_lines.append(line)
+
+            # Add if not found
+            if not device_mac_found:
+                new_lines.append(f"AMBIENT_DEVICE_MAC={device_mac}\n")
+
+            # Write back to file
+            with open(ENV_FILE, "w") as f:
+                f.writelines(new_lines)
+
+            # Update environment variable for current process
+            os.environ["AMBIENT_DEVICE_MAC"] = device_mac
+
+            logger.info(
+                "device_selection_saved",
+                device_mac=device_mac[:8],
+                env_file=str(ENV_FILE),
+            )
+            return True, "Device selection saved successfully"
+
+        except Exception as e:
+            logger.error("save_device_selection_error", error=str(e))
+            return False, f"Failed to save device selection: {str(e)}"
 
     def get_credential_status(self) -> dict:
         """
@@ -265,18 +335,17 @@ class BackfillService:
                 error=None,
             )
 
-            api = AmbientWeatherAPI(api_key, app_key)
+            # Use API queue for rate limiting
+            from weather_app.web.app import api_queue
+
+            api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)
 
             # Use cached devices from validation if available (avoid redundant API call)
             devices = self._cached_devices
             if devices:
                 logger.info("backfill_using_cached_devices")
             else:
-                # Ensure we respect rate limit before making API call
-                time_since_last_call = time.time() - self._last_api_call_time
-                if time_since_last_call < 1.0:
-                    time.sleep(1.0 - time_since_last_call)
-
+                # No manual rate limiting needed - queue handles it
                 logger.info("backfill_getting_devices")
                 devices = api.get_devices()
                 self._last_api_call_time = time.time()
@@ -289,8 +358,42 @@ class BackfillService:
                 )
                 return
 
-            mac_address = devices[0].get("macAddress")
-            device_name = devices[0].get("info", {}).get("name", "Weather Station")
+            # Select device: use configured MAC or default to first device
+            mac_address = None
+            device_name = None
+
+            if AMBIENT_DEVICE_MAC:
+                # Find the configured device in the list
+                for device in devices:
+                    if device.get("macAddress") == AMBIENT_DEVICE_MAC:
+                        mac_address = device.get("macAddress")
+                        device_name = device.get("info", {}).get(
+                            "name", "Weather Station"
+                        )
+                        logger.info(
+                            "using_configured_device",
+                            mac=mac_address[:8],
+                            name=device_name,
+                        )
+                        break
+
+                if not mac_address:
+                    logger.warning(
+                        "configured_device_not_found",
+                        configured_mac=AMBIENT_DEVICE_MAC[:8],
+                        available_count=len(devices),
+                    )
+                    # Fall back to first device
+                    mac_address = devices[0].get("macAddress")
+                    device_name = (
+                        devices[0].get("info", {}).get("name", "Weather Station")
+                    )
+                    logger.info("falling_back_to_first_device", mac=mac_address[:8])
+            else:
+                # No device configured, use first device
+                mac_address = devices[0].get("macAddress")
+                device_name = devices[0].get("info", {}).get("name", "Weather Station")
+                logger.info("using_first_device", mac=mac_address[:8], name=device_name)
 
             self._update_progress(message=f"Connected to {device_name}")
 

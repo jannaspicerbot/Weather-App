@@ -74,3 +74,6 @@ htmlcov/
 # Temporary files
 *.tmp
 nul
+
+# Development tracking files
+NEXT_STEPS.md

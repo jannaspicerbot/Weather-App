@@ -20,6 +20,8 @@ from weather_app.web.models import (
     CredentialValidationResponse,
     DatabaseStats,
     DeviceInfo,
+    DeviceListResponse,
+    DeviceSelectionRequest,
     WeatherData,
 )
 
@@ -300,17 +302,19 @@ def register_routes(app: FastAPI):
         )
 
     @app.post("/api/credentials/save")
-    def save_credentials(request: CredentialValidationRequest):
+    def save_credentials(request: CredentialValidationRequest, device_mac: str = None):
         """
         Save credentials to the .env file.
 
         Note: This does NOT re-validate credentials to avoid duplicate API calls.
         Frontend should call /api/credentials/validate first.
+
+        Optional device_mac parameter can be provided to save device selection at the same time.
         """
         # Save directly without re-validating (frontend already validated)
         # This avoids duplicate calls to Ambient Weather API
         success, save_message = backfill_service.save_credentials(
-            request.api_key, request.app_key
+            request.api_key, request.app_key, device_mac
         )
 
         if not success:
@@ -393,6 +397,83 @@ def register_routes(app: FastAPI):
 
         backfill_service.stop()
         return {"success": True, "message": "Backfill stop requested"}
+
+    # ===========================================
+    # Device Management Endpoints
+    # ===========================================
+
+    @app.get("/api/devices", response_model=DeviceListResponse)
+    def get_devices():
+        """
+        Get list of available weather devices.
+
+        Returns the list of devices associated with the configured credentials
+        and indicates which device is currently selected.
+
+        Requires valid API credentials to be configured.
+        """
+        import os
+
+        from weather_app.api.client import AmbientWeatherAPI
+
+        # Get credentials from environment
+        api_key = os.getenv("AMBIENT_API_KEY")
+        app_key = os.getenv("AMBIENT_APP_KEY")
+
+        if not api_key or not app_key:
+            raise HTTPException(
+                status_code=400, detail="API credentials not configured"
+            )
+
+        try:
+            # Fetch devices from API (with rate limiting via queue)
+            from weather_app.web.app import api_queue
+
+            api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)
+            devices = api.get_devices()
+
+            # Convert to response model
+            device_infos = []
+            for device in devices:
+                # Extract location from coords (prefer location over full address)
+                coords = device.get("info", {}).get("coords", {})
+                location = coords.get("location") or coords.get("address")
+
+                device_infos.append(
+                    DeviceInfo(
+                        mac_address=device.get("macAddress", ""),
+                        name=device.get("info", {}).get("name"),
+                        last_data=device.get("lastData", {}).get("date"),
+                        location=location,
+                    )
+                )
+
+            # Get currently selected device
+            selected_mac = os.getenv("AMBIENT_DEVICE_MAC")
+
+            return DeviceListResponse(
+                devices=device_infos, selected_device_mac=selected_mac
+            )
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Failed to fetch devices: {str(e)}"
+            )
+
+    @app.post("/api/devices/select")
+    def select_device(request: DeviceSelectionRequest):
+        """
+        Save device selection.
+
+        Updates the AMBIENT_DEVICE_MAC environment variable and saves it to .env file.
+        All subsequent data fetching will use the selected device.
+        """
+        success, message = backfill_service.save_device_selection(request.device_mac)
+
+        if not success:
+            raise HTTPException(status_code=500, detail=message)
+
+        return {"success": True, "message": message, "device_mac": request.device_mac}
 
     # ===========================================
     # Error Handlers

@@ -1,0 +1,64 @@
+# Pre-commit hooks configuration
+# See https://pre-commit.com for more information
+#
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+# Skip hooks (emergency): git commit --no-verify
+#
+# This config combines:
+# 1. Security checks (prevent committing secrets) - previously in .git/hooks/pre-commit
+# 2. Python linting (ruff, black, isort) - to catch CI failures before push
+
+repos:
+  # =============================================================================
+  # SECURITY - Prevent committing secrets (replaces old bash pre-commit hook)
+  # =============================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Block .env files from being committed
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-yaml
+      - id: detect-private-key
+      - id: trailing-whitespace
+        exclude: ^(tests/archive/|web/.*\.svg$)
+      - id: end-of-file-fixer
+        exclude: ^(tests/archive/|web/)
+
+  # Block .env and credential files explicitly
+  - repo: local
+    hooks:
+      - id: no-env-files
+        name: Block .env files
+        entry: python scripts/check_secrets.py
+        language: system
+        pass_filenames: false
+
+  # =============================================================================
+  # PYTHON LINTING - Catch CI failures before push
+  # =============================================================================
+
+  # Ruff - Fast Python linter (replaces flake8, isort checks)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+        exclude: ^(tests/archive|installer/|tests/data/)
+        types_or: [python, pyi]
+
+  # Black - Python code formatter
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        exclude: ^(tests/archive|installer/|tests/data/)
+
+  # isort - Import sorting (Black-compatible)
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile, black]
+        exclude: ^(tests/archive|installer/|tests/data/)

@@ -248,6 +248,36 @@ body {
   color: var(--color-text-secondary);
 }
 
+/* ============================================
+   HISTORICAL CONDITIONS SECTION
+   ============================================ */
+
+.historical-conditions {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .historical-conditions {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.historical-conditions__header {
+  margin-bottom: var(--spacing-6);
+}
+
+.historical-conditions__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
 /* Responsive masonry grid */
 .current-conditions__grid {
   display: grid;
@@ -475,7 +505,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 150px;
+  height: 200px;
   color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
@@ -1455,6 +1485,245 @@ button:focus-visible {
   background-color: var(--color-water);
 }
 
+/* ============================================================================
+   Device Manager
+   ============================================================================ */
+
+/* Container */
+.device-manager {
+  position: relative;
+  display: inline-block;
+}
+
+/* Button */
+.device-manager__button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.device-manager__button:hover:not(:disabled) {
+  background-color: var(--color-bg-elevated);
+  border-color: var(--color-interactive);
+}
+
+.device-manager__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.device-manager__button--error {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.device-manager__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.device-manager__label {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-manager__chevron {
+  font-size: 0.625rem;
+  margin-left: var(--spacing-1);
+  transition: transform 0.2s ease;
+}
+
+/* Dropdown Menu */
+.device-manager__dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-1));
+  right: 0;
+  min-width: 320px;
+  max-width: 400px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.device-manager__dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-3) var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.device-manager__dropdown-header h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.device-manager__count {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-tertiary);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: 12px;
+}
+
+/* Error in Dropdown */
+.device-manager__error {
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-error-bg);
+  border-left: 3px solid var(--color-error);
+  color: var(--color-error);
+  font-size: 0.875rem;
+}
+
+/* Device List */
+.device-manager__list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Device Option */
+.device-manager__option {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-bg-secondary);
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.device-manager__option:last-child {
+  border-bottom: none;
+}
+
+.device-manager__option:hover:not(:disabled) {
+  background-color: var(--color-bg-elevated);
+}
+
+.device-manager__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.device-manager__option--selected {
+  background-color: var(--color-interactive-10);
+}
+
+.device-manager__option--selected:hover {
+  background-color: var(--color-interactive-10);
+}
+
+.device-manager__option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-1);
+}
+
+.device-manager__option-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.device-manager__selected-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-interactive);
+  background-color: var(--color-interactive-10);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: 4px;
+}
+
+.device-manager__option-details {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.device-manager__location {
+  font-weight: 500;
+}
+
+.device-manager__mac {
+  font-family: 'Courier New', monospace;
+}
+
+.device-manager__divider {
+  color: var(--color-border);
+}
+
+.device-manager__last-data {
+  font-style: italic;
+}
+
+/* Empty State */
+.device-manager__empty {
+  padding: var(--spacing-6) var(--spacing-4);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .device-manager__button {
+    background-color: var(--color-bg-elevated);
+    border-color: var(--color-border);
+  }
+
+  .device-manager__button:hover:not(:disabled) {
+    background-color: var(--color-bg-tertiary);
+  }
+
+  .device-manager__dropdown {
+    background-color: var(--color-bg-elevated);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .device-manager__option {
+    background-color: var(--color-bg-elevated);
+  }
+
+  .device-manager__option:hover:not(:disabled) {
+    background-color: var(--color-bg-tertiary);
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+  .device-manager__dropdown {
+    right: auto;
+    left: 0;
+    min-width: 280px;
+  }
+
+  .device-manager__label {
+    max-width: 100px;
+  }
+}
+
 /* Loading States */
 .dashboard__loading {
   min-height: 100vh;
@@ -1522,17 +1791,8 @@ button:focus-visible {
    ============================================ */
 
 .date-range {
-  background-color: var(--color-bg-secondary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  padding: var(--spacing-6);
+  /* Removed background and shadow - now nested in historical-conditions */
   margin-bottom: var(--spacing-6);
-}
-
-@media (prefers-color-scheme: dark) {
-  .date-range {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
 }
 
 .date-range__title {
@@ -1755,4 +2015,270 @@ button:focus-visible {
 
 .weather-test__info-list li {
   margin-bottom: var(--spacing-1);
+}
+
+/* ===========================================
+   Device Selector Component
+   =========================================== */
+
+.device-selector {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.device-selector__error {
+  background-color: rgba(211, 47, 47, 0.1);
+  border: 1px solid var(--color-error);
+  border-radius: 8px;
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+}
+
+.device-selector__error p {
+  color: var(--color-error);
+  margin: var(--spacing-2) 0 0 0;
+  font-size: 0.875rem;
+}
+
+.device-selector__error p:first-child {
+  margin-top: 0;
+  font-weight: 600;
+}
+
+/* Single Device View */
+.device-selector__single {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-6);
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-success);
+  border-radius: 12px;
+  margin-bottom: var(--spacing-6);
+}
+
+.device-selector__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-growth-15);
+  border-radius: 50%;
+  color: var(--color-success);
+}
+
+.device-selector__icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.device-selector__single-info {
+  flex: 1;
+}
+
+.device-selector__single-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-1) 0;
+}
+
+.device-selector__single-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-1) 0;
+}
+
+.device-selector__single-location {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: var(--spacing-1) 0;
+}
+
+.device-selector__single-mac {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-family: 'Courier New', monospace;
+  margin: 0;
+}
+
+/* Multiple Devices View */
+.device-selector__help {
+  text-align: center;
+  margin-bottom: var(--spacing-6);
+}
+
+.device-selector__help-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-2) 0;
+}
+
+.device-selector__help-text {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.device-selector__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-6);
+}
+
+.device-selector__option {
+  position: relative;
+  display: block;
+  padding: var(--spacing-4);
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.device-selector__option:hover {
+  border-color: var(--color-interactive);
+  background: var(--color-bg-primary);
+}
+
+.device-selector__option--selected {
+  border-color: var(--color-interactive);
+  background: rgba(74, 138, 158, 0.05);
+}
+
+.device-selector__radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.device-selector__option-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.device-selector__option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.device-selector__option-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.device-selector__option-check {
+  width: 20px;
+  height: 20px;
+  color: var(--color-interactive);
+  flex-shrink: 0;
+}
+
+.device-selector__option-details {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.device-selector__option-location,
+.device-selector__option-mac,
+.device-selector__option-date {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.device-selector__option-mac {
+  font-family: 'Courier New', monospace;
+}
+
+.device-selector__option-divider {
+  color: var(--color-border);
+}
+
+/* Submit Button */
+.device-selector__submit {
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+}
+
+.device-selector__submit--enabled {
+  background: var(--color-interactive);
+  color: white;
+}
+
+.device-selector__submit--enabled:hover {
+  background: var(--color-water);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 107, 143, 0.3);
+}
+
+.device-selector__submit--disabled {
+  background: var(--color-border);
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
+.device-selector__submit-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.device-selector__spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.device-selector__note {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: var(--spacing-4) 0 0 0;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .device-selector__option {
+    background: var(--color-bg-secondary);
+  }
+  
+  .device-selector__option:hover {
+    background: var(--color-bg-primary);
+  }
+  
+  .device-selector__option--selected {
+    background: rgba(74, 138, 158, 0.15);
+  }
 }

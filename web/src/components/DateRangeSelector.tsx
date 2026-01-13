@@ -65,8 +65,6 @@ export default function DateRangeSelector({ start, end, onChange, onExport }: Da
 
   return (
     <div className="date-range">
-      <h3 className="date-range__title">Date Range</h3>
-
       <div className="date-range__controls">
         {/* Quick Preset Buttons */}
         <div className="date-range__presets">

@@ -60,6 +60,7 @@ class DeviceInfo(BaseModel):
     mac_address: str
     name: str | None = None
     last_data: str | None = None
+    location: str | None = None
 
 
 class CredentialValidationResponse(BaseModel):
@@ -101,3 +102,16 @@ class BackfillProgressResponse(BaseModel):
     requests_made: int = 0
     requests_per_second: float = 1.0
     records_per_request: int = 288
+
+
+class DeviceSelectionRequest(BaseModel):
+    """Request model for saving device selection"""
+
+    device_mac: str
+
+
+class DeviceListResponse(BaseModel):
+    """Response model for device list"""
+
+    devices: list[DeviceInfo]
+    selected_device_mac: str | None = None

@@ -43,9 +43,10 @@ describe('OnboardingFlow', () => {
 
       // Step labels should be visible (use container query to be specific)
       const stepLabels = container.querySelectorAll('.onboarding__step-label');
-      expect(stepLabels).toHaveLength(2);
+      expect(stepLabels).toHaveLength(3);
       expect(stepLabels[0]).toHaveTextContent('Connect Account');
-      expect(stepLabels[1]).toHaveTextContent('Load Data');
+      expect(stepLabels[1]).toHaveTextContent('Select Device');
+      expect(stepLabels[2]).toHaveTextContent('Load Data');
     });
 
     it('should hide decorative SVG icons from screen readers', () => {
@@ -69,28 +70,31 @@ describe('OnboardingFlow', () => {
       ).toBeInTheDocument();
     });
 
-    it('should render step indicator with two steps', () => {
+    it('should render step indicator with three steps', () => {
       const { container } = render(<OnboardingFlow {...defaultProps} />);
 
-      // Both step numbers should be present
+      // All step numbers should be present
       const stepCircles = container.querySelectorAll('.onboarding__step-circle');
-      expect(stepCircles).toHaveLength(2);
+      expect(stepCircles).toHaveLength(3);
       expect(stepCircles[0]).toHaveTextContent('1');
       expect(stepCircles[1]).toHaveTextContent('2');
+      expect(stepCircles[2]).toHaveTextContent('3');
 
-      // Both step labels should be present
+      // All step labels should be present
       const stepLabels = container.querySelectorAll('.onboarding__step-label');
       expect(stepLabels[0]).toHaveTextContent('Connect Account');
-      expect(stepLabels[1]).toHaveTextContent('Load Data');
+      expect(stepLabels[1]).toHaveTextContent('Select Device');
+      expect(stepLabels[2]).toHaveTextContent('Load Data');
     });
 
     it('should show credentials step as active by default', () => {
       const { container } = render(<OnboardingFlow {...defaultProps} />);
 
-      // First step circle should have active class
+      // First step circle should have active class, others pending
       const stepCircles = container.querySelectorAll('.onboarding__step-circle');
       expect(stepCircles[0]).toHaveClass('onboarding__step-circle--active');
       expect(stepCircles[1]).toHaveClass('onboarding__step-circle--pending');
+      expect(stepCircles[2]).toHaveClass('onboarding__step-circle--pending');
     });
 
     it('should render CredentialInput component on credentials step', () => {

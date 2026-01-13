@@ -16,6 +16,7 @@ vi.mock('../api', () => ({
     getLatestWeatherWeatherLatestGet: vi.fn(),
     getDatabaseStatsWeatherStatsGet: vi.fn(),
     getWeatherDataWeatherGet: vi.fn(),
+    apiGetWeatherRangeApiWeatherRangeGet: vi.fn(),
   },
 }));
 
@@ -23,11 +24,13 @@ vi.mock('../api', () => ({
 vi.mock('../services/onboardingApi', () => ({
   getCredentialStatus: vi.fn(),
   getBackfillProgress: vi.fn(),
+  getDevices: vi.fn(),
+  selectDevice: vi.fn(),
 }));
 
 // Import mocks after vi.mock
 import { DefaultService } from '../api';
-import { getCredentialStatus, getBackfillProgress } from '../services/onboardingApi';
+import { getCredentialStatus, getBackfillProgress, getDevices } from '../services/onboardingApi';
 
 const mockWeatherData = {
   id: 1,
@@ -73,6 +76,19 @@ describe('Dashboard', () => {
     vi.mocked(DefaultService.getDatabaseStatsWeatherStatsGet).mockResolvedValue(mockStats);
     vi.mocked(DefaultService.getLatestWeatherWeatherLatestGet).mockResolvedValue(mockWeatherData);
     vi.mocked(DefaultService.getWeatherDataWeatherGet).mockResolvedValue([mockWeatherData]);
+    vi.mocked(DefaultService.apiGetWeatherRangeApiWeatherRangeGet).mockResolvedValue([mockWeatherData]);
+    // Mock getDevices for DeviceManager component
+    vi.mocked(getDevices).mockResolvedValue({
+      devices: [
+        {
+          mac_address: 'AA:BB:CC:DD:EE:FF',
+          name: 'Test Weather Station',
+          last_data: '2024-01-07T12:00:00Z',
+          location: 'Test City',
+        },
+      ],
+      selected_device_mac: 'AA:BB:CC:DD:EE:FF',
+    });
   });
 
   describe('Accessibility', () => {
@@ -230,7 +246,8 @@ describe('Dashboard', () => {
       render(<Dashboard />);
 
       await waitFor(() => {
-        expect(screen.getByText('Date Range')).toBeInTheDocument();
+        // DateRangeSelector renders these preset buttons
+        expect(screen.getByText('Last 24h')).toBeInTheDocument();
       });
     });
   });

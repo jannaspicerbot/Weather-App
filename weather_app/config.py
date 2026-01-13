@@ -95,6 +95,10 @@ FULL_RESOLUTION_YEARS = 3
 AGGREGATION_HOLD_YEARS = 50  # Phase 2 only
 PURGE_RAW_AFTER_AGGREGATION = True  # Phase 2 only
 
+# Ambient Weather API Configuration
+# Device MAC address - if not set, will use first device from account
+AMBIENT_DEVICE_MAC = os.getenv("AMBIENT_DEVICE_MAC")
+
 # Scheduler Configuration
 # Enable/disable automatic data collection (default: true)
 SCHEDULER_ENABLED = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
