@@ -2,7 +2,7 @@
  * SortableMetricCard Component
  *
  * Wrapper component that makes metric cards draggable/sortable using dnd-kit.
- * Provides full accessibility support per docs/design/inclusive-design.md:
+ * Provides full accessibility support per docs/standards/ACCESSIBILITY.md:
  * - Keyboard navigation (Enter/Space to activate, Arrow keys to move)
  * - Screen reader announcements for all drag operations
  * - Touch support for iPad (44x44px minimum touch targets)

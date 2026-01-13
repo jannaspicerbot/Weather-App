@@ -11,6 +11,13 @@ docs/
 ├── README.md                          ← You are here
 ├── product/                           # Business & user-focused docs
 │   └── requirements.md                # Product Requirements (PRD)
+├── standards/                         # Development standards (load contextually)
+│   ├── README.md                      # Standards index & decision tree
+│   ├── ACCESSIBILITY.md               # WCAG 2.2 AA, inclusive design
+│   ├── API-STANDARDS.md               # FastAPI patterns & requirements
+│   ├── REACT-STANDARDS.md             # React/TypeScript patterns
+│   ├── DATABASE-PATTERNS.md           # DuckDB best practices
+│   └── TESTING.md                     # Test strategies & patterns
 ├── architecture/                      # System design & decisions
 │   ├── overview.md                    # High-level architecture
 │   └── decisions/                     # Architecture Decision Records (ADRs)
@@ -21,19 +28,17 @@ docs/
 │       ├── 005-retention-strategy.md
 │       ├── 006-react-aria-components.md
 │       └── 007-victory-charts.md
-├── design/                            # UI/UX & accessibility standards
-│   └── inclusive-design.md            # Accessibility & WCAG 2.2 AA compliance
+├── design/                            # UI/UX standards
+│   ├── frontend-guidelines.md         # Frontend development guide
+│   ├── design-tokens.md               # Color palette & tokens
+│   └── dashboard-layout.md            # Dashboard specifications
 ├── technical/                         # Implementation guides
 │   ├── api-reference.md               # REST API documentation
 │   ├── cli-reference.md               # CLI command reference
 │   ├── database-schema.md             # Database schema & queries
 │   ├── deployment-guide.md            # Installation & deployment
-│   └── github-actions-overview.md    # CI/CD automation & testing
+│   └── github-actions-overview.md     # CI/CD automation & testing
 └── archive/                           # Historical docs (Phase 1-2)
-    ├── requirements.md.old
-    ├── specifications.md.old
-    ├── architecture.md.old
-    └── peer-review.md
 ```
 
 ---
@@ -98,17 +103,46 @@ docs/
 
 ---
 
-### 3. Design Documentation
+### 3. Standards Documentation (NEW - Hub & Spoke System)
 
-**Purpose:** UI/UX standards, accessibility, inclusive design
+**Purpose:** Development standards loaded contextually based on task
 
-**[Inclusive Design Standards](design/inclusive-design.md)**
+**[Standards Index](standards/README.md)** - Start here for all standards
+
+**[Accessibility Standards](standards/ACCESSIBILITY.md)**
 - WCAG 2.2 Level AA compliance
 - HCD × WCAG strategic approach (POUR principles)
 - Component accessibility guidelines
 - Testing strategy (automated + manual)
 - Recommended libraries and tools
-- Plain language standards
+
+**[API Standards](standards/API-STANDARDS.md)**
+- FastAPI endpoint structure
+- Type safety & Pydantic validation
+- Error handling patterns
+- Response models & pagination
+
+**[React Standards](standards/REACT-STANDARDS.md)**
+- Component structure & TypeScript patterns
+- State management & hooks
+- Accessibility integration (React Aria)
+
+**[Database Patterns](standards/DATABASE-PATTERNS.md)**
+- DuckDB connection management
+- Query patterns & performance
+- Schema design & migrations
+
+**[Testing Standards](standards/TESTING.md)**
+- pytest & Vitest patterns
+- Fixtures & mocking strategies
+
+**When to read:** Load contextually based on what you're building (see CLAUDE.md decision tree)
+
+---
+
+### 4. Design Documentation
+
+**Purpose:** UI/UX standards and visual design
 
 **[Frontend Development Guidelines](design/frontend-guidelines.md)**
 - Semantic design tokens (no hard-coded colors)
@@ -126,11 +160,11 @@ docs/
 - Accessibility validation (WCAG 2.2 AA contrast)
 - Palette testing and selection guide
 
-**When to read:** You want to build accessible, inclusive user interfaces
+**When to read:** Visual design, layout specifications, frontend patterns
 
 ---
 
-### 4. Technical Documentation
+### 5. Technical Documentation
 
 **Purpose:** Implementation details, usage guides, reference material
 
@@ -247,7 +281,7 @@ docs/
 | **Project Goals** | [Product Requirements](product/requirements.md) |
 | **Frontend Development** | [Frontend Guidelines](design/frontend-guidelines.md) |
 | **Dashboard Layout** | [Frontend Guidelines - Dashboard Section](design/frontend-guidelines.md#dashboard-layout--architecture) |
-| **Accessibility** | [Inclusive Design](design/inclusive-design.md) |
+| **Accessibility** | [Accessibility Standards](standards/ACCESSIBILITY.md) |
 | **Design Tokens** | [Design Token System](design/design-tokens.md) |
 
 ### By Role
@@ -256,7 +290,7 @@ docs/
 |------|---------------------|
 | **End User** | [Deployment Guide](technical/deployment-guide.md), [CLI Reference](technical/cli-reference.md) |
 | **Frontend Developer** | [Frontend Guidelines](design/frontend-guidelines.md), [API Reference](technical/api-reference.md), [Design Tokens](design/design-tokens.md) |
-| **UI/UX Designer** | [Inclusive Design](design/inclusive-design.md), [Design Token System](design/design-tokens.md), [Frontend Guidelines](design/frontend-guidelines.md) |
+| **UI/UX Designer** | [Accessibility Standards](standards/ACCESSIBILITY.md), [Design Token System](design/design-tokens.md), [Frontend Guidelines](design/frontend-guidelines.md) |
 | **Backend Developer** | [Database Schema](technical/database-schema.md), [ADRs](architecture/decisions/), [Architecture Overview](architecture/overview.md) |
 | **DevOps Engineer** | [Deployment Guide](technical/deployment-guide.md), [ADR-004: Docker Deployment](architecture/decisions/004-docker-deployment.md) |
 | **Product Manager** | [Product Requirements](product/requirements.md) |

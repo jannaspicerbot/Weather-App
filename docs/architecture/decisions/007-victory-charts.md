@@ -31,7 +31,7 @@ From user discussion (2026-01-03):
 
 ### Inclusive Design Standards
 
-From [docs/design/inclusive-design.md](../design/inclusive-design.md):
+From [docs/standards/ACCESSIBILITY.md](../standards/ACCESSIBILITY.md):
 - Charts must have ARIA labels and descriptions
 - Keyboard navigation for data points
 - Alternative data table view for screen readers
@@ -149,7 +149,7 @@ We will **migrate from Recharts to Victory Charts** for data visualization.
 
 ### Alignment with Inclusive Design Standards
 
-From [docs/design/inclusive-design.md](../design/inclusive-design.md):
+From [docs/standards/ACCESSIBILITY.md](../standards/ACCESSIBILITY.md):
 
 | Requirement | Victory Support |
 |-------------|-----------------|
@@ -461,7 +461,7 @@ npm run lighthouse
 - [Victory Accessibility Guide](https://commerce.nearform.com/open-source/victory/docs/victory-accessibility)
 - [VictoryVoronoiContainer (keyboard nav)](https://commerce.nearform.com/open-source/victory/docs/victory-voronoi-container)
 - [WCAG 2.2 Guidelines](https://www.w3.org/TR/WCAG22/)
-- [Inclusive Design Standards](../design/inclusive-design.md)
+- [Accessibility Standards](../standards/ACCESSIBILITY.md)
 
 ---
 

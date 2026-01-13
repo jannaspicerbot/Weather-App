@@ -222,7 +222,7 @@ function Button(props) {
 - ✅ Alt text for images and icons
 - ✅ Semantic HTML (headings, landmarks, lists)
 
-See [../docs/design/inclusive-design.md](../docs/design/inclusive-design.md) for complete accessibility guidelines.
+See [../docs/standards/ACCESSIBILITY.md](../docs/standards/ACCESSIBILITY.md) for complete accessibility guidelines.
 
 ## 🧪 Testing
 
@@ -339,7 +339,7 @@ For complete documentation, see:
 
 - **[Frontend Guidelines](../docs/design/frontend-guidelines.md)** - Component structure, patterns, best practices
 - **[Design Token System](../docs/design/design-tokens.md)** - Color palette, typography, spacing
-- **[Inclusive Design](../docs/design/inclusive-design.md)** - Accessibility standards (WCAG 2.2 AA)
+- **[Inclusive Design](../docs/standards/ACCESSIBILITY.md)** - Accessibility standards (WCAG 2.2 AA)
 - **[API Reference](../docs/technical/api-reference.md)** - Backend API endpoints and schemas
 - **[Architecture Overview](../docs/architecture/overview.md)** - System design and data flow
 

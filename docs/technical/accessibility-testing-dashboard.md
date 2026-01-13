@@ -319,7 +319,7 @@ npm install -D eslint-plugin-jsx-a11y
 - [NVDA Screen Reader](https://www.nvaccess.org/)
 - [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
 - [Lighthouse CI Documentation](https://github.com/GoogleChrome/lighthouse-ci)
-- [Project Inclusive Design Standards](../design/inclusive-design.md)
+- [Accessibility Standards](../standards/ACCESSIBILITY.md)
 
 ---
 

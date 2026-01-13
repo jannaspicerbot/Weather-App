@@ -110,7 +110,7 @@ jobs:
           "docs/README.md"
           "docs/product/requirements.md"
           "docs/architecture/overview.md"
-          "docs/design/inclusive-design.md"
+          "docs/standards/ACCESSIBILITY.md"
           "docs/technical/api-reference.md"
           "docs/technical/cli-reference.md"
           "docs/technical/database-schema.md"
@@ -172,7 +172,7 @@ jobs:
           "ARIA"
         )
 
-        file="docs/design/inclusive-design.md"
+        file="docs/standards/ACCESSIBILITY.md"
         if [[ ! -f "$file" ]]; then
           echo "ERROR: Inclusive design documentation missing!"
           exit 1

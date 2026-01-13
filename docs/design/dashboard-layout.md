@@ -336,7 +336,7 @@ The dashboard supports user-configurable chart order via drag-and-drop:
 ## Related Documents
 
 - [Design Tokens](./design-tokens.md) - Color and styling tokens
-- [Inclusive Design](./inclusive-design.md) - Accessibility standards
+- [Accessibility Standards](../standards/ACCESSIBILITY.md) - Accessibility standards
 - [Architecture Overview](../architecture/overview.md) - System architecture
 
 ---

@@ -42,7 +42,7 @@ From user discussion (2026-01-05):
 
 ### Inclusive Design Standards
 
-From [docs/design/inclusive-design.md](../../design/inclusive-design.md):
+From [docs/standards/ACCESSIBILITY.md](../../standards/ACCESSIBILITY.md):
 - WCAG 2.2 Level AA compliance is required
 - Keyboard navigation for all interactive elements
 - Screen reader compatibility with proper ARIA
@@ -755,7 +755,7 @@ describe('Dashboard Drag-and-Drop Accessibility', () => {
 **Accessibility Standards:**
 - [WCAG 2.2 Guidelines](https://www.w3.org/TR/WCAG22/)
 - [WAI-ARIA 1.2 Drag and Drop](https://www.w3.org/WAI/ARIA/apg/patterns/dnd/)
-- [Inclusive Design Standards](../../design/inclusive-design.md)
+- [Accessibility Standards](../../standards/ACCESSIBILITY.md)
 
 **Project ADRs:**
 - [ADR-006: React Aria Component Library](./006-react-aria-components.md)
