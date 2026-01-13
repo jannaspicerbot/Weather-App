@@ -1455,6 +1455,241 @@ button:focus-visible {
   background-color: var(--color-water);
 }
 
+/* ============================================================================
+   Device Manager
+   ============================================================================ */
+
+/* Container */
+.device-manager {
+  position: relative;
+  display: inline-block;
+}
+
+/* Button */
+.device-manager__button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.device-manager__button:hover:not(:disabled) {
+  background-color: var(--color-bg-elevated);
+  border-color: var(--color-interactive);
+}
+
+.device-manager__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.device-manager__button--error {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.device-manager__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.device-manager__label {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-manager__chevron {
+  font-size: 0.625rem;
+  margin-left: var(--spacing-1);
+  transition: transform 0.2s ease;
+}
+
+/* Dropdown Menu */
+.device-manager__dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-1));
+  right: 0;
+  min-width: 320px;
+  max-width: 400px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.device-manager__dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-3) var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.device-manager__dropdown-header h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.device-manager__count {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-tertiary);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: 12px;
+}
+
+/* Error in Dropdown */
+.device-manager__error {
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-error-bg);
+  border-left: 3px solid var(--color-error);
+  color: var(--color-error);
+  font-size: 0.875rem;
+}
+
+/* Device List */
+.device-manager__list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Device Option */
+.device-manager__option {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-bg-secondary);
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.device-manager__option:last-child {
+  border-bottom: none;
+}
+
+.device-manager__option:hover:not(:disabled) {
+  background-color: var(--color-bg-elevated);
+}
+
+.device-manager__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.device-manager__option--selected {
+  background-color: var(--color-interactive-10);
+}
+
+.device-manager__option--selected:hover {
+  background-color: var(--color-interactive-10);
+}
+
+.device-manager__option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-1);
+}
+
+.device-manager__option-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.device-manager__selected-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-interactive);
+  background-color: var(--color-interactive-10);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: 4px;
+}
+
+.device-manager__option-details {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.device-manager__mac {
+  font-family: 'Courier New', monospace;
+}
+
+.device-manager__divider {
+  color: var(--color-border);
+}
+
+.device-manager__last-data {
+  font-style: italic;
+}
+
+/* Empty State */
+.device-manager__empty {
+  padding: var(--spacing-6) var(--spacing-4);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .device-manager__button {
+    background-color: var(--color-bg-elevated);
+    border-color: var(--color-border);
+  }
+
+  .device-manager__button:hover:not(:disabled) {
+    background-color: var(--color-bg-tertiary);
+  }
+
+  .device-manager__dropdown {
+    background-color: var(--color-bg-elevated);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .device-manager__option {
+    background-color: var(--color-bg-elevated);
+  }
+
+  .device-manager__option:hover:not(:disabled) {
+    background-color: var(--color-bg-tertiary);
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+  .device-manager__dropdown {
+    right: auto;
+    left: 0;
+    min-width: 280px;
+  }
+
+  .device-manager__label {
+    max-width: 100px;
+  }
+}
+
 /* Loading States */
 .dashboard__loading {
   min-height: 100vh;

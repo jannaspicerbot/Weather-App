@@ -20,6 +20,7 @@ import { useMetricsLayout } from '../hooks/useMetricsLayout';
 import { InstallPrompt } from './InstallPrompt';
 import { OnboardingFlow } from './onboarding';
 import BackfillStatusBanner from './BackfillStatusBanner';
+import DeviceManager from './DeviceManager';
 import { getCredentialStatus, getBackfillProgress } from '../services/onboardingApi';
 
 export default function Dashboard() {
@@ -299,6 +300,7 @@ export default function Dashboard() {
             )}
           </div>
           <div className="dashboard__actions">
+            <DeviceManager />
             <InstallPrompt />
             <button
               onClick={handleResetAllLayouts}
