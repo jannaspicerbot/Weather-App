@@ -118,6 +118,26 @@ export default function Dashboard() {
     }
   };
 
+  /**
+   * Calculate optimal number of data points based on date range
+   * Modern browsers handle 10,000-35,000 SVG points easily
+   */
+  const getOptimalSampleSize = (days: number): number => {
+    if (days <= 30) {
+      // ≤30 days: Show ALL points for smooth, high-fidelity charts
+      // Up to 8,640 points (30 days × 288 records/day)
+      return days * 288;
+    } else if (days <= 90) {
+      // 30-90 days: Light sampling for performance
+      // ~15,000 points maintains smoothness
+      return 15000;
+    } else {
+      // >90 days: Moderate sampling
+      // ~17,520 points (hourly aggregates for ~2 years)
+      return 17520;
+    }
+  };
+
   const fetchHistoricalData = async () => {
     try {
       const startDateStr = dateRange.start.toISOString().split('T')[0];
@@ -127,15 +147,14 @@ export default function Dashboard() {
       const daysDiff = Math.ceil((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
 
       // Ambient Weather records every 5 minutes = ~288 records/day
-      // Use pagination to fetch data in chunks and sample evenly
       const recordsPerDay = 288;
       const estimatedTotal = daysDiff * recordsPerDay;
-      const targetPoints = 1000; // Target number of points for charts
+      const targetPoints = getOptimalSampleSize(daysDiff);
 
       if (estimatedTotal <= targetPoints) {
-        // Small range - fetch all data
+        // Fetch all data - no sampling needed
         const data = await DefaultService.getWeatherDataWeatherGet(
-          1000,
+          estimatedTotal,
           undefined,
           startDateStr,
           endDateStr,
@@ -145,7 +164,7 @@ export default function Dashboard() {
       } else {
         // Large range - fetch data with strategic sampling
         // Fetch multiple pages with offsets to get evenly distributed samples
-        const pages = Math.min(Math.ceil(targetPoints / 200), 5); // Max 5 API calls
+        const pages = Math.min(Math.ceil(targetPoints / 2000), 8); // Max 8 API calls
         const recordsPerPage = Math.floor(targetPoints / pages);
 
         const allData: typeof historicalData = [];
