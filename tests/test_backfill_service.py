@@ -373,6 +373,27 @@ class TestSaveCredentials:
         assert success is False
         assert "Failed to save" in message
 
+    def test_save_credentials_updates_existing_device_mac(
+        self, backfill_service, temp_env_file
+    ):
+        """Updates existing device MAC when saving credentials with device_mac."""
+        temp_env_file.write_text(
+            "AMBIENT_API_KEY=old_api\n"
+            "AMBIENT_APP_KEY=old_app\n"
+            "AMBIENT_DEVICE_MAC=OLD:MAC:ADDRESS\n"
+        )
+
+        success, message = backfill_service.save_credentials(
+            "new_api_key", "new_app_key", device_mac="NEW:MAC:ADDRESS"
+        )
+
+        assert success is True
+        content = temp_env_file.read_text()
+        assert "AMBIENT_API_KEY=new_api_key" in content
+        assert "AMBIENT_APP_KEY=new_app_key" in content
+        assert "AMBIENT_DEVICE_MAC=NEW:MAC:ADDRESS" in content
+        assert "OLD:MAC:ADDRESS" not in content
+
 
 # =============================================================================
 # Save Device Selection Tests
@@ -731,6 +752,353 @@ class TestRunBackfill:
 
             # Verify get_device_data was called for latest data
             mock_instance.get_device_data.assert_called()
+
+
+# =============================================================================
+# Device Selection Tests (Phase 2 Coverage)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestRunBackfillDeviceSelection:
+    """Tests for device selection logic in _run_backfill."""
+
+    def test_backfill_uses_configured_device_when_found(self, backfill_service):
+        """Uses configured device MAC when it exists in device list."""
+        devices = [
+            {"macAddress": "FIRST:DEVICE", "info": {"name": "First Device"}},
+            {"macAddress": "CONFIGURED:MAC", "info": {"name": "Configured Device"}},
+            {"macAddress": "THIRD:DEVICE", "info": {"name": "Third Device"}},
+        ]
+
+        with patch("weather_app.web.backfill_service.AmbientWeatherAPI") as mock_api:
+            mock_instance = MagicMock()
+            mock_instance.get_devices.return_value = devices
+            mock_instance.get_device_data.return_value = []
+            mock_instance.fetch_all_historical_data.return_value = (0, 0, 0)
+            mock_api.return_value = mock_instance
+
+            with patch("weather_app.web.app.api_queue"):
+                with patch("weather_app.web.backfill_service.WeatherDatabase"):
+                    # Configure to use the second device in the list
+                    with patch(
+                        "weather_app.web.backfill_service.AMBIENT_DEVICE_MAC",
+                        "CONFIGURED:MAC",
+                    ):
+                        backfill_service._run_backfill("api_key", "app_key")
+
+            # Should have used the configured device, not first device
+            mock_instance.get_device_data.assert_called()
+            call_args = mock_instance.get_device_data.call_args
+            assert call_args[0][0] == "CONFIGURED:MAC"
+
+    def test_backfill_uses_first_device_when_no_mac_configured(self, backfill_service):
+        """Uses first device when AMBIENT_DEVICE_MAC is not set."""
+        devices = [
+            {"macAddress": "FIRST:DEVICE", "info": {"name": "First Device"}},
+            {"macAddress": "SECOND:DEVICE", "info": {"name": "Second Device"}},
+        ]
+
+        with patch("weather_app.web.backfill_service.AmbientWeatherAPI") as mock_api:
+            mock_instance = MagicMock()
+            mock_instance.get_devices.return_value = devices
+            mock_instance.get_device_data.return_value = []
+            mock_instance.fetch_all_historical_data.return_value = (0, 0, 0)
+            mock_api.return_value = mock_instance
+
+            with patch("weather_app.web.app.api_queue"):
+                with patch("weather_app.web.backfill_service.WeatherDatabase"):
+                    # No device MAC configured (empty string)
+                    with patch(
+                        "weather_app.web.backfill_service.AMBIENT_DEVICE_MAC", ""
+                    ):
+                        backfill_service._run_backfill("api_key", "app_key")
+
+            # Should have used the first device
+            mock_instance.get_device_data.assert_called()
+            call_args = mock_instance.get_device_data.call_args
+            assert call_args[0][0] == "FIRST:DEVICE"
+
+    def test_backfill_uses_first_device_when_mac_is_none(self, backfill_service):
+        """Uses first device when AMBIENT_DEVICE_MAC is None."""
+        devices = [
+            {"macAddress": "ONLY:DEVICE", "info": {"name": "Only Device"}},
+        ]
+
+        with patch("weather_app.web.backfill_service.AmbientWeatherAPI") as mock_api:
+            mock_instance = MagicMock()
+            mock_instance.get_devices.return_value = devices
+            mock_instance.get_device_data.return_value = []
+            mock_instance.fetch_all_historical_data.return_value = (0, 0, 0)
+            mock_api.return_value = mock_instance
+
+            with patch("weather_app.web.app.api_queue"):
+                with patch("weather_app.web.backfill_service.WeatherDatabase"):
+                    # No device MAC configured (None)
+                    with patch(
+                        "weather_app.web.backfill_service.AMBIENT_DEVICE_MAC", None
+                    ):
+                        backfill_service._run_backfill("api_key", "app_key")
+
+            # Should have used the first (and only) device
+            mock_instance.get_device_data.assert_called()
+            call_args = mock_instance.get_device_data.call_args
+            assert call_args[0][0] == "ONLY:DEVICE"
+
+
+# =============================================================================
+# Batch Callback Tests (Phase 2 Coverage)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestRunBackfillBatchCallback:
+    """Tests for batch_callback execution in _run_backfill."""
+
+    def test_batch_callback_updates_progress_with_date(self, backfill_service):
+        """Batch callback extracts date and updates progress."""
+        devices = [{"macAddress": "MAC", "info": {"name": "Station"}}]
+
+        # Track batch_callback invocations
+        batch_callback_called = []
+
+        def capture_batch_callback(
+            mac,
+            start_date,
+            end_date,
+            batch_size,
+            delay,
+            progress_callback,
+            batch_callback,
+        ):
+            """Capture and invoke the batch_callback with test data."""
+            # Simulate batch data with dates
+            batch_data = [
+                {"tempf": 72, "date": "2024-01-15T10:00:00", "dateutc": 1705312800000},
+                {"tempf": 73, "date": "2024-01-15T11:00:00", "dateutc": 1705316400000},
+                {"tempf": 74, "date": "2024-01-15T12:00:00", "dateutc": 1705320000000},
+            ]
+            # Invoke the batch_callback
+            inserted, skipped = batch_callback(batch_data)
+            batch_callback_called.append((inserted, skipped))
+            return (3, 3, 0)  # total_fetched, total_inserted, total_skipped
+
+        with patch("weather_app.web.backfill_service.AmbientWeatherAPI") as mock_api:
+            mock_instance = MagicMock()
+            mock_instance.get_devices.return_value = devices
+            mock_instance.get_device_data.return_value = []
+            mock_instance.fetch_all_historical_data.side_effect = (
+                capture_batch_callback
+            )
+            mock_api.return_value = mock_instance
+
+            with patch("weather_app.web.app.api_queue"):
+                with patch(
+                    "weather_app.web.backfill_service.WeatherDatabase"
+                ) as mock_db:
+                    mock_db_instance = MagicMock()
+                    mock_db_instance.__enter__ = MagicMock(return_value=mock_db_instance)
+                    mock_db_instance.__exit__ = MagicMock(return_value=False)
+                    mock_db_instance.insert_data.return_value = (3, 0)
+                    mock_db.return_value = mock_db_instance
+
+                    backfill_service._run_backfill("api_key", "app_key")
+
+        # batch_callback should have been called
+        assert len(batch_callback_called) == 1
+        assert batch_callback_called[0] == (3, 0)  # inserted, skipped
+
+        # Progress should have current_date updated
+        progress = backfill_service.get_progress()
+        assert progress["current_date"] == "2024-01-15"
+        assert progress["inserted_records"] == 3
+
+    def test_batch_callback_handles_empty_batch(self, backfill_service):
+        """Batch callback handles empty batch gracefully."""
+        devices = [{"macAddress": "MAC", "info": {"name": "Station"}}]
+
+        batch_callback_results = []
+
+        def capture_batch_callback(
+            mac,
+            start_date,
+            end_date,
+            batch_size,
+            delay,
+            progress_callback,
+            batch_callback,
+        ):
+            """Invoke batch_callback with empty list."""
+            inserted, skipped = batch_callback([])
+            batch_callback_results.append((inserted, skipped))
+            return (0, 0, 0)
+
+        with patch("weather_app.web.backfill_service.AmbientWeatherAPI") as mock_api:
+            mock_instance = MagicMock()
+            mock_instance.get_devices.return_value = devices
+            mock_instance.get_device_data.return_value = []
+            mock_instance.fetch_all_historical_data.side_effect = (
+                capture_batch_callback
+            )
+            mock_api.return_value = mock_instance
+
+            with patch("weather_app.web.app.api_queue"):
+                with patch(
+                    "weather_app.web.backfill_service.WeatherDatabase"
+                ) as mock_db:
+                    mock_db_instance = MagicMock()
+                    mock_db_instance.__enter__ = MagicMock(return_value=mock_db_instance)
+                    mock_db_instance.__exit__ = MagicMock(return_value=False)
+                    mock_db_instance.insert_data.return_value = (0, 0)
+                    mock_db.return_value = mock_db_instance
+
+                    backfill_service._run_backfill("api_key", "app_key")
+
+        # batch_callback should have been called with empty batch
+        assert len(batch_callback_results) == 1
+        assert batch_callback_results[0] == (0, 0)
+
+    def test_batch_callback_handles_missing_date_field(self, backfill_service):
+        """Batch callback handles records without date field."""
+        devices = [{"macAddress": "MAC", "info": {"name": "Station"}}]
+
+        batch_callback_called = []
+
+        def capture_batch_callback(
+            mac,
+            start_date,
+            end_date,
+            batch_size,
+            delay,
+            progress_callback,
+            batch_callback,
+        ):
+            """Invoke batch_callback with data missing date field."""
+            batch_data = [
+                {"tempf": 72, "dateutc": 1705312800000},  # No 'date' field
+                {"tempf": 73, "dateutc": 1705316400000},
+            ]
+            inserted, skipped = batch_callback(batch_data)
+            batch_callback_called.append((inserted, skipped))
+            return (2, 2, 0)
+
+        with patch("weather_app.web.backfill_service.AmbientWeatherAPI") as mock_api:
+            mock_instance = MagicMock()
+            mock_instance.get_devices.return_value = devices
+            mock_instance.get_device_data.return_value = []
+            mock_instance.fetch_all_historical_data.side_effect = (
+                capture_batch_callback
+            )
+            mock_api.return_value = mock_instance
+
+            with patch("weather_app.web.app.api_queue"):
+                with patch(
+                    "weather_app.web.backfill_service.WeatherDatabase"
+                ) as mock_db:
+                    mock_db_instance = MagicMock()
+                    mock_db_instance.__enter__ = MagicMock(return_value=mock_db_instance)
+                    mock_db_instance.__exit__ = MagicMock(return_value=False)
+                    mock_db_instance.insert_data.return_value = (2, 0)
+                    mock_db.return_value = mock_db_instance
+
+                    backfill_service._run_backfill("api_key", "app_key")
+
+        # Should complete without error
+        assert len(batch_callback_called) == 1
+        progress = backfill_service.get_progress()
+        # current_date should be None since records lacked date field
+        assert progress["current_date"] is None
+
+
+# =============================================================================
+# Progress Callback Tests (Phase 2 Coverage)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestRunBackfillProgressCallback:
+    """Tests for progress_callback execution in _run_backfill."""
+
+    def test_progress_callback_updates_progress(self, backfill_service):
+        """Progress callback updates progress with fetch stats."""
+        devices = [{"macAddress": "MAC", "info": {"name": "Station"}}]
+
+        progress_callback_calls = []
+
+        def capture_callbacks(
+            mac,
+            start_date,
+            end_date,
+            batch_size,
+            delay,
+            progress_callback,
+            batch_callback,
+        ):
+            """Invoke progress_callback to test its behavior."""
+            # Simulate calling progress_callback multiple times
+            progress_callback(100, 1)
+            progress_callback_calls.append((100, 1))
+            progress_callback(200, 2)
+            progress_callback_calls.append((200, 2))
+            return (200, 200, 0)
+
+        with patch("weather_app.web.backfill_service.AmbientWeatherAPI") as mock_api:
+            mock_instance = MagicMock()
+            mock_instance.get_devices.return_value = devices
+            mock_instance.get_device_data.return_value = []
+            mock_instance.fetch_all_historical_data.side_effect = capture_callbacks
+            mock_api.return_value = mock_instance
+
+            with patch("weather_app.web.app.api_queue"):
+                with patch("weather_app.web.backfill_service.WeatherDatabase"):
+                    backfill_service._run_backfill("api_key", "app_key")
+
+        # Progress callback should have been called
+        assert len(progress_callback_calls) == 2
+        progress = backfill_service.get_progress()
+        assert progress["total_records"] == 200
+        assert progress["requests_made"] == 2
+
+    def test_progress_callback_raises_interrupted_on_stop(self, backfill_service):
+        """Progress callback raises InterruptedError when stop requested."""
+        devices = [{"macAddress": "MAC", "info": {"name": "Station"}}]
+
+        def trigger_stop_during_callback(
+            mac,
+            start_date,
+            end_date,
+            batch_size,
+            delay,
+            progress_callback,
+            batch_callback,
+        ):
+            """Set stop_requested flag and call progress_callback."""
+            # First call succeeds
+            progress_callback(100, 1)
+
+            # Set stop flag
+            backfill_service._stop_requested = True
+
+            # Second call should raise InterruptedError
+            progress_callback(200, 2)
+
+        with patch("weather_app.web.backfill_service.AmbientWeatherAPI") as mock_api:
+            mock_instance = MagicMock()
+            mock_instance.get_devices.return_value = devices
+            mock_instance.get_device_data.return_value = []
+            mock_instance.fetch_all_historical_data.side_effect = (
+                trigger_stop_during_callback
+            )
+            mock_api.return_value = mock_instance
+
+            with patch("weather_app.web.app.api_queue"):
+                with patch("weather_app.web.backfill_service.WeatherDatabase"):
+                    backfill_service._run_backfill("api_key", "app_key")
+
+        # Should have caught InterruptedError and set status to idle
+        progress = backfill_service.get_progress()
+        assert progress["status"] == "idle"
+        assert "cancelled" in progress["message"].lower()
 
 
 # =============================================================================
