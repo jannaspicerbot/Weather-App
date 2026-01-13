@@ -120,21 +120,19 @@ export default function Dashboard() {
 
   /**
    * Calculate optimal number of data points based on date range
-   * Modern browsers handle 10,000-35,000 SVG points easily
+   * Backend API limit is 10,000 records max
    */
   const getOptimalSampleSize = (days: number): number => {
+    const MAX_API_LIMIT = 10000;
+
     if (days <= 30) {
       // ≤30 days: Show ALL points for smooth, high-fidelity charts
       // Up to 8,640 points (30 days × 288 records/day)
-      return days * 288;
-    } else if (days <= 90) {
-      // 30-90 days: Light sampling for performance
-      // ~15,000 points maintains smoothness
-      return 15000;
+      return Math.min(days * 288, MAX_API_LIMIT);
     } else {
-      // >90 days: Moderate sampling
-      // ~17,520 points (hourly aggregates for ~2 years)
-      return 17520;
+      // >30 days: Request max allowed by API
+      // Backend will return evenly sampled data
+      return MAX_API_LIMIT;
     }
   };
 
