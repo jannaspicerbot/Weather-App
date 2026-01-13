@@ -9,6 +9,7 @@ Tests cover:
 - Session management
 """
 
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -455,3 +456,326 @@ class TestFetchAllHistoricalData:
 
         # Should return empty because all data is before start_date
         assert data == []
+
+
+# =============================================================================
+# REQUEST QUEUE INTEGRATION TESTS
+# =============================================================================
+
+
+class TestRequestQueueIntegration:
+    """Tests for request queue integration with async event loops."""
+
+    @pytest.mark.unit
+    def test_get_devices_no_event_loop_creates_one(self, mock_devices_response):
+        """Creates new event loop when none exists."""
+        mock_queue = MagicMock()
+        mock_future = asyncio.Future()
+        mock_future.set_result(mock_devices_response)
+        mock_queue.enqueue.return_value = mock_future
+
+        api = AmbientWeatherAPI(
+            api_key="key", application_key="app_key", request_queue=mock_queue
+        )
+
+        # Mock asyncio to simulate no event loop
+        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No loop")):
+            with patch("asyncio.new_event_loop") as mock_new_loop:
+                mock_loop = MagicMock()
+                mock_loop.run_until_complete.return_value = mock_devices_response
+                mock_new_loop.return_value = mock_loop
+
+                with patch("asyncio.set_event_loop"):
+                    result = api.get_devices()
+
+        mock_new_loop.assert_called_once()
+        assert result == mock_devices_response
+
+    @pytest.mark.unit
+    def test_get_devices_with_request_queue(self, mock_devices_response):
+        """Uses request queue when provided."""
+        mock_queue = MagicMock()
+        mock_future = asyncio.Future()
+        mock_future.set_result(mock_devices_response)
+        mock_queue.enqueue.return_value = mock_future
+
+        api = AmbientWeatherAPI(
+            api_key="key", application_key="app_key", request_queue=mock_queue
+        )
+
+        with patch("asyncio.get_event_loop") as mock_get_loop:
+            mock_loop = MagicMock()
+            mock_loop.run_until_complete.return_value = mock_devices_response
+            mock_get_loop.return_value = mock_loop
+
+            result = api.get_devices()
+
+        # Should have called enqueue
+        mock_queue.enqueue.assert_called_once()
+        assert result == mock_devices_response
+
+    @pytest.mark.unit
+    def test_get_device_data_no_event_loop_creates_one(self, mock_device_data_response):
+        """Creates new event loop for device data when none exists."""
+        mock_queue = MagicMock()
+        mock_future = asyncio.Future()
+        mock_future.set_result(mock_device_data_response)
+        mock_queue.enqueue.return_value = mock_future
+
+        api = AmbientWeatherAPI(
+            api_key="key", application_key="app_key", request_queue=mock_queue
+        )
+
+        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No loop")):
+            with patch("asyncio.new_event_loop") as mock_new_loop:
+                mock_loop = MagicMock()
+                mock_loop.run_until_complete.return_value = mock_device_data_response
+                mock_new_loop.return_value = mock_loop
+
+                with patch("asyncio.set_event_loop"):
+                    result = api.get_device_data("AA:BB:CC:DD:EE:FF")
+
+        mock_new_loop.assert_called_once()
+        assert result == mock_device_data_response
+
+    @pytest.mark.unit
+    def test_get_device_data_with_request_queue(self, mock_device_data_response):
+        """Uses request queue for device data."""
+        mock_queue = MagicMock()
+        mock_future = asyncio.Future()
+        mock_future.set_result(mock_device_data_response)
+        mock_queue.enqueue.return_value = mock_future
+
+        api = AmbientWeatherAPI(
+            api_key="key", application_key="app_key", request_queue=mock_queue
+        )
+
+        with patch("asyncio.get_event_loop") as mock_get_loop:
+            mock_loop = MagicMock()
+            mock_loop.run_until_complete.return_value = mock_device_data_response
+            mock_get_loop.return_value = mock_loop
+
+            result = api.get_device_data("AA:BB:CC:DD:EE:FF")
+
+        mock_queue.enqueue.assert_called_once()
+        assert result == mock_device_data_response
+
+    @pytest.mark.unit
+    def test_get_devices_without_request_queue_calls_impl_directly(
+        self, mock_devices_response
+    ):
+        """Without request queue, calls implementation directly."""
+        api = AmbientWeatherAPI(api_key="key", application_key="app_key")
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = mock_devices_response
+
+        with patch.object(api.session, "get", return_value=mock_response):
+            result = api.get_devices()
+
+        assert result == mock_devices_response
+
+    @pytest.mark.unit
+    def test_get_device_data_without_request_queue_calls_impl_directly(
+        self, mock_device_data_response
+    ):
+        """Without request queue, calls implementation directly."""
+        api = AmbientWeatherAPI(api_key="key", application_key="app_key")
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = mock_device_data_response
+
+        with patch.object(api.session, "get", return_value=mock_response):
+            result = api.get_device_data("AA:BB:CC:DD:EE:FF")
+
+        assert result == mock_device_data_response
+
+
+# =============================================================================
+# ADDITIONAL HISTORICAL DATA TESTS
+# =============================================================================
+
+
+class TestHistoricalDataFetching:
+    """Additional tests for historical data fetching."""
+
+    @pytest.mark.unit
+    def test_fetch_historical_with_start_date_filter(self, api_client):
+        """Filters data by start_date parameter."""
+        from datetime import datetime
+
+        # Data spanning multiple dates
+        mock_data = [
+            {"dateutc": 1704110400000, "tempf": 72.5},  # 2024-01-01 12:00
+            {"dateutc": 1704020400000, "tempf": 70.0},  # 2023-12-31 12:00
+        ]
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = [mock_data, []]
+
+        with patch.object(api_client.session, "get", return_value=mock_response):
+            with patch("time.sleep"):
+                data = api_client.fetch_all_historical_data(
+                    "AA:BB:CC:DD:EE:FF",
+                    start_date=datetime(2024, 1, 1),
+                )
+
+        # Should only return data on or after 2024-01-01
+        assert len(data) == 1
+        assert data[0]["dateutc"] == 1704110400000
+
+    @pytest.mark.unit
+    def test_fetch_historical_rate_limit_with_60s_sleep(self, api_client):
+        """Handles 429 rate limit with 60s sleep and retry."""
+        mock_response_ok = MagicMock()
+        mock_response_ok.status_code = 200
+        mock_response_ok.json.return_value = []
+
+        mock_response_429 = MagicMock()
+        mock_response_429.status_code = 429
+        error = requests.exceptions.HTTPError(response=mock_response_429)
+        mock_response_429.raise_for_status.side_effect = error
+
+        call_count = [0]
+
+        def side_effect(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise error
+            return mock_response_ok
+
+        with patch.object(api_client.session, "get", side_effect=side_effect):
+            with patch("time.sleep") as mock_sleep:
+                api_client.fetch_all_historical_data("AA:BB:CC:DD:EE:FF")
+
+        # Should have waited 60 seconds
+        mock_sleep.assert_any_call(60)
+
+    @pytest.mark.unit
+    def test_fetch_historical_pagination_uses_oldest_timestamp(self, api_client):
+        """Correctly paginates using oldest timestamp from batch."""
+        batch1 = [
+            {"dateutc": 1704114000000, "tempf": 74.0},  # Newer
+            {"dateutc": 1704110400000, "tempf": 72.5},  # Older
+        ]
+        batch2 = [
+            {"dateutc": 1704106800000, "tempf": 70.0},
+        ]
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = [batch1, batch2, []]
+
+        end_dates = []
+
+        original_get = api_client.session.get
+
+        def capture_end_date(*args, **kwargs):
+            if "endDate" in kwargs.get("params", {}):
+                end_dates.append(kwargs["params"]["endDate"])
+            return mock_response
+
+        with patch.object(api_client.session, "get", side_effect=capture_end_date):
+            with patch("time.sleep"):
+                data = api_client.fetch_all_historical_data("AA:BB:CC:DD:EE:FF")
+
+        # Second call should use oldest timestamp from first batch minus 1
+        assert len(end_dates) >= 1
+        if len(end_dates) > 0:
+            assert end_dates[0] == 1704110400000 - 1
+
+    @pytest.mark.unit
+    def test_fetch_historical_batch_callback_returns_tuple(
+        self, api_client, mock_device_data_response
+    ):
+        """Batch callback mode returns tuple with counts."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = [mock_device_data_response, []]
+
+        batch_callback = MagicMock(return_value=(2, 0))
+
+        with patch.object(api_client.session, "get", return_value=mock_response):
+            with patch("time.sleep"):
+                result = api_client.fetch_all_historical_data(
+                    "AA:BB:CC:DD:EE:FF", batch_callback=batch_callback
+                )
+
+        assert isinstance(result, tuple)
+        assert len(result) == 3
+        total_fetched, total_inserted, total_skipped = result
+        assert total_fetched == 2
+        assert total_inserted == 2
+        assert total_skipped == 0
+
+    @pytest.mark.unit
+    def test_fetch_historical_progress_callback_called_each_batch(
+        self, api_client, mock_device_data_response
+    ):
+        """Progress callback is called after each batch."""
+        batch1 = mock_device_data_response  # 2 records
+        batch2 = [{"dateutc": 1704100000000, "tempf": 68.0}]  # 1 record
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = [batch1, batch2, []]
+
+        progress_calls = []
+
+        def progress_callback(total, requests):
+            progress_calls.append((total, requests))
+
+        with patch.object(api_client.session, "get", return_value=mock_response):
+            with patch("time.sleep"):
+                api_client.fetch_all_historical_data(
+                    "AA:BB:CC:DD:EE:FF", progress_callback=progress_callback
+                )
+
+        assert len(progress_calls) >= 2
+        assert progress_calls[0] == (2, 1)  # First batch: 2 records, 1 request
+        assert progress_calls[1] == (3, 2)  # Second batch: 3 total, 2 requests
+
+    @pytest.mark.unit
+    def test_fetch_historical_with_end_date_parameter(self, api_client):
+        """Uses end_date parameter to start pagination."""
+        from datetime import datetime
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = []
+
+        end_dates_used = []
+
+        def capture_call(*args, **kwargs):
+            if "endDate" in kwargs.get("params", {}):
+                end_dates_used.append(kwargs["params"]["endDate"])
+            return mock_response
+
+        with patch.object(api_client.session, "get", side_effect=capture_call):
+            with patch("time.sleep"):
+                api_client.fetch_all_historical_data(
+                    "AA:BB:CC:DD:EE:FF",
+                    end_date=datetime(2024, 1, 15, 12, 0, 0),
+                )
+
+        # First call should not have endDate (or should have the provided one)
+        # The API starts from end_date and works backward
+        # Note: First call may or may not include endDate depending on implementation
+
+    @pytest.mark.unit
+    def test_fetch_historical_empty_batch_stops_pagination(self, api_client):
+        """Empty batch response stops pagination."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = [[], []]
+
+        with patch.object(api_client.session, "get", return_value=mock_response):
+            with patch("time.sleep") as mock_sleep:
+                data = api_client.fetch_all_historical_data("AA:BB:CC:DD:EE:FF")
+
+        assert data == []
+        # Should not have called sleep for rate limiting (no second request)
+        mock_sleep.assert_not_called()

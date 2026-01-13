@@ -380,3 +380,248 @@ class TestSchedulerIntegration:
         # Shutdown
         scheduler.shutdown()
         assert not scheduler.scheduler.running
+
+
+# =============================================================================
+# ADDITIONAL EDGE CASE TESTS
+# =============================================================================
+
+
+class TestSchedulerEdgeCases:
+    """Tests for scheduler edge cases and error handling."""
+
+    @pytest.mark.unit
+    def test_fetch_job_missing_api_key(self, mock_env_disabled):
+        """Job returns early if API key missing."""
+        scheduler = WeatherScheduler()
+        scheduler.api_key = None
+        scheduler.app_key = "app_key"
+
+        # Should not raise exception, should return early
+        scheduler.fetch_weather_job()
+
+    @pytest.mark.unit
+    def test_fetch_job_missing_app_key(self, mock_env_enabled):
+        """Job returns early if App key missing."""
+        scheduler = WeatherScheduler()
+        scheduler.app_key = None
+
+        # Should not raise exception, should return early
+        scheduler.fetch_weather_job()
+
+    @pytest.mark.unit
+    def test_fetch_job_device_not_found_fallback(
+        self, mock_env_enabled, temp_db_path, mock_weather_data
+    ):
+        """Falls back to first device if configured device not found."""
+        devices = [
+            {"macAddress": "FIRST:DEVICE", "info": {"name": "First Device"}},
+            {"macAddress": "SECOND:DEVICE", "info": {"name": "Second Device"}},
+        ]
+
+        scheduler = WeatherScheduler()
+
+        mock_api = MagicMock()
+        mock_api.get_devices.return_value = devices
+        mock_api.get_device_data.return_value = mock_weather_data
+
+        with patch("weather_app.scheduler.scheduler.DB_PATH", temp_db_path):
+            with patch(
+                "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+            ):
+                with patch(
+                    "weather_app.scheduler.scheduler.AMBIENT_DEVICE_MAC",
+                    "NONEXISTENT:MAC",
+                ):
+                    scheduler.fetch_weather_job()
+
+        # Should have called get_device_data with the first device
+        mock_api.get_device_data.assert_called_once()
+        call_args = mock_api.get_device_data.call_args
+        assert call_args[0][0] == "FIRST:DEVICE"
+
+    @pytest.mark.unit
+    def test_fetch_job_no_data_from_device(
+        self, mock_env_enabled, mock_devices_response
+    ):
+        """Handles empty data response gracefully."""
+        scheduler = WeatherScheduler()
+
+        mock_api = MagicMock()
+        mock_api.get_devices.return_value = mock_devices_response
+        mock_api.get_device_data.return_value = []  # Empty response
+
+        with patch(
+            "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+        ):
+            # Should not raise exception
+            scheduler.fetch_weather_job()
+
+        # Should have called both methods
+        mock_api.get_devices.assert_called_once()
+        mock_api.get_device_data.assert_called_once()
+
+    @pytest.mark.unit
+    def test_fetch_job_exception_does_not_propagate(self, mock_env_enabled):
+        """Exceptions are caught and don't propagate to scheduler."""
+        scheduler = WeatherScheduler()
+
+        mock_api = MagicMock()
+        mock_api.get_devices.side_effect = Exception("Unexpected error")
+
+        with patch(
+            "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+        ):
+            # Should NOT raise exception
+            scheduler.fetch_weather_job()
+
+    @pytest.mark.unit
+    def test_fetch_job_db_error_does_not_propagate(
+        self, mock_env_enabled, mock_devices_response, mock_weather_data
+    ):
+        """Database errors are caught and don't propagate."""
+        scheduler = WeatherScheduler()
+
+        mock_api = MagicMock()
+        mock_api.get_devices.return_value = mock_devices_response
+        mock_api.get_device_data.return_value = mock_weather_data
+
+        with patch(
+            "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+        ):
+            with patch(
+                "weather_app.scheduler.scheduler.WeatherDatabase"
+            ) as mock_db_class:
+                mock_db_class.return_value.__enter__.side_effect = Exception(
+                    "DB Error"
+                )
+
+                # Should NOT raise exception
+                scheduler.fetch_weather_job()
+
+    @pytest.mark.unit
+    def test_fetch_job_uses_configured_device(
+        self, mock_env_enabled, temp_db_path, mock_weather_data
+    ):
+        """Uses configured device MAC when available."""
+        devices = [
+            {"macAddress": "WRONG:DEVICE", "info": {"name": "Wrong Device"}},
+            {"macAddress": "CONFIGURED:MAC", "info": {"name": "Configured Device"}},
+        ]
+
+        scheduler = WeatherScheduler()
+
+        mock_api = MagicMock()
+        mock_api.get_devices.return_value = devices
+        mock_api.get_device_data.return_value = mock_weather_data
+
+        with patch("weather_app.scheduler.scheduler.DB_PATH", temp_db_path):
+            with patch(
+                "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+            ):
+                with patch(
+                    "weather_app.scheduler.scheduler.AMBIENT_DEVICE_MAC",
+                    "CONFIGURED:MAC",
+                ):
+                    scheduler.fetch_weather_job()
+
+        # Should have used the configured device
+        mock_api.get_device_data.assert_called_once()
+        call_args = mock_api.get_device_data.call_args
+        assert call_args[0][0] == "CONFIGURED:MAC"
+
+    @pytest.mark.unit
+    def test_fetch_job_uses_first_device_when_no_config(
+        self, mock_env_enabled, temp_db_path, mock_weather_data
+    ):
+        """Uses first device when no device configured."""
+        devices = [
+            {"macAddress": "FIRST:DEVICE", "info": {"name": "First Device"}},
+            {"macAddress": "SECOND:DEVICE", "info": {"name": "Second Device"}},
+        ]
+
+        scheduler = WeatherScheduler()
+
+        mock_api = MagicMock()
+        mock_api.get_devices.return_value = devices
+        mock_api.get_device_data.return_value = mock_weather_data
+
+        with patch("weather_app.scheduler.scheduler.DB_PATH", temp_db_path):
+            with patch(
+                "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+            ):
+                with patch(
+                    "weather_app.scheduler.scheduler.AMBIENT_DEVICE_MAC", None
+                ):
+                    scheduler.fetch_weather_job()
+
+        # Should have used the first device
+        mock_api.get_device_data.assert_called_once()
+        call_args = mock_api.get_device_data.call_args
+        assert call_args[0][0] == "FIRST:DEVICE"
+
+    @pytest.mark.unit
+    def test_get_status_when_disabled(self, mock_env_disabled):
+        """Status shows disabled state when scheduler disabled."""
+        scheduler = WeatherScheduler()
+
+        status = scheduler.get_status()
+
+        assert status["enabled"] is False
+        assert status["running"] is False
+        assert "disabled" in status["message"].lower()
+
+    @pytest.mark.unit
+    def test_shutdown_when_disabled(self, mock_env_disabled):
+        """Shutdown returns early if scheduler disabled."""
+        scheduler = WeatherScheduler()
+
+        with patch.object(scheduler.scheduler, "shutdown") as mock_shutdown:
+            scheduler.shutdown()
+
+        # Should not have called shutdown on the underlying scheduler
+        mock_shutdown.assert_not_called()
+
+    @pytest.mark.unit
+    def test_start_when_disabled(self, mock_env_disabled):
+        """Start returns early if scheduler disabled."""
+        scheduler = WeatherScheduler()
+
+        with patch.object(scheduler.scheduler, "add_job") as mock_add:
+            with patch.object(scheduler.scheduler, "start") as mock_start:
+                scheduler.start()
+
+        mock_add.assert_not_called()
+        mock_start.assert_not_called()
+
+    @pytest.mark.unit
+    def test_init_with_api_queue(self, mock_env_enabled):
+        """Scheduler accepts and stores api_queue parameter."""
+        mock_queue = MagicMock()
+
+        scheduler = WeatherScheduler(api_queue=mock_queue)
+
+        assert scheduler.api_queue is mock_queue
+
+    @pytest.mark.unit
+    def test_fetch_job_uses_api_queue(
+        self, mock_env_enabled, temp_db_path, mock_devices_response, mock_weather_data
+    ):
+        """Fetch job passes api_queue to AmbientWeatherAPI."""
+        mock_queue = MagicMock()
+        scheduler = WeatherScheduler(api_queue=mock_queue)
+
+        mock_api = MagicMock()
+        mock_api.get_devices.return_value = mock_devices_response
+        mock_api.get_device_data.return_value = mock_weather_data
+
+        with patch("weather_app.scheduler.scheduler.DB_PATH", temp_db_path):
+            with patch(
+                "weather_app.scheduler.scheduler.AmbientWeatherAPI", return_value=mock_api
+            ) as mock_api_class:
+                scheduler.fetch_weather_job()
+
+        # Verify AmbientWeatherAPI was called with the queue
+        mock_api_class.assert_called_once()
+        call_kwargs = mock_api_class.call_args
+        assert call_kwargs[1]["request_queue"] is mock_queue

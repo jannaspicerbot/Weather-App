@@ -425,3 +425,587 @@ class TestCors:
         )
         # OPTIONS request should succeed
         assert response.status_code in [200, 204, 405]
+
+
+# =============================================================================
+# CREDENTIAL ENDPOINT TESTS
+# =============================================================================
+
+
+class TestCredentialEndpoints:
+    """Tests for credential management endpoints."""
+
+    @pytest.mark.unit
+    def test_get_credential_status_not_configured(self, client):
+        """GET /api/credentials/status returns not configured when no creds."""
+        with patch.dict("os.environ", {"AMBIENT_API_KEY": "", "AMBIENT_APP_KEY": ""}):
+            response = client.get("/api/credentials/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["configured"] is False
+
+    @pytest.mark.unit
+    def test_get_credential_status_configured(self, client):
+        """GET /api/credentials/status returns configured when creds set."""
+        with patch.dict(
+            "os.environ", {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"}
+        ):
+            response = client.get("/api/credentials/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["configured"] is True
+
+    @pytest.mark.unit
+    def test_validate_credentials_success(self, client):
+        """POST /api/credentials/validate with valid creds returns success."""
+        with patch(
+            "weather_app.web.routes.backfill_service.validate_credentials"
+        ) as mock_validate:
+            mock_validate.return_value = (
+                True,
+                "Found 1 device(s)",
+                [
+                    {
+                        "mac_address": "AA:BB:CC:DD:EE:FF",
+                        "name": "Test Station",
+                        "last_data": "2024-01-01T12:00:00",
+                    }
+                ],
+            )
+
+            response = client.post(
+                "/api/credentials/validate",
+                json={"api_key": "test_key", "app_key": "test_app"},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["valid"] is True
+        assert "1 device" in data["message"]
+        assert len(data["devices"]) == 1
+
+    @pytest.mark.unit
+    def test_validate_credentials_invalid(self, client):
+        """POST /api/credentials/validate with invalid creds returns error."""
+        with patch(
+            "weather_app.web.routes.backfill_service.validate_credentials"
+        ) as mock_validate:
+            mock_validate.return_value = (False, "Invalid API credentials", [])
+
+            response = client.post(
+                "/api/credentials/validate",
+                json={"api_key": "bad_key", "app_key": "bad_app"},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["valid"] is False
+        assert "Invalid" in data["message"]
+
+    @pytest.mark.unit
+    def test_save_credentials_success(self, client):
+        """POST /api/credentials/save successfully saves creds."""
+        with patch(
+            "weather_app.web.routes.backfill_service.save_credentials"
+        ) as mock_save:
+            mock_save.return_value = (True, "Credentials saved successfully")
+
+            response = client.post(
+                "/api/credentials/save",
+                json={"api_key": "new_key", "app_key": "new_app"},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+
+    @pytest.mark.unit
+    def test_save_credentials_failure(self, client):
+        """POST /api/credentials/save returns error on failure."""
+        with patch(
+            "weather_app.web.routes.backfill_service.save_credentials"
+        ) as mock_save:
+            mock_save.return_value = (False, "Failed to save credentials")
+
+            response = client.post(
+                "/api/credentials/save",
+                json={"api_key": "key", "app_key": "app"},
+            )
+
+        assert response.status_code == 500
+
+    @pytest.mark.unit
+    def test_save_credentials_with_device_mac(self, client):
+        """POST /api/credentials/save with device_mac parameter."""
+        with patch(
+            "weather_app.web.routes.backfill_service.save_credentials"
+        ) as mock_save:
+            mock_save.return_value = (True, "Saved")
+
+            response = client.post(
+                "/api/credentials/save?device_mac=AA:BB:CC:DD:EE:FF",
+                json={"api_key": "key", "app_key": "app"},
+            )
+
+        assert response.status_code == 200
+        mock_save.assert_called_once_with("key", "app", "AA:BB:CC:DD:EE:FF")
+
+
+# =============================================================================
+# BACKFILL ENDPOINT TESTS
+# =============================================================================
+
+
+class TestBackfillEndpoints:
+    """Tests for backfill management endpoints."""
+
+    @pytest.mark.unit
+    def test_get_backfill_progress(self, client):
+        """GET /api/backfill/progress returns current progress."""
+        with patch(
+            "weather_app.web.routes.backfill_service.get_progress"
+        ) as mock_progress:
+            mock_progress.return_value = {
+                "status": "idle",
+                "progress_id": None,
+                "message": "No backfill in progress",
+                "total_records": 0,
+                "inserted_records": 0,
+                "skipped_records": 0,
+            }
+
+            response = client.get("/api/backfill/progress")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "idle"
+        assert data["total_records"] == 0
+
+    @pytest.mark.unit
+    def test_get_backfill_progress_in_progress(self, client):
+        """GET /api/backfill/progress during active backfill."""
+        with patch(
+            "weather_app.web.routes.backfill_service.get_progress"
+        ) as mock_progress:
+            mock_progress.return_value = {
+                "status": "in_progress",
+                "progress_id": 12345,
+                "message": "Fetching historical data...",
+                "total_records": 5000,
+                "inserted_records": 4500,
+                "skipped_records": 500,
+                "requests_made": 20,
+                "estimated_time_remaining_seconds": 300,
+            }
+
+            response = client.get("/api/backfill/progress")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "in_progress"
+        assert data["total_records"] == 5000
+        assert data["inserted_records"] == 4500
+
+    @pytest.mark.unit
+    def test_start_backfill_success(self, client):
+        """POST /api/backfill/start starts backfill successfully."""
+        with patch(
+            "weather_app.web.routes.backfill_service.start_backfill"
+        ) as mock_start:
+            mock_start.return_value = (True, "Backfill started")
+
+            response = client.post(
+                "/api/backfill/start",
+                json={"api_key": "key", "app_key": "app"},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "in_progress"
+
+    @pytest.mark.unit
+    def test_start_backfill_already_running(self, client):
+        """POST /api/backfill/start when already running."""
+        with patch(
+            "weather_app.web.routes.backfill_service.start_backfill"
+        ) as mock_start:
+            mock_start.return_value = (False, "Backfill already in progress")
+            with patch(
+                "weather_app.web.routes.backfill_service.get_progress"
+            ) as mock_progress:
+                mock_progress.return_value = {
+                    "status": "in_progress",
+                    "progress_id": 999,
+                    "message": "Running...",
+                    "total_records": 100,
+                    "inserted_records": 50,
+                    "skipped_records": 0,
+                }
+
+                response = client.post("/api/backfill/start", json={})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "already in progress" in data["message"]
+
+    @pytest.mark.unit
+    def test_start_backfill_missing_credentials(self, client):
+        """POST /api/backfill/start with missing credentials."""
+        with patch(
+            "weather_app.web.routes.backfill_service.start_backfill"
+        ) as mock_start:
+            mock_start.return_value = (False, "API credentials not configured")
+            with patch(
+                "weather_app.web.routes.backfill_service.get_progress"
+            ) as mock_progress:
+                mock_progress.return_value = {"status": "idle"}
+
+                response = client.post("/api/backfill/start", json={})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "credentials" in data["message"].lower()
+
+    @pytest.mark.unit
+    def test_start_backfill_without_body(self, client):
+        """POST /api/backfill/start without request body."""
+        with patch(
+            "weather_app.web.routes.backfill_service.start_backfill"
+        ) as mock_start:
+            mock_start.return_value = (True, "Backfill started")
+
+            response = client.post("/api/backfill/start")
+
+        assert response.status_code == 200
+
+    @pytest.mark.unit
+    def test_stop_backfill_success(self, client):
+        """POST /api/backfill/stop stops running backfill."""
+        with patch(
+            "weather_app.web.routes.backfill_service.is_running"
+        ) as mock_running:
+            mock_running.return_value = True
+            with patch(
+                "weather_app.web.routes.backfill_service.stop"
+            ) as mock_stop:
+                response = client.post("/api/backfill/stop")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        mock_stop.assert_called_once()
+
+    @pytest.mark.unit
+    def test_stop_backfill_not_running(self, client):
+        """POST /api/backfill/stop when no backfill running."""
+        with patch(
+            "weather_app.web.routes.backfill_service.is_running"
+        ) as mock_running:
+            mock_running.return_value = False
+
+            response = client.post("/api/backfill/stop")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is False
+        assert "No backfill" in data["message"]
+
+
+# =============================================================================
+# DEVICE ENDPOINT TESTS
+# =============================================================================
+
+
+class TestDeviceEndpoints:
+    """Tests for device management endpoints."""
+
+    @pytest.mark.unit
+    def test_get_devices_success(self, client):
+        """GET /api/devices returns device list."""
+        with patch.dict(
+            "os.environ", {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"}
+        ):
+            with patch("weather_app.api.client.AmbientWeatherAPI") as mock_api:
+                mock_instance = mock_api.return_value
+                mock_instance.get_devices.return_value = [
+                    {
+                        "macAddress": "AA:BB:CC:DD:EE:FF",
+                        "info": {
+                            "name": "Test Station",
+                            "coords": {"location": "Test City"},
+                        },
+                        "lastData": {"date": "2024-01-01T12:00:00"},
+                    }
+                ]
+                with patch("weather_app.web.app.api_queue"):
+                    response = client.get("/api/devices")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["devices"]) == 1
+        assert data["devices"][0]["mac_address"] == "AA:BB:CC:DD:EE:FF"
+
+    @pytest.mark.unit
+    def test_get_devices_no_credentials(self, client):
+        """GET /api/devices returns error if credentials not configured."""
+        with patch.dict(
+            "os.environ", {"AMBIENT_API_KEY": "", "AMBIENT_APP_KEY": ""}
+        ):
+            response = client.get("/api/devices")
+
+        assert response.status_code == 400
+        data = response.json()
+        assert "not configured" in data["detail"]
+
+    @pytest.mark.unit
+    def test_get_devices_with_selected_device(self, client):
+        """GET /api/devices returns selected device MAC."""
+        with patch.dict(
+            "os.environ",
+            {
+                "AMBIENT_API_KEY": "key",
+                "AMBIENT_APP_KEY": "app",
+                "AMBIENT_DEVICE_MAC": "AA:BB:CC:DD:EE:FF",
+            },
+        ):
+            with patch("weather_app.api.client.AmbientWeatherAPI") as mock_api:
+                mock_instance = mock_api.return_value
+                mock_instance.get_devices.return_value = [
+                    {
+                        "macAddress": "AA:BB:CC:DD:EE:FF",
+                        "info": {"name": "Station"},
+                        "lastData": {},
+                    }
+                ]
+                with patch("weather_app.web.app.api_queue"):
+                    response = client.get("/api/devices")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["selected_device_mac"] == "AA:BB:CC:DD:EE:FF"
+
+    @pytest.mark.unit
+    def test_get_devices_api_error(self, client):
+        """GET /api/devices handles API errors gracefully."""
+        with patch.dict(
+            "os.environ", {"AMBIENT_API_KEY": "key", "AMBIENT_APP_KEY": "app"}
+        ):
+            with patch("weather_app.api.client.AmbientWeatherAPI") as mock_api:
+                mock_instance = mock_api.return_value
+                mock_instance.get_devices.side_effect = Exception("API Error")
+                with patch("weather_app.web.app.api_queue"):
+                    response = client.get("/api/devices")
+
+        assert response.status_code == 500
+
+    @pytest.mark.unit
+    def test_select_device_success(self, client):
+        """POST /api/devices/select saves device selection."""
+        with patch(
+            "weather_app.web.routes.backfill_service.save_device_selection"
+        ) as mock_save:
+            mock_save.return_value = (True, "Device selection saved")
+
+            response = client.post(
+                "/api/devices/select",
+                json={"device_mac": "AA:BB:CC:DD:EE:FF"},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["device_mac"] == "AA:BB:CC:DD:EE:FF"
+
+    @pytest.mark.unit
+    def test_select_device_failure(self, client):
+        """POST /api/devices/select handles save failure."""
+        with patch(
+            "weather_app.web.routes.backfill_service.save_device_selection"
+        ) as mock_save:
+            mock_save.return_value = (False, "Failed to save")
+
+            response = client.post(
+                "/api/devices/select",
+                json={"device_mac": "AA:BB:CC:DD:EE:FF"},
+            )
+
+        assert response.status_code == 500
+
+
+# =============================================================================
+# APP FACTORY TESTS
+# =============================================================================
+
+
+class TestAppFactory:
+    """Tests for app factory and frontend registration."""
+
+    @pytest.mark.unit
+    def test_register_frontend_frozen_executable(self, tmp_path):
+        """Uses correct path for PyInstaller frozen app."""
+        from fastapi import FastAPI
+        from unittest.mock import MagicMock
+        import sys
+
+        # Create a test app
+        test_app = FastAPI()
+
+        # Create a fake static directory
+        fake_meipass = tmp_path / "meipass"
+        static_dir = fake_meipass / "web" / "dist"
+        static_dir.mkdir(parents=True)
+        (static_dir / "index.html").write_text("<html></html>")
+
+        # Mock sys.frozen and sys._MEIPASS
+        with patch.object(sys, "frozen", True, create=True):
+            with patch.object(sys, "_MEIPASS", str(fake_meipass), create=True):
+                from weather_app.web.app import register_frontend
+
+                register_frontend(test_app)
+
+        # Should have mounted the static files
+        # Check that a mount was added
+        assert len(test_app.routes) > 0
+
+    @pytest.mark.unit
+    def test_register_frontend_not_found(self, tmp_path):
+        """Logs warning if frontend static files not found."""
+        from fastapi import FastAPI
+        import sys
+
+        test_app = FastAPI()
+
+        # This test validates that register_frontend doesn't crash
+        # when the frontend directory doesn't exist.
+        # The function uses getattr(sys, "frozen", False) to determine mode,
+        # and in development mode, it looks for web/dist relative to the module.
+
+        # Since the real web/dist may or may not exist in the test environment,
+        # we simply verify the function doesn't raise an exception.
+        from weather_app.web.app import register_frontend
+
+        # Just verify it doesn't raise - it should either mount or log warning
+        register_frontend(test_app)
+
+    @pytest.mark.unit
+    def test_create_app_returns_fastapi(self):
+        """create_app returns a FastAPI instance."""
+        from weather_app.web.app import create_app
+        from weather_app.config import API_TITLE
+        from fastapi import FastAPI
+
+        app = create_app()
+
+        assert isinstance(app, FastAPI)
+        assert app.title == API_TITLE
+
+
+# =============================================================================
+# ROUTE ERROR HANDLING TESTS
+# =============================================================================
+
+
+class TestRouteErrorHandling:
+    """Tests for error handling in routes."""
+
+    @pytest.mark.unit
+    def test_get_weather_data_runtime_error(self, client):
+        """GET /weather handles RuntimeError."""
+        with patch(
+            "weather_app.web.routes.WeatherRepository.get_all_readings"
+        ) as mock_get:
+            mock_get.side_effect = RuntimeError("Database connection failed")
+
+            response = client.get("/weather")
+
+        assert response.status_code == 500
+        data = response.json()
+        assert "Database connection failed" in data["detail"]
+
+    @pytest.mark.unit
+    def test_get_weather_data_value_error(self, client):
+        """GET /weather handles ValueError for invalid dates."""
+        with patch(
+            "weather_app.web.routes.WeatherRepository.get_all_readings"
+        ) as mock_get:
+            mock_get.side_effect = ValueError("Invalid date format")
+
+            response = client.get("/weather?start_date=bad-date")
+
+        assert response.status_code == 400
+        data = response.json()
+        assert "Invalid date format" in data["detail"]
+
+    @pytest.mark.unit
+    def test_get_latest_weather_runtime_error(self, client):
+        """GET /weather/latest handles RuntimeError."""
+        with patch(
+            "weather_app.web.routes.WeatherRepository.get_latest_reading"
+        ) as mock_get:
+            mock_get.side_effect = RuntimeError("Database error")
+
+            response = client.get("/weather/latest")
+
+        assert response.status_code == 500
+
+    @pytest.mark.unit
+    def test_get_stats_runtime_error(self, client):
+        """GET /weather/stats handles RuntimeError."""
+        with patch(
+            "weather_app.web.routes.WeatherRepository.get_stats"
+        ) as mock_get:
+            mock_get.side_effect = RuntimeError("Database error")
+
+            response = client.get("/weather/stats")
+
+        assert response.status_code == 500
+
+    @pytest.mark.unit
+    def test_api_get_latest_runtime_error(self, client):
+        """GET /api/weather/latest handles RuntimeError."""
+        with patch(
+            "weather_app.web.routes.WeatherRepository.get_all_readings"
+        ) as mock_get:
+            mock_get.side_effect = RuntimeError("Database error")
+
+            response = client.get("/api/weather/latest")
+
+        assert response.status_code == 500
+
+    @pytest.mark.unit
+    def test_api_weather_range_value_error(self, client):
+        """GET /api/weather/range handles ValueError."""
+        with patch(
+            "weather_app.web.routes.WeatherRepository.get_all_readings"
+        ) as mock_get:
+            mock_get.side_effect = ValueError("Invalid date")
+
+            response = client.get("/api/weather/range?start_date=invalid")
+
+        assert response.status_code == 400
+
+    @pytest.mark.unit
+    def test_api_weather_range_runtime_error(self, client):
+        """GET /api/weather/range handles RuntimeError."""
+        with patch(
+            "weather_app.web.routes.WeatherRepository.get_all_readings"
+        ) as mock_get:
+            mock_get.side_effect = RuntimeError("Database error")
+
+            response = client.get("/api/weather/range")
+
+        assert response.status_code == 500
+
+    @pytest.mark.unit
+    def test_api_get_stats_runtime_error(self, client):
+        """GET /api/weather/stats handles RuntimeError."""
+        with patch(
+            "weather_app.web.routes.WeatherRepository.get_stats"
+        ) as mock_get:
+            mock_get.side_effect = RuntimeError("Database error")
+
+            response = client.get("/api/weather/stats")
+
+        assert response.status_code == 500

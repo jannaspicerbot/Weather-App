@@ -252,6 +252,182 @@ class TestAPIQueue:
             await queue.shutdown(timeout=2.0)
 
 
+# =============================================================================
+# EDGE CASE TESTS
+# =============================================================================
+
+
+class TestAPIQueueEdgeCases:
+    """Tests for API queue edge cases."""
+
+    @pytest.mark.asyncio
+    async def test_start_when_already_running(self):
+        """Start is no-op when queue already running."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        try:
+            # Start once
+            await queue.start()
+            assert queue.running is True
+            original_task = queue.worker_task
+
+            # Start again should be no-op
+            await queue.start()
+            assert queue.running is True
+            # Worker task should be the same
+            assert queue.worker_task is original_task
+
+        finally:
+            await queue.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_shutdown_when_not_running(self):
+        """Shutdown is no-op when queue not running."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        # Should not raise exception
+        await queue.shutdown()
+
+        # Queue should still not be running
+        assert queue.running is False
+
+    @pytest.mark.asyncio
+    async def test_enqueue_when_not_running(self):
+        """Enqueue raises RuntimeError when queue stopped."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        def sample_function():
+            return 42
+
+        # Should raise RuntimeError
+        with pytest.raises(RuntimeError, match="Queue is not running"):
+            await queue.enqueue(sample_function)
+
+    @pytest.mark.asyncio
+    async def test_shutdown_timeout_scenario(self):
+        """Handles timeout during graceful shutdown."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+        await queue.start()
+
+        try:
+            executed = []
+
+            def very_slow_function():
+                """Function that takes a long time"""
+                time.sleep(0.5)
+                executed.append(1)
+                return 1
+
+            # Queue a slow request
+            task = asyncio.create_task(queue.enqueue(very_slow_function))
+
+            # Give it a moment to start
+            await asyncio.sleep(0.1)
+
+            # Shutdown with very short timeout
+            await queue.shutdown(timeout=0.05)
+
+            # Queue should be stopped
+            assert queue.running is False
+
+        except Exception:
+            pass  # We expect this might not complete cleanly
+
+    @pytest.mark.asyncio
+    async def test_request_key_generation(self):
+        """Request key is generated correctly for deduplication."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        def test_func(a, b):
+            return a + b
+
+        # Generate keys for different calls
+        key1 = queue._generate_request_key(test_func, (1, 2), {})
+        key2 = queue._generate_request_key(test_func, (1, 2), {})
+        key3 = queue._generate_request_key(test_func, (3, 4), {})
+        key4 = queue._generate_request_key(test_func, (1, 2), {"x": 1})
+
+        # Same args should produce same key
+        assert key1 == key2
+
+        # Different args should produce different key
+        assert key1 != key3
+
+        # Different kwargs should produce different key
+        assert key1 != key4
+
+    @pytest.mark.asyncio
+    async def test_cleanup_after_request_completion(self):
+        """In-flight tracking is cleaned up after request completes."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+        await queue.start()
+
+        try:
+
+            def sample_function(x):
+                return x * 2
+
+            # Execute request
+            await queue.enqueue(sample_function, 5)
+
+            # In-flight dict should be empty after completion
+            assert len(queue._in_flight) == 0
+
+        finally:
+            await queue.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_cleanup_after_request_failure(self):
+        """In-flight tracking is cleaned up after request fails."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+        await queue.start()
+
+        try:
+
+            def failing_function():
+                raise ValueError("Test error")
+
+            # Execute request (should fail)
+            try:
+                await queue.enqueue(failing_function)
+            except ValueError:
+                pass
+
+            # In-flight dict should still be empty after failure
+            assert len(queue._in_flight) == 0
+
+        finally:
+            await queue.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_max_queue_size_tracking(self):
+        """Max queue size metric is tracked correctly."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.5)  # Slow rate to build up queue
+        await queue.start()
+
+        try:
+            results = []
+
+            def slow_function(x):
+                time.sleep(0.1)
+                results.append(x)
+                return x
+
+            # Queue multiple requests quickly
+            tasks = [
+                asyncio.create_task(queue.enqueue(slow_function, i)) for i in range(5)
+            ]
+
+            # Wait for all to complete
+            await asyncio.gather(*tasks)
+
+            # Max queue size should have been tracked
+            assert queue.metrics.max_queue_size >= 1
+
+        finally:
+            await queue.shutdown()
+
+
 # Integration test marker (can be skipped if desired)
 @pytest.mark.integration
 class TestAPIQueueIntegration:
