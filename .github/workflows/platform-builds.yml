@@ -5,6 +5,7 @@ name: Platform-Specific Builds
 # - Full installer builds ONLY on pushes to main (after PR merge)
 # - Path filters ensure we skip builds for docs-only or test-only changes
 # - PRs do NOT trigger installer builds (use main-ci.yml for PR validation)
+# - Can be called by other workflows (e.g., release.yml) via workflow_call
 # =============================================================================
 on:
   push:
@@ -31,6 +32,14 @@ on:
           - windows
           - macos
           - both
+  # Allow other workflows to call this workflow
+  workflow_call:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: false
+        default: 'both'
+        type: string
 
 # Cancel in-progress runs for the same branch (but not for workflow_dispatch)
 concurrency:
