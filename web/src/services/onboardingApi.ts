@@ -81,20 +81,28 @@ export async function validateCredentials(
 
 /**
  * Save validated credentials to the server's .env file
+ * Optionally saves device MAC address selection
  */
 export async function saveCredentials(
   apiKey: string,
-  appKey: string
+  appKey: string,
+  deviceMac?: string
 ): Promise<{ success: boolean; message: string }> {
+  const body: { api_key: string; app_key: string; device_mac?: string } = {
+    api_key: apiKey,
+    app_key: appKey,
+  };
+
+  if (deviceMac) {
+    body.device_mac = deviceMac;
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/credentials/save`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      api_key: apiKey,
-      app_key: appKey,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -154,6 +162,42 @@ export async function stopBackfill(): Promise<{ success: boolean; message: strin
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
     throw new Error(error.detail || 'Failed to stop backfill');
+  }
+
+  return response.json();
+}
+
+/**
+ * Get list of available devices (requires credentials to be configured)
+ */
+export async function getDevices(): Promise<{ devices: DeviceInfo[]; selected_device_mac: string | null }> {
+  const response = await fetch(`${API_BASE_URL}/api/devices`);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || 'Failed to fetch devices');
+  }
+
+  return response.json();
+}
+
+/**
+ * Save device selection
+ */
+export async function selectDevice(deviceMac: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/api/devices/select`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      device_mac: deviceMac,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || 'Failed to save device selection');
   }
 
   return response.json();
