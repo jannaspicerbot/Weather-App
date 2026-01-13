@@ -505,7 +505,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 150px;
+  height: 200px;
   color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
