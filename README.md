@@ -202,7 +202,7 @@ GET /api/weather/history?start_date=2024-01-01&end_date=2024-12-31
 GET /api/weather/stats?start_date=2024-01-01&end_date=2024-12-31
 
 # Health check
-GET /health
+GET /api/health
 ```
 
 **Interactive API docs** (Swagger UI): http://localhost:8000/docs

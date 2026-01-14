@@ -68,7 +68,7 @@ def register_frontend(app: FastAPI) -> None:
     if getattr(sys, "frozen", False):
         # Running as executable - static files bundled with app
         # PyInstaller extracts files to sys._MEIPASS temporary directory
-        static_dir = Path(sys._MEIPASS) / "web" / "dist"
+        static_dir = Path(sys._MEIPASS) / "web" / "dist"  # type: ignore[attr-defined]
     else:
         # Development mode - serve from project's web/dist directory
         static_dir = Path(__file__).parent.parent.parent / "web" / "dist"

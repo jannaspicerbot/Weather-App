@@ -84,6 +84,202 @@ def populated_db_path(temp_db_path):
 
 
 # =============================================================================
+# GET_SAMPLED_READINGS TESTS
+# =============================================================================
+
+
+class TestGetSampledReadings:
+    """Tests for WeatherRepository.get_sampled_readings()."""
+
+    @pytest.fixture
+    def large_db_path(self, temp_db_path):
+        """Create a database with many records spanning multiple days."""
+        # Create 100 records across 10 days (10 records per day)
+        sample_records = []
+        base_timestamp = 1704067200000  # 2024-01-01T00:00:00 UTC
+
+        for day in range(10):
+            for hour in range(10):
+                timestamp = base_timestamp + (day * 86400000) + (hour * 3600000)
+                date_str = datetime.fromtimestamp(timestamp / 1000).strftime(
+                    "%Y-%m-%dT%H:%M:%S"
+                )
+                sample_records.append(
+                    {
+                        "dateutc": timestamp,
+                        "date": date_str,
+                        "tempf": 70.0 + day + (hour * 0.1),
+                        "humidity": 50,
+                    }
+                )
+
+        with WeatherDatabase(temp_db_path) as db:
+            db.insert_data(sample_records)
+
+        return temp_db_path
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_returns_all_when_under_limit(self, populated_db_path):
+        """Should return all records when total < target_count."""
+        with patch("weather_app.database.repository.DB_PATH", populated_db_path):
+            results = WeatherRepository.get_sampled_readings(
+                start_date="2024-01-01",
+                end_date="2024-01-04",
+                target_count=100,
+            )
+
+        # Should return all 5 records since 5 < 100
+        assert len(results) == 5
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_samples_when_over_limit(self, large_db_path):
+        """Should sample records when total > target_count."""
+        with patch("weather_app.database.repository.DB_PATH", large_db_path):
+            results = WeatherRepository.get_sampled_readings(
+                start_date="2024-01-01",
+                end_date="2024-01-11",
+                target_count=20,
+            )
+
+        # Should return approximately 20 records (sampled from 100)
+        assert len(results) <= 20
+        assert len(results) >= 15  # Allow some variance due to integer division
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_distributed_across_range(self, large_db_path):
+        """Verify sampling returns data from across the full date range."""
+        with patch("weather_app.database.repository.DB_PATH", large_db_path):
+            results = WeatherRepository.get_sampled_readings(
+                start_date="2024-01-01",
+                end_date="2024-01-11",
+                target_count=10,
+            )
+
+        # Extract unique dates from results
+        dates = set()
+        for record in results:
+            date_part = record["date"][:10]  # Extract YYYY-MM-DD
+            dates.add(date_part)
+
+        # Should have records from multiple days, not just the first or last
+        assert len(dates) >= 5, f"Expected records from at least 5 days, got {dates}"
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_ordered_ascending(self, large_db_path):
+        """Results should be ordered by date ascending."""
+        with patch("weather_app.database.repository.DB_PATH", large_db_path):
+            results = WeatherRepository.get_sampled_readings(
+                start_date="2024-01-01",
+                end_date="2024-01-11",
+                target_count=20,
+            )
+
+        # Verify ascending order
+        for i in range(1, len(results)):
+            assert results[i]["dateutc"] >= results[i - 1]["dateutc"]
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_respects_date_range(self, large_db_path):
+        """Should only return records within date range."""
+        with patch("weather_app.database.repository.DB_PATH", large_db_path):
+            results = WeatherRepository.get_sampled_readings(
+                start_date="2024-01-03",
+                end_date="2024-01-05",
+                target_count=100,
+            )
+
+        # All records should be within the date range
+        for record in results:
+            assert record["date"] >= "2024-01-03"
+            assert record["date"] <= "2024-01-05T23:59:59"
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_empty_range(self, populated_db_path):
+        """Should return empty list for date range with no data."""
+        with patch("weather_app.database.repository.DB_PATH", populated_db_path):
+            results = WeatherRepository.get_sampled_readings(
+                start_date="2025-01-01",
+                end_date="2025-01-31",
+                target_count=100,
+            )
+
+        assert results == []
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_invalid_start_date(self, populated_db_path):
+        """Should raise ValueError for invalid start date format."""
+        with patch("weather_app.database.repository.DB_PATH", populated_db_path):
+            with pytest.raises(ValueError) as exc_info:
+                WeatherRepository.get_sampled_readings(
+                    start_date="invalid-date",
+                    end_date="2024-01-31",
+                    target_count=100,
+                )
+
+        assert "Invalid start_date format" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_invalid_end_date(self, populated_db_path):
+        """Should raise ValueError for invalid end date format."""
+        with patch("weather_app.database.repository.DB_PATH", populated_db_path):
+            with pytest.raises(ValueError) as exc_info:
+                WeatherRepository.get_sampled_readings(
+                    start_date="2024-01-01",
+                    end_date="01/31/2024",
+                    target_count=100,
+                )
+
+        assert "Invalid end_date format" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_returns_dictionaries(self, populated_db_path):
+        """Results should be dictionaries with correct keys."""
+        with patch("weather_app.database.repository.DB_PATH", populated_db_path):
+            results = WeatherRepository.get_sampled_readings(
+                start_date="2024-01-01",
+                end_date="2024-01-04",
+                target_count=100,
+            )
+
+        assert len(results) > 0
+        record = results[0]
+        assert isinstance(record, dict)
+        assert "date" in record
+        assert "dateutc" in record
+        assert "tempf" in record
+
+    @pytest.mark.unit
+    def test_get_sampled_readings_includes_data_from_end_of_range(self, large_db_path):
+        """
+        Regression test: Verify sampling includes data from the end of the date range.
+
+        This test prevents the bug where LIMIT truncated data before reaching
+        the end of the dataset. With ceiling division and no LIMIT, the full
+        range should always be covered.
+        """
+        with patch("weather_app.database.repository.DB_PATH", large_db_path):
+            # Get the last record's date from the full dataset
+            all_records = WeatherRepository.get_all_readings(limit=1, order="desc")
+            last_date = all_records[0]["date"][:10]  # Extract YYYY-MM-DD
+
+            # Get sampled data with a small target to force sampling
+            sampled = WeatherRepository.get_sampled_readings(
+                start_date="2024-01-01",
+                end_date="2024-01-11",
+                target_count=10,
+            )
+
+            # Verify the last sampled record is from the last day of data
+            sampled_last_date = sampled[-1]["date"][:10]
+
+            # The last sampled record should be from the same day as the actual last record
+            assert sampled_last_date == last_date, (
+                f"Sampling missed end of range: last data is {last_date}, "
+                f"but sampling only reached {sampled_last_date}"
+            )
+
+
+# =============================================================================
 # GET_ALL_READINGS TESTS
 # =============================================================================
 

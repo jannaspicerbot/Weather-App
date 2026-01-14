@@ -145,7 +145,6 @@ jobs:
 
       - name: Type Check (mypy)
         run: mypy weather_app/
-        continue-on-error: true
 
   # ============================================================================
   # FRONTEND TESTS - Lint, type check, and build

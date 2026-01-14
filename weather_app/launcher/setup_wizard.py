@@ -199,5 +199,6 @@ def run_setup() -> bool:
     """
     if needs_setup():
         wizard = SetupWizard()
-        return wizard.run()
+        result: bool = wizard.run()
+        return result
     return True

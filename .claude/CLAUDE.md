@@ -152,7 +152,7 @@ Choose the right Claude model for your task:
 
 ```bash
 # Backend (Python)
-uvicorn weather_app.api.main:app --reload    # Start dev server
+uvicorn weather_app.web.app:create_app --factory --reload  # Start dev server
 pytest tests/ -v                              # Run tests
 black weather_app/                            # Format code
 ruff check --fix weather_app/                 # Lint and auto-fix

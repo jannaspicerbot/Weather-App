@@ -20,6 +20,7 @@ Usage:
 """
 
 import asyncio
+import functools
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -82,6 +83,7 @@ class AmbientAPIQueue:
         self.worker_task: asyncio.Task | None = None
         self.running = False
         self.last_request_time: float = 0.0
+        self._loop: asyncio.AbstractEventLoop | None = None
 
         # Request deduplication: map request keys to futures
         self._in_flight: dict[str, asyncio.Future] = {}
@@ -113,6 +115,7 @@ class AmbientAPIQueue:
             return
 
         self.running = True
+        self._loop = asyncio.get_running_loop()
         self.worker_task = asyncio.create_task(self._worker())
         logger.info("api_queue_started")
 
@@ -195,7 +198,7 @@ class AmbientAPIQueue:
             return await self._in_flight[request_key]
 
         # Create new request
-        future = asyncio.Future()
+        future: asyncio.Future[Any] = asyncio.Future()
         self._in_flight[request_key] = future
 
         request = QueuedRequest(
@@ -271,11 +274,11 @@ class AmbientAPIQueue:
                         result = await request.func(*request.args, **request.kwargs)
                     else:
                         loop = asyncio.get_event_loop()
-                        # Bind request to lambda parameter to avoid late binding issues
-                        result = await loop.run_in_executor(
-                            None,
-                            lambda req=request: req.func(*req.args, **req.kwargs),
+                        # Use functools.partial to bind request and avoid late binding
+                        bound_func = functools.partial(
+                            request.func, *request.args, **request.kwargs
                         )
+                        result = await loop.run_in_executor(None, bound_func)
 
                     # Calculate wait time and update metrics
                     wait_time = start_time - request.enqueue_time
@@ -327,6 +330,47 @@ class AmbientAPIQueue:
                 "api_queue_worker_error", error=str(e), error_type=type(e).__name__
             )
             raise
+
+    def enqueue_threadsafe(
+        self, func: Callable, *args, timeout: float = 60.0, **kwargs
+    ) -> Any:
+        """
+        Enqueue an API request from a non-async thread context.
+
+        This method is safe to call from background threads (e.g., APScheduler jobs,
+        BackfillService). It blocks until the request completes.
+
+        Args:
+            func: The function to call (typically an AmbientWeatherAPI method)
+            *args: Positional arguments for the function
+            timeout: Maximum seconds to wait for result (default: 60.0)
+            **kwargs: Keyword arguments for the function
+
+        Returns:
+            The result of the function call
+
+        Raises:
+            RuntimeError: If queue is not running
+            TimeoutError: If request takes longer than timeout
+            Exception: Any exception raised by the function
+        """
+        if not self.running:
+            raise RuntimeError("Queue is not running. Call start() first.")
+
+        if self._loop is None:
+            raise RuntimeError("Queue event loop not initialized")
+
+        # Submit coroutine to the queue's event loop from this thread
+        concurrent_future = asyncio.run_coroutine_threadsafe(
+            self.enqueue(func, *args, **kwargs),
+            self._loop,
+        )
+
+        try:
+            return concurrent_future.result(timeout=timeout)
+        except TimeoutError:
+            concurrent_future.cancel()
+            raise TimeoutError(f"Request timed out after {timeout} seconds")
 
     def get_metrics(self) -> dict[str, Any]:
         """

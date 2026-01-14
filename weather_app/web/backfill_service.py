@@ -85,7 +85,7 @@ class BackfillService:
             Tuple of (valid: bool, message: str, devices: list)
         """
         try:
-            # Use API queue for rate limiting
+            # Use shared API queue for rate limiting (thread-safe)
             from weather_app.web.app import api_queue
 
             api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)
@@ -141,7 +141,7 @@ class BackfillService:
                 return False, f"Failed to validate credentials: {error_msg}", []
 
     def save_credentials(
-        self, api_key: str, app_key: str, device_mac: str = None
+        self, api_key: str, app_key: str, device_mac: str | None = None
     ) -> tuple[bool, str]:
         """
         Save credentials and optionally device MAC to the .env file.
@@ -278,7 +278,7 @@ class BackfillService:
         }
 
     def start_backfill(
-        self, api_key: str = None, app_key: str = None
+        self, api_key: str | None = None, app_key: str | None = None
     ) -> tuple[bool, str]:
         """
         Start background backfill process.
@@ -297,10 +297,10 @@ class BackfillService:
             return False, "Backfill already in progress"
 
         # Get credentials
-        api_key = api_key or os.getenv("AMBIENT_API_KEY")
-        app_key = app_key or os.getenv("AMBIENT_APP_KEY")
+        effective_api_key: str | None = api_key or os.getenv("AMBIENT_API_KEY")
+        effective_app_key: str | None = app_key or os.getenv("AMBIENT_APP_KEY")
 
-        if not api_key or not app_key:
+        if not effective_api_key or not effective_app_key:
             return False, "API credentials not configured"
 
         # Reset stop flag
@@ -309,7 +309,7 @@ class BackfillService:
         # Start background thread
         self._thread = threading.Thread(
             target=self._run_backfill,
-            args=(api_key, app_key),
+            args=(effective_api_key, effective_app_key),
             daemon=True,
         )
         self._thread.start()
@@ -335,7 +335,7 @@ class BackfillService:
                 error=None,
             )
 
-            # Use API queue for rate limiting
+            # Use shared API queue for rate limiting (thread-safe)
             from weather_app.web.app import api_queue
 
             api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)
@@ -468,8 +468,17 @@ class BackfillService:
                         )
 
                         with self._lock:
-                            self._progress["inserted_records"] += inserted
-                            self._progress["skipped_records"] += skipped
+                            current_inserted = self._progress["inserted_records"]
+                            current_skipped = self._progress["skipped_records"]
+                            if isinstance(current_inserted, int) and isinstance(
+                                current_skipped, int
+                            ):
+                                self._progress["inserted_records"] = (
+                                    current_inserted + inserted
+                                )
+                                self._progress["skipped_records"] = (
+                                    current_skipped + skipped
+                                )
                             if current_date:
                                 self._progress["current_date"] = current_date
 

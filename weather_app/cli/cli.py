@@ -13,7 +13,7 @@ import click
 from dotenv import load_dotenv
 
 # Fix Windows console encoding for emoji support
-if sys.platform == "win32":
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 from weather_app.api import AmbientWeatherAPI
@@ -144,7 +144,7 @@ def fetch(limit):
             return
 
         # Save to database
-        with WeatherDatabase(db_path) as db:
+        with WeatherDatabase(str(db_path)) as db:
             inserted, skipped = db.insert_data(data)
 
         duration_ms = (time.time() - start_time) * 1000
@@ -261,7 +261,7 @@ def backfill(start, end, batch_size, delay):
             click.echo(f"📡 Fetching from device: {device_name}\n")
 
             # Fetch and save data incrementally
-            with WeatherDatabase(db_path) as db:
+            with WeatherDatabase(str(db_path)) as db:
                 # Initialize backfill progress
                 progress_id = db.init_backfill_progress(start, end)
 
@@ -394,14 +394,15 @@ def export(output, start, end, limit):
 
     # Execute query and export using DuckDB
     with WeatherDatabase(str(db_path)) as db:
-        result = db.conn.execute(query, params).fetchall()
+        conn = db._get_conn()
+        result = conn.execute(query, params).fetchall()
 
         if not result:
             click.echo("⚠️  No data found matching criteria")
             return
 
         # Convert to list of dictionaries
-        columns = [desc[0] for desc in db.conn.description]
+        columns = [desc[0] for desc in conn.description]
         rows = [dict(zip(columns, row)) for row in result]
 
     # Write to CSV
@@ -437,16 +438,18 @@ def info():
         try:
             # Use WeatherDatabase to get record count
             with WeatherDatabase(str(db_path)) as db:
-                result = db.conn.execute("SELECT COUNT(*) FROM weather_data").fetchone()
-                count = result[0]
+                conn = db._get_conn()
+                result = conn.execute("SELECT COUNT(*) FROM weather_data").fetchone()
+                count = result[0] if result else 0
                 click.echo(f"Total records: {count:,}")
 
                 if count > 0:
-                    result = db.conn.execute(
+                    date_result = conn.execute(
                         "SELECT MIN(date), MAX(date) FROM weather_data"
                     ).fetchone()
-                    min_date, max_date = result
-                    click.echo(f"Date range: {min_date} to {max_date}")
+                    if date_result:
+                        min_date, max_date = date_result
+                        click.echo(f"Date range: {min_date} to {max_date}")
 
             logger.info("info_command_completed", total_records=count)
         except Exception as e:

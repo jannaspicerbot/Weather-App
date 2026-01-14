@@ -9,14 +9,20 @@ import { VictoryChart, VictoryLine, VictoryAxis, VictoryContainer } from 'victor
 import { type WeatherData } from '../../api';
 import { ChartCard } from './ChartCard';
 
+interface DateRange {
+  start: Date;
+  end: Date;
+}
+
 interface HumidityChartProps {
   data: WeatherData[];
+  dateRange?: DateRange;
 }
 
 // Chart height for compact 2x2 grid layout
 const CHART_HEIGHT = 200;
 
-export default function HumidityChart({ data }: HumidityChartProps) {
+export default function HumidityChart({ data, dateRange }: HumidityChartProps) {
   const hasData = data && data.length > 0;
 
   const humidityData = hasData
@@ -42,6 +48,7 @@ export default function HumidityChart({ data }: HumidityChartProps) {
         <VictoryChart
           height={CHART_HEIGHT}
           padding={{ top: 15, bottom: 35, left: 50, right: 20 }}
+          domain={dateRange ? { x: [dateRange.start, dateRange.end] } : undefined}
           containerComponent={
             <VictoryContainer
               title="Humidity Chart"

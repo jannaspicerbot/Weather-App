@@ -1,8 +1,9 @@
 """
 Debug launcher to test the Weather App with console output and error logging
 """
-import sys
+
 import logging
+import sys
 import traceback
 from pathlib import Path
 
@@ -10,11 +11,8 @@ from pathlib import Path
 log_file = Path.home() / "weather_app_debug.log"
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler(sys.stdout)
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(log_file), logging.StreamHandler(sys.stdout)],
 )
 
 logger = logging.getLogger(__name__)
@@ -39,7 +37,7 @@ except ImportError as e:
     logger.error(f"Import error: {e}")
     logger.error(f"Full traceback:\n{traceback.format_exc()}")
     logger.error(f"sys.path: {sys.path}")
-    print(f"\nERROR: Failed to import required modules")
+    print("\nERROR: Failed to import required modules")
     print(f"See log file for details: {log_file}")
     input("\nPress Enter to exit...")
     sys.exit(1)
@@ -47,7 +45,7 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Unexpected error: {e}")
     logger.error(f"Full traceback:\n{traceback.format_exc()}")
-    print(f"\nERROR: Application crashed")
+    print("\nERROR: Application crashed")
     print(f"See log file for details: {log_file}")
     input("\nPress Enter to exit...")
     sys.exit(1)

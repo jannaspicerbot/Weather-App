@@ -42,7 +42,7 @@ def get_resource_path(relative_path):
     if getattr(sys, "frozen", False):
         # Running as PyInstaller bundle
         # PyInstaller sets sys._MEIPASS to the temp extraction directory
-        base_path = Path(sys._MEIPASS)
+        base_path = Path(sys._MEIPASS)  # type: ignore[attr-defined]
     else:
         # Running in development
         # Resolve from project root (3 levels up from this file)
@@ -73,7 +73,7 @@ def verify_resource_exists(relative_path, resource_name=None):
             f"Required resource not found: {name}\n"
             f"Expected at: {resource}\n"
             f"Frozen: {getattr(sys, 'frozen', False)}\n"
-            f"Base path: {Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else Path(__file__).parent.parent.parent}"
+            f"Base path: {Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else Path(__file__).parent.parent.parent}"  # type: ignore[attr-defined]
         )
     return resource
 
@@ -117,7 +117,7 @@ def get_base_path():
         Path: Base path (project root in dev, _MEIPASS when frozen)
     """
     if getattr(sys, "frozen", False):
-        return Path(sys._MEIPASS)
+        return Path(sys._MEIPASS)  # type: ignore[attr-defined]
     else:
         return Path(__file__).parent.parent.parent
 
@@ -140,5 +140,5 @@ def get_meipass():
         Path | None: _MEIPASS path if frozen, None if development
     """
     if getattr(sys, "frozen", False):
-        return Path(sys._MEIPASS)
+        return Path(sys._MEIPASS)  # type: ignore[attr-defined]
     return None

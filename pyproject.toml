@@ -69,3 +69,15 @@ ignore = [
 "tests/**/*.py" = ["F541", "F841", "E722", "UP009"]  # Allow f-strings without placeholders, unused variables, bare except, and UTF-8 declarations in tests
 "tests/utils/*.py" = ["F841", "E722"]  # Allow unused variables and bare except in test utilities
 "tests/archive/**/*.py" = ["F841", "E402", "E722", "F401", "F541"]  # Relax linting for archived experimental code
+
+[tool.coverage.run]
+source = ["weather_app"]
+omit = ["*/tests/*", "*/scripts/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+fail_under = 60
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]

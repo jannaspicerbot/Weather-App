@@ -129,7 +129,7 @@ def verify_bundled_resources(log_file):
     try:
         # Determine base path for resources
         if getattr(sys, "frozen", False):
-            base_path = Path(sys._MEIPASS)
+            base_path = Path(sys._MEIPASS)  # type: ignore[attr-defined]
         else:
             base_path = Path(__file__).parent.parent.parent
 

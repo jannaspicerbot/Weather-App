@@ -358,6 +358,103 @@ class TestApiWeatherEndpoints:
         assert len(data) == 3
 
     @pytest.mark.unit
+    def test_api_weather_range_uses_sampling(self, temp_db_path):
+        """GET /api/weather/range should use sampling for date range queries."""
+        # Create a database with many records
+        sample_records = []
+        base_timestamp = 1704067200000  # 2024-01-01T00:00:00 UTC
+
+        for i in range(50):  # 50 records
+            timestamp = base_timestamp + (i * 3600000)  # 1 hour apart
+            date_str = datetime.fromtimestamp(timestamp / 1000).strftime(
+                "%Y-%m-%dT%H:%M:%S"
+            )
+            sample_records.append(
+                {
+                    "dateutc": timestamp,
+                    "date": date_str,
+                    "tempf": 70.0 + i,
+                    "humidity": 50,
+                }
+            )
+
+        with WeatherDatabase(temp_db_path) as db:
+            db.insert_data(sample_records)
+
+        with patch("weather_app.database.repository.DB_PATH", temp_db_path):
+            with patch("weather_app.config.DB_PATH", temp_db_path):
+                app = create_app()
+                client = TestClient(app)
+
+                # Request with limit lower than total records
+                response = client.get(
+                    "/api/weather/range?start_date=2024-01-01&end_date=2024-01-03&limit=10"
+                )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should return sampled data, not exceed limit
+        assert len(data) <= 10
+
+    @pytest.mark.unit
+    def test_api_weather_range_without_dates_returns_recent(self, client_with_data):
+        """GET /api/weather/range without dates returns most recent records."""
+        response = client_with_data.get("/api/weather/range?limit=2")
+        assert response.status_code == 200
+        data = response.json()
+
+        assert len(data) == 2
+        # Should be ordered by date descending (most recent first)
+        assert data[0]["date"] == "2024-01-01T13:00:00"
+
+    @pytest.mark.unit
+    def test_api_weather_range_sampled_data_is_distributed(self, temp_db_path):
+        """Verify /api/weather/range returns evenly distributed samples."""
+        # Create records spanning 10 days
+        sample_records = []
+        base_timestamp = 1704067200000  # 2024-01-01T00:00:00 UTC
+
+        for day in range(10):
+            for hour in range(10):  # 10 records per day = 100 total
+                timestamp = base_timestamp + (day * 86400000) + (hour * 3600000)
+                date_str = datetime.fromtimestamp(timestamp / 1000).strftime(
+                    "%Y-%m-%dT%H:%M:%S"
+                )
+                sample_records.append(
+                    {
+                        "dateutc": timestamp,
+                        "date": date_str,
+                        "tempf": 70.0,
+                        "humidity": 50,
+                    }
+                )
+
+        with WeatherDatabase(temp_db_path) as db:
+            db.insert_data(sample_records)
+
+        with patch("weather_app.database.repository.DB_PATH", temp_db_path):
+            with patch("weather_app.config.DB_PATH", temp_db_path):
+                app = create_app()
+                client = TestClient(app)
+
+                response = client.get(
+                    "/api/weather/range?start_date=2024-01-01&end_date=2024-01-11&limit=20"
+                )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Extract unique dates
+        dates = set()
+        for record in data:
+            date_part = record["date"][:10]
+            dates.add(date_part)
+
+        # Should have data from multiple days (distributed), not just recent ones
+        assert len(dates) >= 5, f"Expected data from at least 5 days, got {dates}"
+
+    @pytest.mark.unit
     def test_api_weather_stats(self, client_with_data):
         """GET /api/weather/stats should return statistics."""
         response = client_with_data.get("/api/weather/stats")

@@ -4,13 +4,15 @@ Convert PNG icon to platform-specific formats (.ico and .icns)
 Usage: python scripts/convert_icon.py
 """
 
-from PIL import Image
-from pathlib import Path
 import sys
+from pathlib import Path
+
+from PIL import Image
 
 # Fix Windows console encoding for emoji support
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+
 
 def convert_to_ico(png_path: Path, ico_path: Path):
     """Convert PNG to Windows .ico format with multiple sizes"""
@@ -21,13 +23,10 @@ def convert_to_ico(png_path: Path, ico_path: Path):
     # Windows icon sizes: 16, 32, 48, 64, 128, 256
     icon_sizes = [(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
 
-    img.save(
-        ico_path,
-        format='ICO',
-        sizes=icon_sizes
-    )
+    img.save(ico_path, format="ICO", sizes=icon_sizes)
 
     print(f"✅ Created {ico_path}")
+
 
 def convert_to_icns(png_path: Path, icns_path: Path):
     """Convert PNG to macOS .icns format"""
@@ -66,10 +65,13 @@ def convert_to_icns(png_path: Path, icns_path: Path):
     # Note: .icns creation requires macOS 'iconutil' command
     # PyInstaller on macOS can also use the PNG directly with --icon flag
 
+
 def main():
     # Paths
     project_root = Path(__file__).parent.parent
-    png_path = project_root / "docs" / "design" / "icons" / "weather-app-icon-soft-trust.png"
+    png_path = (
+        project_root / "docs" / "design" / "icons" / "weather-app-icon-soft-trust.png"
+    )
 
     # Output to weather_app/resources/icons/ (bundled with app)
     resources_dir = project_root / "weather_app" / "resources" / "icons"
@@ -91,6 +93,7 @@ def main():
 
     # Copy PNG for Linux/fallback use
     import shutil
+
     shutil.copy(png_path, fallback_png)
     print(f"✅ Copied fallback PNG to {fallback_png}")
 
@@ -98,6 +101,7 @@ def main():
     print(f"   Windows:  {windows_ico}")
     print(f"   macOS:    {macos_icns} (requires macOS iconutil)")
     print(f"   Fallback: {fallback_png}")
+
 
 if __name__ == "__main__":
     main()

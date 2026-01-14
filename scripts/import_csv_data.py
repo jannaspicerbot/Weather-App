@@ -16,8 +16,8 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from weather_app.database.engine import WeatherDatabase
 from weather_app.config import DB_PATH
+from weather_app.database.engine import WeatherDatabase
 
 
 def parse_csv_row(row: dict) -> dict:
@@ -47,7 +47,7 @@ def parse_csv_row(row: dict) -> dict:
     """
 
     # Parse date field
-    date_str = row.get('Date', '')
+    date_str = row.get("Date", "")
     if not date_str:
         return None
 
@@ -57,14 +57,14 @@ def parse_csv_row(row: dict) -> dict:
         # Convert to UTC timestamp in milliseconds
         dateutc = int(dt.timestamp() * 1000)
         # Format as ISO string without timezone for display
-        date_display = dt.strftime('%Y-%m-%d %H:%M:%S')
+        date_display = dt.strftime("%Y-%m-%d %H:%M:%S")
     except ValueError:
         print(f"Warning: Could not parse date: {date_str}")
         return None
 
     def get_float(field_name: str) -> float | None:
         """Get float value from CSV, return None if empty or invalid"""
-        value = row.get(field_name, '').strip()
+        value = row.get(field_name, "").strip()
         if not value:
             return None
         try:
@@ -74,7 +74,7 @@ def parse_csv_row(row: dict) -> dict:
 
     def get_int(field_name: str) -> int | None:
         """Get integer value from CSV, return None if empty or invalid"""
-        value = row.get(field_name, '').strip()
+        value = row.get(field_name, "").strip()
         if not value:
             return None
         try:
@@ -84,26 +84,26 @@ def parse_csv_row(row: dict) -> dict:
 
     # Map CSV columns to database columns
     data = {
-        'dateutc': dateutc,
-        'date': date_display,
-        'tempf': get_float('Outdoor Temperature (°F)'),
-        'feelsLike': get_float('Feels Like (°F)'),
-        'dewPoint': get_float('Dew Point (°F)'),
-        'windspeedmph': get_float('Wind Speed (mph)'),
-        'windgustmph': get_float('Wind Gust (mph)'),
-        'maxdailygust': get_float('Max Daily Gust (mph)'),
-        'winddir': get_int('Wind Direction (°)'),
-        'hourlyrainin': get_float('Rain Rate (in/hr)'),
-        'eventrain': get_float('Event Rain (in)'),
-        'dailyrainin': get_float('Daily Rain (in)'),
-        'weeklyrainin': get_float('Weekly Rain (in)'),
-        'monthlyrainin': get_float('Monthly Rain (in)'),
-        'yearlyrainin': get_float('Yearly Rain (in)'),
-        'baromrelin': get_float('Relative Pressure (inHg)'),
-        'baromabsin': get_float('Absolute Pressure (inHg)'),
-        'humidity': get_int('Humidity (%)'),
-        'uv': get_int('Ultra-Violet Radiation Index'),
-        'solarradiation': get_float('Solar Radiation (W/m^2)'),
+        "dateutc": dateutc,
+        "date": date_display,
+        "tempf": get_float("Outdoor Temperature (°F)"),
+        "feelsLike": get_float("Feels Like (°F)"),
+        "dewPoint": get_float("Dew Point (°F)"),
+        "windspeedmph": get_float("Wind Speed (mph)"),
+        "windgustmph": get_float("Wind Gust (mph)"),
+        "maxdailygust": get_float("Max Daily Gust (mph)"),
+        "winddir": get_int("Wind Direction (°)"),
+        "hourlyrainin": get_float("Rain Rate (in/hr)"),
+        "eventrain": get_float("Event Rain (in)"),
+        "dailyrainin": get_float("Daily Rain (in)"),
+        "weeklyrainin": get_float("Weekly Rain (in)"),
+        "monthlyrainin": get_float("Monthly Rain (in)"),
+        "yearlyrainin": get_float("Yearly Rain (in)"),
+        "baromrelin": get_float("Relative Pressure (inHg)"),
+        "baromabsin": get_float("Absolute Pressure (inHg)"),
+        "humidity": get_int("Humidity (%)"),
+        "uv": get_int("Ultra-Violet Radiation Index"),
+        "solarradiation": get_float("Solar Radiation (W/m^2)"),
     }
 
     return data
@@ -123,7 +123,7 @@ def import_csv_file(csv_path: str, db: WeatherDatabase) -> tuple[int, int]:
     batch = []
     batch_size = 1000  # Insert in batches for performance
 
-    with open(csv_path, 'r', encoding='utf-8') as f:
+    with open(csv_path, encoding="utf-8") as f:
         reader = csv.DictReader(f)
 
         for row in reader:
@@ -152,8 +152,8 @@ def main():
     """Import all CSV files from data/downloads/ directory"""
 
     # Find all CSV files
-    csv_dir = Path(__file__).parent.parent / 'data' / 'downloads'
-    csv_files = sorted(glob.glob(str(csv_dir / '*.csv')))
+    csv_dir = Path(__file__).parent.parent / "data" / "downloads"
+    csv_files = sorted(glob.glob(str(csv_dir / "*.csv")))
 
     if not csv_files:
         print(f"No CSV files found in {csv_dir}")
@@ -175,7 +175,7 @@ def main():
 
     print()
     print("=" * 60)
-    print(f"Import complete!")
+    print("Import complete!")
     print(f"Total imported: {total_imported}")
     print(f"Total skipped: {total_skipped} (duplicates)")
     print("=" * 60)
@@ -183,5 +183,5 @@ def main():
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

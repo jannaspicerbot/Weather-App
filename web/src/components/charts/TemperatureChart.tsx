@@ -15,14 +15,20 @@ import {
 import { type WeatherData } from '../../api';
 import { ChartCard } from './ChartCard';
 
+interface DateRange {
+  start: Date;
+  end: Date;
+}
+
 interface TemperatureChartProps {
   data: WeatherData[];
+  dateRange?: DateRange;
 }
 
 // Chart height for compact 2x2 grid layout
 const CHART_HEIGHT = 200;
 
-export default function TemperatureChart({ data }: TemperatureChartProps) {
+export default function TemperatureChart({ data, dateRange }: TemperatureChartProps) {
   const hasData = data && data.length > 0;
 
   const temperatureData = hasData
@@ -57,6 +63,7 @@ export default function TemperatureChart({ data }: TemperatureChartProps) {
         <VictoryChart
           height={CHART_HEIGHT}
           padding={{ top: 30, bottom: 35, left: 50, right: 20 }}
+          domain={dateRange ? { x: [dateRange.start, dateRange.end] } : undefined}
           containerComponent={
             <VictoryContainer
               title="Temperature Chart"

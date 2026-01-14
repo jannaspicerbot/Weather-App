@@ -605,7 +605,7 @@ A pre-commit hook has been installed at `.git/hooks/pre-commit` to prevent accid
    weather-app fetch --limit 1
 
    # Or check API health
-   curl http://localhost:8000/health
+   curl http://localhost:8000/api/health
    ```
 
 5. **Revoke Old Credentials (Optional but Recommended):**

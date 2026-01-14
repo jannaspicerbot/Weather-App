@@ -74,6 +74,12 @@ htmlcov/
 # Temporary files
 *.tmp
 nul
+temp/
 
 # Development tracking files
 NEXT_STEPS.md
+
+# Internal development docs (not for public repo)
+docs/audits/
+docs/testing/
+docs/troubleshooting/

@@ -9,7 +9,6 @@ Tests cover:
 - Session management
 """
 
-import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -467,98 +466,72 @@ class TestRequestQueueIntegration:
     """Tests for request queue integration with async event loops."""
 
     @pytest.mark.unit
-    def test_get_devices_no_event_loop_creates_one(self, mock_devices_response):
-        """Creates new event loop when none exists."""
+    def test_get_devices_with_request_queue_uses_threadsafe(
+        self, mock_devices_response
+    ):
+        """Uses enqueue_threadsafe when request queue is provided."""
         mock_queue = MagicMock()
-        mock_future = asyncio.Future()
-        mock_future.set_result(mock_devices_response)
-        mock_queue.enqueue.return_value = mock_future
+        mock_queue.enqueue_threadsafe.return_value = mock_devices_response
 
         api = AmbientWeatherAPI(
             api_key="key", application_key="app_key", request_queue=mock_queue
         )
 
-        # Mock asyncio to simulate no event loop
-        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No loop")):
-            with patch("asyncio.new_event_loop") as mock_new_loop:
-                mock_loop = MagicMock()
-                mock_loop.run_until_complete.return_value = mock_devices_response
-                mock_new_loop.return_value = mock_loop
+        result = api.get_devices()
 
-                with patch("asyncio.set_event_loop"):
-                    result = api.get_devices()
-
-        mock_new_loop.assert_called_once()
+        mock_queue.enqueue_threadsafe.assert_called_once()
         assert result == mock_devices_response
 
     @pytest.mark.unit
-    def test_get_devices_with_request_queue(self, mock_devices_response):
-        """Uses request queue when provided."""
+    def test_get_devices_with_request_queue_returns_data(self, mock_devices_response):
+        """Request queue returns expected data."""
         mock_queue = MagicMock()
-        mock_future = asyncio.Future()
-        mock_future.set_result(mock_devices_response)
-        mock_queue.enqueue.return_value = mock_future
+        mock_queue.enqueue_threadsafe.return_value = mock_devices_response
 
         api = AmbientWeatherAPI(
             api_key="key", application_key="app_key", request_queue=mock_queue
         )
 
-        with patch("asyncio.get_event_loop") as mock_get_loop:
-            mock_loop = MagicMock()
-            mock_loop.run_until_complete.return_value = mock_devices_response
-            mock_get_loop.return_value = mock_loop
+        result = api.get_devices()
 
-            result = api.get_devices()
-
-        # Should have called enqueue
-        mock_queue.enqueue.assert_called_once()
         assert result == mock_devices_response
+        assert len(result) == 1
+        assert result[0]["macAddress"] == "AA:BB:CC:DD:EE:FF"
 
     @pytest.mark.unit
-    def test_get_device_data_no_event_loop_creates_one(self, mock_device_data_response):
-        """Creates new event loop for device data when none exists."""
+    def test_get_device_data_with_request_queue_uses_threadsafe(
+        self, mock_device_data_response
+    ):
+        """Uses enqueue_threadsafe for device data when request queue is provided."""
         mock_queue = MagicMock()
-        mock_future = asyncio.Future()
-        mock_future.set_result(mock_device_data_response)
-        mock_queue.enqueue.return_value = mock_future
+        mock_queue.enqueue_threadsafe.return_value = mock_device_data_response
 
         api = AmbientWeatherAPI(
             api_key="key", application_key="app_key", request_queue=mock_queue
         )
 
-        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No loop")):
-            with patch("asyncio.new_event_loop") as mock_new_loop:
-                mock_loop = MagicMock()
-                mock_loop.run_until_complete.return_value = mock_device_data_response
-                mock_new_loop.return_value = mock_loop
+        result = api.get_device_data("AA:BB:CC:DD:EE:FF")
 
-                with patch("asyncio.set_event_loop"):
-                    result = api.get_device_data("AA:BB:CC:DD:EE:FF")
-
-        mock_new_loop.assert_called_once()
+        mock_queue.enqueue_threadsafe.assert_called_once()
         assert result == mock_device_data_response
 
     @pytest.mark.unit
-    def test_get_device_data_with_request_queue(self, mock_device_data_response):
-        """Uses request queue for device data."""
+    def test_get_device_data_with_request_queue_returns_data(
+        self, mock_device_data_response
+    ):
+        """Request queue returns expected device data."""
         mock_queue = MagicMock()
-        mock_future = asyncio.Future()
-        mock_future.set_result(mock_device_data_response)
-        mock_queue.enqueue.return_value = mock_future
+        mock_queue.enqueue_threadsafe.return_value = mock_device_data_response
 
         api = AmbientWeatherAPI(
             api_key="key", application_key="app_key", request_queue=mock_queue
         )
 
-        with patch("asyncio.get_event_loop") as mock_get_loop:
-            mock_loop = MagicMock()
-            mock_loop.run_until_complete.return_value = mock_device_data_response
-            mock_get_loop.return_value = mock_loop
+        result = api.get_device_data("AA:BB:CC:DD:EE:FF")
 
-            result = api.get_device_data("AA:BB:CC:DD:EE:FF")
-
-        mock_queue.enqueue.assert_called_once()
         assert result == mock_device_data_response
+        assert len(result) == 2
+        assert result[0]["tempf"] == 72.5
 
     @pytest.mark.unit
     def test_get_devices_without_request_queue_calls_impl_directly(
