@@ -248,6 +248,36 @@ class TestGetSampledReadings:
         assert "dateutc" in record
         assert "tempf" in record
 
+    @pytest.mark.unit
+    def test_get_sampled_readings_includes_data_from_end_of_range(self, large_db_path):
+        """
+        Regression test: Verify sampling includes data from the end of the date range.
+
+        This test prevents the bug where LIMIT truncated data before reaching
+        the end of the dataset. With ceiling division and no LIMIT, the full
+        range should always be covered.
+        """
+        with patch("weather_app.database.repository.DB_PATH", large_db_path):
+            # Get the last record's date from the full dataset
+            all_records = WeatherRepository.get_all_readings(limit=1, order="desc")
+            last_date = all_records[0]["date"][:10]  # Extract YYYY-MM-DD
+
+            # Get sampled data with a small target to force sampling
+            sampled = WeatherRepository.get_sampled_readings(
+                start_date="2024-01-01",
+                end_date="2024-01-11",
+                target_count=10,
+            )
+
+            # Verify the last sampled record is from the last day of data
+            sampled_last_date = sampled[-1]["date"][:10]
+
+            # The last sampled record should be from the same day as the actual last record
+            assert sampled_last_date == last_date, (
+                f"Sampling missed end of range: last data is {last_date}, "
+                f"but sampling only reached {sampled_last_date}"
+            )
+
 
 # =============================================================================
 # GET_ALL_READINGS TESTS

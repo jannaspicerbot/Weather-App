@@ -85,7 +85,10 @@ class WeatherRepository:
                     result = conn.execute(query, [start_date, end_date]).fetchall()
                 else:
                     # Sample every Nth record using ROW_NUMBER window function
-                    sample_interval = max(1, total // target_count)
+                    # Use ceiling division to ensure we cover the full date range
+                    # This prevents the bug where LIMIT truncated data before
+                    # reaching the end of the dataset
+                    sample_interval = max(1, (total + target_count - 1) // target_count)
                     query = """
                         SELECT * EXCLUDE (rn) FROM (
                             SELECT *, ROW_NUMBER() OVER (ORDER BY dateutc ASC) as rn
@@ -94,10 +97,9 @@ class WeatherRepository:
                         )
                         WHERE (rn - 1) % ? = 0
                         ORDER BY dateutc ASC
-                        LIMIT ?
                     """
                     result = conn.execute(
-                        query, [start_date, end_date, sample_interval, target_count]
+                        query, [start_date, end_date, sample_interval]
                     ).fetchall()
 
                 # Convert to list of dictionaries
