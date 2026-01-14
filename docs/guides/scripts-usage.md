@@ -24,8 +24,8 @@ $env:AMBIENT_APP_KEY="your_application_key_here"
 
 ## Script 1: update_weather.py
 
-**Purpose:** Fetch recent weather data (last few hours/days)  
-**When to run:** Daily or hourly to keep data current  
+**Purpose:** Fetch recent weather data (last few hours/days)
+**When to run:** Daily or hourly to keep data current
 **Speed:** Fast (1-2 minutes)
 
 ### Basic Usage
@@ -95,8 +95,8 @@ Database totals:
 
 ## Script 2: backfill_weather.py
 
-**Purpose:** Fill in historical data going back to March 13, 2024  
-**When to run:** Overnight or when PC will be idle for hours  
+**Purpose:** Fill in historical data going back to March 13, 2024
+**When to run:** Overnight or when PC will be idle for hours
 **Speed:** Slow (designed to avoid rate limits)
 
 ### Basic Usage
@@ -262,7 +262,7 @@ Just wait an hour and run the script again - it will resume automatically!
    ```powershell
    python backfill_weather.py
    ```
-   
+
 2. **Run update daily**:
    ```powershell
    python update_weather.py

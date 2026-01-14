@@ -2273,11 +2273,11 @@ button:focus-visible {
   .device-selector__option {
     background: var(--color-bg-secondary);
   }
-  
+
   .device-selector__option:hover {
     background: var(--color-bg-primary);
   }
-  
+
   .device-selector__option--selected {
     background: rgba(74, 138, 158, 0.15);
   }

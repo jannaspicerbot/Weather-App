@@ -1,12 +1,16 @@
 """
 Setup configuration for Weather App
 """
-from setuptools import setup, find_packages
+
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 # Read README for long description
 readme_file = Path(__file__).parent / "README.md"
-long_description = readme_file.read_text(encoding='utf-8') if readme_file.exists() else ""
+long_description = (
+    readme_file.read_text(encoding="utf-8") if readme_file.exists() else ""
+)
 
 setup(
     name="weather-app",
@@ -36,8 +40,8 @@ setup(
         "Pillow>=10.0.0",
     ],
     entry_points={
-        'console_scripts': [
-            'weather-app=weather_app.cli:cli',
+        "console_scripts": [
+            "weather-app=weather_app.cli:cli",
         ],
     },
     classifiers=[
