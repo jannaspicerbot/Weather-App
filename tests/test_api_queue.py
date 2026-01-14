@@ -616,3 +616,299 @@ class TestAPIQueueIntegration:
 
         finally:
             await queue.shutdown()
+
+
+# =============================================================================
+# Threadsafe Enqueue Tests (Coverage for enqueue_threadsafe)
+# =============================================================================
+
+
+class TestAPIQueueThreadsafe:
+    """Tests for enqueue_threadsafe method."""
+
+    def test_enqueue_threadsafe_not_running(self):
+        """enqueue_threadsafe raises RuntimeError when queue not running."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        def sample_function():
+            return 42
+
+        with pytest.raises(RuntimeError, match="Queue is not running"):
+            queue.enqueue_threadsafe(sample_function)
+
+    def test_enqueue_threadsafe_no_loop(self):
+        """enqueue_threadsafe raises RuntimeError when event loop not initialized."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+        # Manually set running without starting (no event loop)
+        queue.running = True
+        queue._loop = None
+
+        def sample_function():
+            return 42
+
+        with pytest.raises(RuntimeError, match="event loop not initialized"):
+            queue.enqueue_threadsafe(sample_function)
+
+    def test_enqueue_threadsafe_basic(self):
+        """Test enqueue_threadsafe executes function from another thread."""
+        import concurrent.futures
+        import threading
+
+        # Create a separate event loop in a dedicated thread
+        loop = asyncio.new_event_loop()
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        def run_loop():
+            asyncio.set_event_loop(loop)
+            loop.run_forever()
+
+        loop_thread = threading.Thread(target=run_loop, daemon=True)
+        loop_thread.start()
+
+        try:
+            # Start queue in the loop's thread
+            start_future = asyncio.run_coroutine_threadsafe(queue.start(), loop)
+            start_future.result(timeout=5.0)
+
+            def sample_function(x, y):
+                return x + y
+
+            # Run enqueue_threadsafe from a different thread
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(
+                    queue.enqueue_threadsafe, sample_function, 10, 20
+                )
+                result = future.result(timeout=10.0)
+
+            assert result == 30
+            assert queue.metrics.completed_requests == 1
+
+        finally:
+            # Shutdown queue
+            shutdown_future = asyncio.run_coroutine_threadsafe(queue.shutdown(), loop)
+            shutdown_future.result(timeout=5.0)
+            loop.call_soon_threadsafe(loop.stop)
+            loop_thread.join(timeout=2.0)
+
+    def test_enqueue_threadsafe_with_kwargs(self):
+        """Test enqueue_threadsafe passes kwargs correctly."""
+        import concurrent.futures
+        import threading
+
+        loop = asyncio.new_event_loop()
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        def run_loop():
+            asyncio.set_event_loop(loop)
+            loop.run_forever()
+
+        loop_thread = threading.Thread(target=run_loop, daemon=True)
+        loop_thread.start()
+
+        try:
+            start_future = asyncio.run_coroutine_threadsafe(queue.start(), loop)
+            start_future.result(timeout=5.0)
+
+            def function_with_kwargs(a, b=10, c=20):
+                return a + b + c
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(
+                    queue.enqueue_threadsafe,
+                    function_with_kwargs,
+                    5,
+                    b=15,
+                    c=25,
+                )
+                result = future.result(timeout=10.0)
+
+            assert result == 45  # 5 + 15 + 25
+
+        finally:
+            shutdown_future = asyncio.run_coroutine_threadsafe(queue.shutdown(), loop)
+            shutdown_future.result(timeout=5.0)
+            loop.call_soon_threadsafe(loop.stop)
+            loop_thread.join(timeout=2.0)
+
+    def test_enqueue_threadsafe_timeout(self):
+        """enqueue_threadsafe raises TimeoutError on timeout."""
+        import threading
+
+        loop = asyncio.new_event_loop()
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        def run_loop():
+            asyncio.set_event_loop(loop)
+            loop.run_forever()
+
+        loop_thread = threading.Thread(target=run_loop, daemon=True)
+        loop_thread.start()
+
+        try:
+            start_future = asyncio.run_coroutine_threadsafe(queue.start(), loop)
+            start_future.result(timeout=5.0)
+
+            def very_slow_function():
+                time.sleep(10.0)  # Much longer than timeout
+                return 42
+
+            # Should raise TimeoutError due to short timeout
+            with pytest.raises(TimeoutError, match="timed out"):
+                queue.enqueue_threadsafe(very_slow_function, timeout=0.2)
+
+        finally:
+            # Force stop - the slow function may still be running
+            queue.running = False
+            loop.call_soon_threadsafe(loop.stop)
+            loop_thread.join(timeout=2.0)
+
+
+# =============================================================================
+# Callable Without __name__ Tests (Coverage for else branches)
+# =============================================================================
+
+
+class TestAPIQueueCallableWithoutName:
+    """Tests for callables without __name__ attribute."""
+
+    @pytest.mark.asyncio
+    async def test_request_key_for_callable_without_name(self):
+        """Request key generation handles callables without __name__."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        # Create a callable class instance (no __name__ attribute)
+        class CallableClass:
+            def __call__(self, x):
+                return x * 2
+
+        callable_obj = CallableClass()
+
+        # Should not raise - uses str(func) fallback
+        key = queue._generate_request_key(callable_obj, (5,), {})
+        assert "CallableClass" in key  # str representation contains class name
+
+    @pytest.mark.asyncio
+    async def test_enqueue_callable_without_name(self):
+        """Enqueue handles callables without __name__ attribute."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+        await queue.start()
+
+        try:
+
+            class CallableClass:
+                def __call__(self, x):
+                    return x * 3
+
+            callable_obj = CallableClass()
+            result = await queue.enqueue(callable_obj, 7)
+
+            assert result == 21
+            assert queue.metrics.completed_requests == 1
+
+        finally:
+            await queue.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_failed_request_callable_without_name(self):
+        """Failed request logging handles callables without __name__."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+        await queue.start()
+
+        try:
+
+            class FailingCallable:
+                def __call__(self):
+                    raise ValueError("Callable error")
+
+            callable_obj = FailingCallable()
+
+            with pytest.raises(ValueError, match="Callable error"):
+                await queue.enqueue(callable_obj)
+
+            assert queue.metrics.failed_requests == 1
+
+        finally:
+            await queue.shutdown()
+
+
+# =============================================================================
+# QueueMetrics Tests (Coverage for avg_wait_time_seconds edge case)
+# =============================================================================
+
+
+class TestQueueMetrics:
+    """Tests for QueueMetrics dataclass."""
+
+    def test_avg_wait_time_no_completed_requests(self):
+        """avg_wait_time_seconds returns 0.0 when no requests completed."""
+        from weather_app.services.ambient_api_queue import QueueMetrics
+
+        metrics = QueueMetrics()
+        assert metrics.completed_requests == 0
+        assert metrics.avg_wait_time_seconds == 0.0
+
+    def test_avg_wait_time_with_completed_requests(self):
+        """avg_wait_time_seconds calculates correctly with completed requests."""
+        from weather_app.services.ambient_api_queue import QueueMetrics
+
+        metrics = QueueMetrics(
+            completed_requests=10,
+            total_wait_time_seconds=5.0,
+        )
+        assert metrics.avg_wait_time_seconds == 0.5
+
+
+# =============================================================================
+# Worker Loop Edge Cases (Coverage for timeout continue and exception handler)
+# =============================================================================
+
+
+class TestWorkerLoopEdgeCases:
+    """Tests for worker loop edge cases."""
+
+    @pytest.mark.asyncio
+    async def test_worker_timeout_continue(self):
+        """Worker continues loop when queue.get() times out (empty queue)."""
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+        await queue.start()
+
+        try:
+            # Don't enqueue anything - let worker timeout on empty queue
+            # Wait long enough for at least one timeout cycle (1 second)
+            await asyncio.sleep(1.5)
+
+            # Queue should still be running after timeout cycles
+            assert queue.running is True
+            # No requests should have been processed
+            assert queue.metrics.total_requests == 0
+
+        finally:
+            await queue.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_worker_generic_exception_handler(self):
+        """Worker logs and raises generic exceptions (not CancelledError)."""
+        from unittest.mock import patch
+
+        queue = AmbientAPIQueue(rate_limit_seconds=0.1)
+
+        # Mock queue.get to raise a generic exception (not TimeoutError or CancelledError)
+        original_queue_get = queue.queue.get
+
+        call_count = 0
+
+        async def mock_get():
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                # First call raises a generic exception
+                raise RuntimeError("Simulated queue error")
+            return await original_queue_get()
+
+        with patch.object(queue.queue, "get", side_effect=mock_get):
+            queue.running = True
+            queue._loop = asyncio.get_running_loop()
+
+            # Run worker - it should raise the RuntimeError
+            with pytest.raises(RuntimeError, match="Simulated queue error"):
+                await queue._worker()
