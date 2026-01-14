@@ -233,12 +233,25 @@ def register_routes(app: FastAPI):
         limit: int = Query(default=1000, ge=1, le=10000),
     ):
         """
-        Get weather data within a date range (API route)
+        Get weather data within a date range (API route).
+
+        For large date ranges, returns evenly sampled data distributed
+        across the full range rather than just the most recent records.
         """
         try:
-            return WeatherRepository.get_all_readings(
-                start_date=start_date, end_date=end_date, limit=limit, order="desc"
-            )
+            if start_date and end_date:
+                # Use sampling for date range queries to ensure even distribution
+                return WeatherRepository.get_sampled_readings(
+                    start_date=start_date,
+                    end_date=end_date,
+                    target_count=limit,
+                )
+            else:
+                # No date range specified - return most recent records
+                return WeatherRepository.get_all_readings(
+                    limit=limit,
+                    order="desc",
+                )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except RuntimeError as e:

@@ -131,7 +131,7 @@ export default function Dashboard() {
       return Math.min(days * 288, MAX_API_LIMIT);
     } else {
       // >30 days: Request max allowed by API
-      // Backend will return evenly sampled data
+      // Backend returns evenly sampled data distributed across the date range
       return MAX_API_LIMIT;
     }
   };
