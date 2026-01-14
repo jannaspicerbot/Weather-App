@@ -13,11 +13,9 @@ Usage:
 
 import logging
 import sys
-from collections.abc import Mapping
 from typing import Any
 
 import structlog
-from structlog.contextvars import BoundVarsToken
 
 
 def configure_logging(level: str = "INFO", json_logs: bool = True) -> None:
@@ -85,7 +83,7 @@ def get_logger(name: str) -> structlog.stdlib.BoundLogger:
         >>> logger.info("api_request", method="GET", endpoint="/weather/latest")
         >>> logger.error("database_error", error="Connection failed", table="weather_data")
     """
-    return structlog.get_logger(name)  # type: ignore[return-value]
+    return structlog.get_logger(name)  # type: ignore[no-any-return]
 
 
 # Context managers for request tracking
@@ -105,7 +103,7 @@ class LogContext:
             # Output includes request_id and user_id automatically
         """
         self.context = context
-        self.token: Mapping[str, BoundVarsToken] | None = None
+        self.token: Any = None
 
     def __enter__(self) -> "LogContext":
         self.token = structlog.contextvars.bind_contextvars(**self.context)
@@ -151,13 +149,13 @@ def log_api_request(
     # Log as info if successful, warning if client error, error if server error
     if status_code:
         if status_code >= 500:
-            logger.error(**log_data)  # type: ignore[arg-type]
+            logger.error(**log_data)
         elif status_code >= 400:
-            logger.warning(**log_data)  # type: ignore[arg-type]
+            logger.warning(**log_data)
         else:
-            logger.info(**log_data)  # type: ignore[arg-type]
+            logger.info(**log_data)
     else:
-        logger.info(**log_data)  # type: ignore[arg-type]
+        logger.info(**log_data)
 
 
 def log_database_operation(
@@ -191,9 +189,9 @@ def log_database_operation(
         log_data["duration_ms"] = round(duration_ms, 2)
     if error:
         log_data["error"] = error
-        logger.error(**log_data)  # type: ignore[arg-type]
+        logger.error(**log_data)
     else:
-        logger.info(**log_data)  # type: ignore[arg-type]
+        logger.info(**log_data)
 
 
 def log_cli_command(
@@ -229,9 +227,9 @@ def log_cli_command(
         log_data["duration_ms"] = round(duration_ms, 2)
 
     if success:
-        logger.info(**log_data)  # type: ignore[arg-type]
+        logger.info(**log_data)
     else:
-        logger.error(**log_data)  # type: ignore[arg-type]
+        logger.error(**log_data)
 
 
 # Initialize logging on module import with sensible defaults

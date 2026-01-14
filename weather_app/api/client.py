@@ -3,6 +3,7 @@ Ambient Weather API client with request queue integration
 """
 
 import time
+from typing import Any
 
 import requests
 
@@ -208,7 +209,7 @@ class AmbientWeatherAPI:
             Tuple of (total_records, total_inserted, total_skipped) if batch_callback used,
             otherwise list of all weather data records (legacy behavior)
         """
-        all_data = [] if batch_callback is None else None
+        all_data: list[Any] | None = [] if batch_callback is None else None
         total_fetched = 0
         total_inserted = 0
         total_skipped = 0
@@ -241,7 +242,7 @@ class AmbientWeatherAPI:
                     inserted, skipped = batch_callback(data)
                     total_inserted += inserted
                     total_skipped += skipped
-                else:
+                elif all_data is not None:
                     all_data.extend(data)
 
                 if progress_callback:

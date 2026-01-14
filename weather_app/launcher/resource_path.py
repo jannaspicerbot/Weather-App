@@ -140,5 +140,5 @@ def get_meipass():
         Path | None: _MEIPASS path if frozen, None if development
     """
     if getattr(sys, "frozen", False):
-        return Path(sys._MEIPASS)
+        return Path(sys._MEIPASS)  # type: ignore[attr-defined]
     return None

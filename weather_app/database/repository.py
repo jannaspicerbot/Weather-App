@@ -41,9 +41,10 @@ class WeatherRepository:
         start_time = time.time()
         try:
             with WeatherDatabase(DB_PATH) as db:
+                conn = db._get_conn()
                 # Build query
                 query = "SELECT * FROM weather_data WHERE 1=1"
-                params = []
+                params: list[Any] = []
 
                 # Add date filters if provided
                 if start_date:
@@ -69,12 +70,12 @@ class WeatherRepository:
                 query += " LIMIT ? OFFSET ?"
                 params.extend([limit, offset])
 
-                result = db.conn.execute(query, params).fetchall()
+                result = conn.execute(query, params).fetchall()
 
                 # Convert to list of dictionaries
                 records = []
                 if result:
-                    columns = [desc[0] for desc in db.conn.description]
+                    columns = [desc[0] for desc in conn.description]
                     records = [dict(zip(columns, row)) for row in result]
 
                 duration_ms = (time.time() - start_time) * 1000
@@ -106,7 +107,8 @@ class WeatherRepository:
         start_time = time.time()
         try:
             with WeatherDatabase(DB_PATH) as db:
-                result = db.conn.execute(
+                conn = db._get_conn()
+                result = conn.execute(
                     """
                     SELECT * FROM weather_data
                     ORDER BY dateutc DESC
@@ -116,7 +118,7 @@ class WeatherRepository:
 
                 record = None
                 if result:
-                    columns = [desc[0] for desc in db.conn.description]
+                    columns = [desc[0] for desc in conn.description]
                     record = dict(zip(columns, result))
 
                 duration_ms = (time.time() - start_time) * 1000
@@ -148,11 +150,12 @@ class WeatherRepository:
         start_time = time.time()
         try:
             with WeatherDatabase(DB_PATH) as db:
+                conn = db._get_conn()
                 # Get total count
-                count_result = db.conn.execute(
+                count_result = conn.execute(
                     "SELECT COUNT(*) as count FROM weather_data"
                 ).fetchone()
-                total_records = count_result[0]
+                total_records = count_result[0] if count_result else 0
 
                 if total_records == 0:
                     duration_ms = (time.time() - start_time) * 1000
@@ -171,12 +174,12 @@ class WeatherRepository:
                     }
 
                 # Get date range
-                date_result = db.conn.execute(
+                date_result = conn.execute(
                     "SELECT MIN(date) as min_date, MAX(date) as max_date FROM weather_data"
                 ).fetchone()
 
-                min_date = date_result[0]
-                max_date = date_result[1]
+                min_date = date_result[0] if date_result else None
+                max_date = date_result[1] if date_result else None
 
                 # Calculate date range in days
                 date_range_days = None

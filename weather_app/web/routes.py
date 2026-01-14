@@ -302,7 +302,9 @@ def register_routes(app: FastAPI):
         )
 
     @app.post("/api/credentials/save")
-    def save_credentials(request: CredentialValidationRequest, device_mac: str = None):
+    def save_credentials(
+        request: CredentialValidationRequest, device_mac: str | None = None
+    ):
         """
         Save credentials to the .env file.
 
@@ -353,7 +355,7 @@ def register_routes(app: FastAPI):
         )
 
     @app.post("/api/backfill/start", response_model=BackfillProgressResponse)
-    def start_backfill(request: BackfillStartRequest = None):
+    def start_backfill(request: BackfillStartRequest | None = None):
         """
         Start background data backfill.
 
@@ -362,8 +364,8 @@ def register_routes(app: FastAPI):
 
         The backfill runs in the background. Poll /api/backfill/progress to monitor.
         """
-        api_key = request.api_key if request else None
-        app_key = request.app_key if request else None
+        api_key: str | None = request.api_key if request else None
+        app_key: str | None = request.app_key if request else None
 
         started, message = backfill_service.start_backfill(api_key, app_key)
 

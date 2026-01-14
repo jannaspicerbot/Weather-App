@@ -20,6 +20,7 @@ Usage:
 """
 
 import asyncio
+import functools
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -197,7 +198,7 @@ class AmbientAPIQueue:
             return await self._in_flight[request_key]
 
         # Create new request
-        future = asyncio.Future()
+        future: asyncio.Future[Any] = asyncio.Future()
         self._in_flight[request_key] = future
 
         request = QueuedRequest(
@@ -273,11 +274,11 @@ class AmbientAPIQueue:
                         result = await request.func(*request.args, **request.kwargs)
                     else:
                         loop = asyncio.get_event_loop()
-                        # Bind request to lambda parameter to avoid late binding issues
-                        result = await loop.run_in_executor(
-                            None,
-                            lambda req=request: req.func(*req.args, **req.kwargs),
+                        # Use functools.partial to bind request and avoid late binding
+                        bound_func = functools.partial(
+                            request.func, *request.args, **request.kwargs
                         )
+                        result = await loop.run_in_executor(None, bound_func)
 
                     # Calculate wait time and update metrics
                     wait_time = start_time - request.enqueue_time
