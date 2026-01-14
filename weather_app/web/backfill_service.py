@@ -85,7 +85,7 @@ class BackfillService:
             Tuple of (valid: bool, message: str, devices: list)
         """
         try:
-            # Use API queue for rate limiting
+            # Use shared API queue for rate limiting (thread-safe)
             from weather_app.web.app import api_queue
 
             api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)
@@ -335,7 +335,7 @@ class BackfillService:
                 error=None,
             )
 
-            # Use API queue for rate limiting
+            # Use shared API queue for rate limiting (thread-safe)
             from weather_app.web.app import api_queue
 
             api = AmbientWeatherAPI(api_key, app_key, request_queue=api_queue)

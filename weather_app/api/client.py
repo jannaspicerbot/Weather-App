@@ -2,7 +2,6 @@
 Ambient Weather API client with request queue integration
 """
 
-import asyncio
 import time
 
 import requests
@@ -93,17 +92,8 @@ class AmbientWeatherAPI:
             List of device dictionaries
         """
         if self.request_queue:
-            # Use async queue - run in event loop
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                # No event loop in current thread, create one
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-
-            return loop.run_until_complete(
-                self.request_queue.enqueue(self._get_devices_impl)
-            )
+            # Use thread-safe queue method (works from any thread context)
+            return self.request_queue.enqueue_threadsafe(self._get_devices_impl)
         else:
             # Direct call (legacy behavior)
             return self._get_devices_impl()
@@ -183,18 +173,9 @@ class AmbientWeatherAPI:
             List of weather data records
         """
         if self.request_queue:
-            # Use async queue - run in event loop
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                # No event loop in current thread, create one
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-
-            return loop.run_until_complete(
-                self.request_queue.enqueue(
-                    self._get_device_data_impl, mac_address, end_date, limit
-                )
+            # Use thread-safe queue method (works from any thread context)
+            return self.request_queue.enqueue_threadsafe(
+                self._get_device_data_impl, mac_address, end_date, limit
             )
         else:
             # Direct call (legacy behavior)
