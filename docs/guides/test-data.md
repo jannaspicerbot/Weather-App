@@ -27,20 +27,20 @@ This creates `ambient_weather_test.db` with realistic weather data.
 PowerShell:
 ```powershell
 $env:USE_TEST_DB="true"
-python main.py
+python server.py
 ```
 
 Bash/Linux:
 ```bash
-USE_TEST_DB=true python main.py
+USE_TEST_DB=true python server.py
 ```
 
-**Option B: Using uvicorn directly**
+**Option B: Using uvicorn directly (with hot-reload)**
 
 PowerShell:
 ```powershell
 $env:USE_TEST_DB="true"
-uvicorn main:app --reload
+uvicorn weather_app.web.app:create_app --factory --reload --port 8000
 ```
 
 ### 3. Verify Test Database is Active
@@ -176,18 +176,18 @@ Result: ~720 records (much faster to generate and query)
 ### Use Test Database
 ```powershell
 $env:USE_TEST_DB="true"
-python main.py
+python server.py
 ```
 
 ### Use Production Database (Default)
 ```bash
-python main.py
+python server.py
 ```
 
 Or explicitly:
 ```powershell
 $env:USE_TEST_DB="false"
-python main.py
+python server.py
 ```
 
 ## Testing the API with Test Data
@@ -220,8 +220,8 @@ curl http://localhost:8000/weather/stats
 - `ambient_weather.db` - Production database (real data from Ambient Weather API)
 - `ambient_weather_test.db` - Test database (synthetic data)
 - `config.py` - Configuration to switch between databases
-- `generate_test_data.py` - Script to generate test data
-- `main.py` - FastAPI application (automatically uses correct database)
+- `tests/data/generate_test_data.py` - Script to generate test data
+- `server.py` - FastAPI application entry point (automatically uses correct database)
 
 ## Tips
 

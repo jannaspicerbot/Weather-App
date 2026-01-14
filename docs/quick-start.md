@@ -28,12 +28,12 @@ This creates 7 days of realistic weather data (~2,000 records).
 **PowerShell:**
 ```powershell
 $env:USE_TEST_DB="true"
-python main.py
+python server.py
 ```
 
 **Bash/Linux:**
 ```bash
-USE_TEST_DB=true python main.py
+USE_TEST_DB=true python server.py
 ```
 
 You should see:
@@ -106,10 +106,15 @@ python scripts/ambient_weather_fetch.py
 ### Step 4: Start the API (Production Mode)
 
 ```bash
-python main.py
+python server.py
 ```
 
 (No `USE_TEST_DB` environment variable needed - production is the default)
+
+**For development with hot-reload:**
+```bash
+uvicorn weather_app.web.app:create_app --factory --reload --port 8000
+```
 
 ### Step 5: Create Visualizations (Optional)
 
@@ -182,7 +187,7 @@ The script is smart - it only downloads new data, not everything again!
 - Install dependencies: `pip install -r requirements.txt`
 
 **"Cannot connect to API"**
-- Make sure you ran `python main.py` first
+- Make sure you ran `python server.py` first
 - Check that port 8000 is not in use
 
 **"No data found"** (Test mode)
@@ -267,7 +272,7 @@ python scripts/ambient_weather_fetch.py
 ## File Reference
 
 ### Core Files
-- `main.py` - FastAPI server entry point
+- `server.py` - FastAPI server entry point
 - `weather_app/` - Refactored package structure
 - `.env` - Your API keys (create this, never commit it!)
 - `ambient_weather_test.db` - Test database (synthetic data)
