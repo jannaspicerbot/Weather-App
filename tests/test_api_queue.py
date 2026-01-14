@@ -732,6 +732,7 @@ class TestAPIQueueThreadsafe:
 
     def test_enqueue_threadsafe_timeout(self):
         """enqueue_threadsafe raises TimeoutError on timeout."""
+        import concurrent.futures
         import threading
 
         loop = asyncio.new_event_loop()
@@ -753,7 +754,9 @@ class TestAPIQueueThreadsafe:
                 return 42
 
             # Should raise TimeoutError due to short timeout
-            with pytest.raises(TimeoutError, match="timed out"):
+            # Note: Python 3.10 raises concurrent.futures.TimeoutError,
+            # Python 3.11+ raises built-in TimeoutError
+            with pytest.raises((TimeoutError, concurrent.futures.TimeoutError)):
                 queue.enqueue_threadsafe(very_slow_function, timeout=0.2)
 
         finally:
