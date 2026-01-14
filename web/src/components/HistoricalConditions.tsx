@@ -34,10 +34,10 @@ export default function HistoricalConditions({
 }: HistoricalConditionsProps) {
   // Chart component mapping
   const chartComponents: Record<ChartId, React.ReactElement> = {
-    temperature: <TemperatureChart data={historicalData} />,
-    humidity: <HumidityChart data={historicalData} />,
-    wind: <WindChart data={historicalData} />,
-    precipitation: <PrecipitationChart data={historicalData} />,
+    temperature: <TemperatureChart data={historicalData} dateRange={dateRange} />,
+    humidity: <HumidityChart data={historicalData} dateRange={dateRange} />,
+    wind: <WindChart data={historicalData} dateRange={dateRange} />,
+    precipitation: <PrecipitationChart data={historicalData} dateRange={dateRange} />,
   };
 
   return (

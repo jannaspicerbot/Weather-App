@@ -15,14 +15,20 @@ import {
 import { type WeatherData } from '../../api';
 import { ChartCard } from './ChartCard';
 
+interface DateRange {
+  start: Date;
+  end: Date;
+}
+
 interface WindChartProps {
   data: WeatherData[];
+  dateRange?: DateRange;
 }
 
 // Chart height for compact 2x2 grid layout
 const CHART_HEIGHT = 200;
 
-export default function WindChart({ data }: WindChartProps) {
+export default function WindChart({ data, dateRange }: WindChartProps) {
   const hasData = data && data.length > 0;
 
   const windSpeedData = hasData
@@ -57,6 +63,7 @@ export default function WindChart({ data }: WindChartProps) {
         <VictoryChart
           height={CHART_HEIGHT}
           padding={{ top: 30, bottom: 35, left: 50, right: 20 }}
+          domain={dateRange ? { x: [dateRange.start, dateRange.end] } : undefined}
           containerComponent={
             <VictoryContainer
               title="Wind Chart"
