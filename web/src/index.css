@@ -268,7 +268,12 @@ body {
 }
 
 .historical-conditions__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: var(--spacing-6);
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
 }
 
 .historical-conditions__title {
