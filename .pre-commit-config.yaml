@@ -85,8 +85,8 @@ repos:
   - repo: local
     hooks:
       - id: pytest-check
-        name: Run pytest before push
-        entry: python -m pytest tests/ -x -q --tb=short -m "not requires_api_key"
+        name: Run pytest with coverage before push
+        entry: python -m pytest tests/ -x -q --tb=short -m "not requires_api_key" --cov=weather_app --cov-fail-under=60
         language: system
         pass_filenames: false
         stages: [pre-push]
