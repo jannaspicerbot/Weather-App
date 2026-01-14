@@ -62,3 +62,16 @@ repos:
       - id: isort
         args: [--profile, black]
         exclude: ^(tests/archive|installer/|tests/data/)
+
+  # =============================================================================
+  # PRE-PUSH - Run tests before pushing to catch CI failures early
+  # =============================================================================
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: Run pytest before push
+        entry: pytest tests/ -x -q --tb=short -m "not requires_api_key"
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        always_run: true
