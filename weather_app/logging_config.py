@@ -13,9 +13,11 @@ Usage:
 
 import logging
 import sys
+from collections.abc import Mapping
 from typing import Any
 
 import structlog
+from structlog.contextvars import BoundVarsToken
 
 
 def configure_logging(level: str = "INFO", json_logs: bool = True) -> None:
@@ -60,7 +62,7 @@ def configure_logging(level: str = "INFO", json_logs: bool = True) -> None:
 
     # Configure structlog
     structlog.configure(
-        processors=processors,
+        processors=processors,  # type: ignore[arg-type]
         wrapper_class=structlog.stdlib.BoundLogger,
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
@@ -83,7 +85,7 @@ def get_logger(name: str) -> structlog.stdlib.BoundLogger:
         >>> logger.info("api_request", method="GET", endpoint="/weather/latest")
         >>> logger.error("database_error", error="Connection failed", table="weather_data")
     """
-    return structlog.get_logger(name)
+    return structlog.get_logger(name)  # type: ignore[return-value]
 
 
 # Context managers for request tracking
@@ -103,9 +105,9 @@ class LogContext:
             # Output includes request_id and user_id automatically
         """
         self.context = context
-        self.token = None
+        self.token: Mapping[str, BoundVarsToken] | None = None
 
-    def __enter__(self):
+    def __enter__(self) -> "LogContext":
         self.token = structlog.contextvars.bind_contextvars(**self.context)
         return self
 
@@ -118,9 +120,9 @@ def log_api_request(
     logger: structlog.stdlib.BoundLogger,
     method: str,
     endpoint: str,
-    params: dict[str, Any] = None,
-    status_code: int = None,
-    duration_ms: float = None,
+    params: dict[str, Any] | None = None,
+    status_code: int | None = None,
+    duration_ms: float | None = None,
 ) -> None:
     """
     Log an API request with standard fields
@@ -133,7 +135,7 @@ def log_api_request(
         status_code: Optional response status code
         duration_ms: Optional request duration in milliseconds
     """
-    log_data = {
+    log_data: dict[str, Any] = {
         "event": "api_request",
         "method": method,
         "endpoint": endpoint,
@@ -149,22 +151,22 @@ def log_api_request(
     # Log as info if successful, warning if client error, error if server error
     if status_code:
         if status_code >= 500:
-            logger.error(**log_data)
+            logger.error(**log_data)  # type: ignore[arg-type]
         elif status_code >= 400:
-            logger.warning(**log_data)
+            logger.warning(**log_data)  # type: ignore[arg-type]
         else:
-            logger.info(**log_data)
+            logger.info(**log_data)  # type: ignore[arg-type]
     else:
-        logger.info(**log_data)
+        logger.info(**log_data)  # type: ignore[arg-type]
 
 
 def log_database_operation(
     logger: structlog.stdlib.BoundLogger,
     operation: str,
     table: str,
-    records: int = None,
-    duration_ms: float = None,
-    error: str = None,
+    records: int | None = None,
+    duration_ms: float | None = None,
+    error: str | None = None,
 ) -> None:
     """
     Log a database operation with standard fields
@@ -177,7 +179,7 @@ def log_database_operation(
         duration_ms: Optional operation duration in milliseconds
         error: Optional error message
     """
-    log_data = {
+    log_data: dict[str, Any] = {
         "event": "database_operation",
         "operation": operation,
         "table": table,
@@ -189,18 +191,18 @@ def log_database_operation(
         log_data["duration_ms"] = round(duration_ms, 2)
     if error:
         log_data["error"] = error
-        logger.error(**log_data)
+        logger.error(**log_data)  # type: ignore[arg-type]
     else:
-        logger.info(**log_data)
+        logger.info(**log_data)  # type: ignore[arg-type]
 
 
 def log_cli_command(
     logger: structlog.stdlib.BoundLogger,
     command: str,
-    args: dict[str, Any] = None,
+    args: dict[str, Any] | None = None,
     success: bool = True,
-    error: str = None,
-    duration_ms: float = None,
+    error: str | None = None,
+    duration_ms: float | None = None,
 ) -> None:
     """
     Log a CLI command execution
@@ -213,7 +215,7 @@ def log_cli_command(
         error: Optional error message
         duration_ms: Optional command duration in milliseconds
     """
-    log_data = {
+    log_data: dict[str, Any] = {
         "event": "cli_command",
         "command": command,
         "success": success,
@@ -227,9 +229,9 @@ def log_cli_command(
         log_data["duration_ms"] = round(duration_ms, 2)
 
     if success:
-        logger.info(**log_data)
+        logger.info(**log_data)  # type: ignore[arg-type]
     else:
-        logger.error(**log_data)
+        logger.error(**log_data)  # type: ignore[arg-type]
 
 
 # Initialize logging on module import with sensible defaults
