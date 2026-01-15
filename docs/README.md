@@ -101,7 +101,7 @@ docs/
 - [ADR-003: TypeScript Frontend](architecture/decisions/003-typescript-frontend.md) - Why TypeScript over JavaScript
 - [ADR-004: Docker Deployment](architecture/decisions/004-docker-deployment.md) - Why Docker Compose
 - [ADR-005: Retention Strategy](architecture/decisions/005-retention-strategy.md) - Why 50-year full-resolution
-- [ADR-006: React Aria Components](architecture/decisions/006-react-aria-components.md) - Why React Aria for accessibility
+- [ADR-006: Accessible UI Components](architecture/decisions/006-react-aria-components.md) - Semantic HTML + @dnd-kit approach (superseded React Aria)
 - [ADR-007: Victory Charts](architecture/decisions/007-victory-charts.md) - Why Victory over Recharts
 
 **When to read:** You want to understand the "how" and "why" of technical decisions
@@ -130,7 +130,7 @@ docs/
 **[React Standards](standards/REACT-STANDARDS.md)**
 - Component structure & TypeScript patterns
 - State management & hooks
-- Accessibility integration (React Aria)
+- Accessibility integration (Semantic HTML + ARIA)
 
 **[Database Patterns](standards/DATABASE-PATTERNS.md)**
 - DuckDB connection management
@@ -442,7 +442,7 @@ What other options were evaluated?
 - [React Documentation](https://react.dev/) - UI framework
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/) - Type-safe JavaScript
 - [Vite Documentation](https://vitejs.dev/) - Build tool and dev server
-- [React Aria Documentation](https://react-spectrum.adobe.com/react-aria/) - Accessible component hooks (Adobe)
+- [@dnd-kit Documentation](https://docs.dndkit.com/) - Accessible drag-and-drop library
 - [Victory Charts Documentation](https://commerce.nearform.com/open-source/victory/) - Accessible charting library
 - [MDN CSS Custom Properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties) - Design token system
 
@@ -463,8 +463,8 @@ What other options were evaluated?
   - Created comprehensive CI/CD guide (docs/technical/github-actions-overview.md)
   - Added Backend CI, Frontend CI & Accessibility, and Documentation CI workflows
   - Included accessibility testing requirements (axe-core, Lighthouse, ESLint jsx-a11y)
-- **2026-01-03:** Added ADR-006 (React Aria) and ADR-007 (Victory Charts) for Phase 3 Web UI
-- **2026-01-03:** Updated Learning Resources with React Aria and Victory Charts documentation
+- **2026-01-03:** Added ADR-006 (UI Components) and ADR-007 (Victory Charts) for Phase 3 Web UI
+- **2026-01-03:** Updated Learning Resources with @dnd-kit and Victory Charts documentation
 - **2026-01-03:** Added design/ folder with Inclusive Design standards (WCAG 2.2 AA)
 - **2026-01-03:** Added Learning Resources section with framework documentation links
 - **2026-01-02:** Initial documentation index created during reorganization

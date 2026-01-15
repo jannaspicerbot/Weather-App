@@ -242,16 +242,24 @@ export function WeatherChart({
 ### Accessible Button (React)
 
 ```typescript
-import { useButton } from '@react-aria/button';
+interface ActionButtonProps {
+  onClick: () => void;
+  children: React.ReactNode;
+  ariaLabel?: string;
+  disabled?: boolean;
+}
 
-function ActionButton({ onPress, children }) {
-  const ref = React.useRef();
-  const { buttonProps } = useButton({ onPress }, ref);
-
+function ActionButton({
+  onClick,
+  children,
+  ariaLabel,
+  disabled = false
+}: ActionButtonProps) {
   return (
     <button
-      {...buttonProps}
-      ref={ref}
+      onClick={onClick}
+      aria-label={ariaLabel}
+      disabled={disabled}
       className="btn"
     >
       {children}
@@ -441,7 +449,7 @@ When you need more context:
    - FastAPI: https://fastapi.tiangolo.com/
    - React: https://react.dev/
    - DuckDB: https://duckdb.org/docs/
-   - React Aria: https://react-spectrum.adobe.com/react-aria/
+   - @dnd-kit: https://docs.dndkit.com/
    - Victory: https://commerce.nearform.com/open-source/victory/
 
 3. **Accessibility** - WCAG and implementation
@@ -459,7 +467,7 @@ When you need more context:
 **Recent updates:**
 - APScheduler integration complete (automated data fetching)
 - Victory Charts migration complete (accessible charts)
-- React Aria integration (accessible components)
+- Semantic HTML + @dnd-kit for accessible components (see ADR-006)
 - DuckDB optimization (10-100x faster than SQLite)
 
 ---

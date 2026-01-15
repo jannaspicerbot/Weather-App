@@ -14,7 +14,7 @@ The Weather Dashboard needs enhanced layout capabilities to support:
 1. **User-customizable widget ordering** via drag-and-drop
 2. **Future support for variable-height widgets** (true masonry layout)
 3. **Responsive design** for desktop (1024px+) and iPad (768-1023px)
-4. **WCAG 2.2 Level AA compliance** (mandatory per ADR-006)
+4. **WCAG 2.2 Level AA compliance** (mandatory per project accessibility standards)
 
 ### Current State (Phase 3)
 
@@ -75,7 +75,7 @@ We will use **dnd-kit (Drag and Drop Kit) + CSS Grid** for dashboard widget mana
 | **1. WCAG 2.2 AA Compliance** | ✅ 9/10 | ❌ 2/10 | ❌ 1/10 | ❌ 2/10 | ⚠️ 5/10 | ✅ 7/10 |
 | **2. Keyboard Navigation** | ✅ 10/10 | ❌ 2/10 | ❌ 1/10 | ❌ 2/10 | ⚠️ 4/10 | ⚠️ 6/10 |
 | **3. Screen Reader Support** | ✅ 9/10 | ❌ 2/10 | ❌ 1/10 | ❌ 3/10 | ⚠️ 5/10 | ✅ 6/10 |
-| **4. React Aria Integration** | ✅ 10/10 | ⚠️ 4/10 | ❌ 2/10 | ⚠️ 5/10 | ⚠️ 5/10 | ✅ 8/10 |
+| **4. Semantic HTML Integration** | ✅ 10/10 | ⚠️ 4/10 | ❌ 2/10 | ⚠️ 5/10 | ⚠️ 5/10 | ✅ 8/10 |
 | **5. TypeScript Support** | ✅ 10/10 | ✅ 9/10 | ⚠️ 5/10 | ⚠️ 6/10 | ✅ 8/10 | N/A |
 | **6. Tailwind Compatibility** | ✅ 10/10 | ⚠️ 7/10 | ⚠️ 4/10 | ✅ 8/10 | ✅ 8/10 | ✅ 10/10 |
 | **7. Bundle Size (gzipped)** | ✅ ~12KB | ⚠️ ~50KB | ⚠️ ~25KB | ✅ ~2KB | ✅ ~8KB | ✅ 0KB |
@@ -106,10 +106,10 @@ We will use **dnd-kit (Drag and Drop Kit) + CSS Grid** for dashboard widget mana
 From [dnd-kit Accessibility Documentation](https://docs.dndkit.com/guides/accessibility):
 > "dnd kit was built from the ground up with accessibility in mind. All sensors provide comprehensive built-in support for keyboard navigation and screen readers."
 
-**Integration with React Aria:**
-- Complements React Aria patterns (ADR-006)
+**Integration with Semantic HTML:**
+- Complements semantic HTML + manual ARIA approach
 - Similar hooks-based architecture
-- Can wrap React Aria components as draggable items
+- Can wrap any React components as draggable items
 
 **Pros:**
 - Industry-leading accessibility (best-in-class)
@@ -236,7 +236,7 @@ From [dnd-kit Accessibility Documentation](https://docs.dndkit.com/guides/access
 ### Why dnd-kit + CSS Grid is the Best Choice
 
 1. **Meets All Accessibility Requirements** - Only library with WCAG 2.2 AA built-in
-2. **Aligns with React Aria Decision** (ADR-006) - Same hooks-based, accessibility-first philosophy
+2. **Aligns with Semantic HTML Approach** - Same hooks-based, accessibility-first philosophy
 3. **Future-Proof Architecture** - Can switch to CSS Columns or native CSS masonry later
 4. **No Accessibility Tech Debt** - Built-in support means low ongoing maintenance
 5. **Excellent iPad Support** - Touch, keyboard, and screen reader optimized
@@ -249,7 +249,7 @@ From [dnd-kit Accessibility Documentation](https://docs.dndkit.com/guides/access
 
 - ✅ **Best-in-class accessibility** - Minimizes accessibility tech debt
 - ✅ **WCAG 2.2 AA compliant** - Built-in keyboard nav, screen reader, ARIA support
-- ✅ **React Aria alignment** - Same hooks-based philosophy as ADR-006
+- ✅ **Semantic HTML alignment** - Same hooks-based philosophy as our accessibility approach
 - ✅ **Flexible architecture** - Can migrate to CSS Columns or native CSS masonry later
 - ✅ **iPad optimized** - Touch, keyboard, and screen reader support
 - ✅ **TypeScript-first** - Excellent type definitions
@@ -278,7 +278,7 @@ From [dnd-kit Accessibility Documentation](https://docs.dndkit.com/guides/access
 
 **Learning curve:**
 - Comprehensive code examples in this ADR
-- Similar patterns to React Aria (team already familiar)
+- Similar hooks-based patterns (team already familiar)
 - Excellent [dnd-kit documentation](https://docs.dndkit.com/)
 
 ---
@@ -758,7 +758,7 @@ describe('Dashboard Drag-and-Drop Accessibility', () => {
 - [Accessibility Standards](../../standards/ACCESSIBILITY.md)
 
 **Project ADRs:**
-- [ADR-006: React Aria Component Library](./006-react-aria-components.md)
+- [ADR-006: React Aria Components](./006-react-aria-components.md) *(Superseded - see semantic HTML approach)*
 - [ADR-007: Victory Charts for Data Visualization](./007-victory-charts.md)
 
 ---

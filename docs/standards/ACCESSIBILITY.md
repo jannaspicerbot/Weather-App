@@ -634,44 +634,59 @@ Automation misses many issues. **Every feature must be manually tested:**
 
 #### For Web (React/TypeScript)
 
-**Component Libraries:**
+**Component Strategy:**
 
-This project uses **React Aria (Adobe)** as the official component library (see [ADR-006](../architecture/decisions/006-react-aria-components.md)).
+This project uses **Semantic HTML + @dnd-kit** for accessible components (see [ADR-006](../architecture/decisions/006-react-aria-components.md)).
 
-**Why React Aria?**
-- Industry gold standard for accessibility (WCAG 2.2 Level AA compliant)
-- Headless hooks-based architecture - maximum flexibility with CSS custom properties
-- All WAI-ARIA 1.2 design patterns implemented correctly
-- Focus management, keyboard navigation, and screen reader support built-in
-- Touch, mouse, keyboard, and pen input handled automatically (iPad optimized)
-- Future-proof: React Native support in development
+**Our Approach:**
+- **Semantic HTML first** - Native `<button>`, `<input>`, `<label>` elements are inherently accessible
+- **Manual ARIA attributes** - Added where semantic HTML isn't sufficient
+- **@dnd-kit for drag-and-drop** - Purpose-built accessible D&D library
+- **CSS Custom Properties** - Semantic design tokens for theming
 
-**Alternatives considered:**
-- **Radix UI** - Excellent accessibility, component-based (easier API)
-- **Headless UI** - Utility CSS-focused, limited component set
-- **Chakra UI** - Pre-styled components, WCAG 2.0 baseline
+**Why this approach?**
+- Simpler codebase without hook composition overhead
+- Smaller bundle size than full component libraries
+- Native elements have built-in keyboard and screen reader support
+- @dnd-kit provides superior accessibility for drag-and-drop specifically
 
-**Why use accessible component libraries?**
-Focus management, keyboard navigation, and ARIA attributes are **hard to get right**. React Aria solves 80%+ of accessibility problems with battle-tested patterns from Adobe products.
+**When to add ARIA:**
+- Screen reader announcements (`aria-live`, `aria-label`)
+- Landmark roles when semantic elements aren't available
+- State communication (`aria-expanded`, `aria-pressed`)
+- Relationships (`aria-describedby`, `aria-labelledby`)
 
 ```typescript
-// ✅ GOOD - Using React Aria for accessible dialog
-import { useDialog } from '@react-aria/dialog';
-import { useOverlay, useModal } from '@react-aria/overlays';
+// ✅ GOOD - Semantic HTML with manual ARIA
+interface DialogProps {
+  title: string;
+  children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-function Dialog({ title, children, isOpen, onClose }) {
-  let ref = React.useRef();
-  let { overlayProps } = useOverlay({ isOpen, onClose }, ref);
-  let { modalProps } = useModal();
-  let { dialogProps, titleProps } = useDialog({}, ref);
+function Dialog({ title, children, isOpen, onClose }: DialogProps) {
+  const dialogRef = React.useRef<HTMLDialogElement>(null);
+
+  React.useEffect(() => {
+    const dialog = dialogRef.current;
+    if (isOpen) {
+      dialog?.showModal();
+    } else {
+      dialog?.close();
+    }
+  }, [isOpen]);
 
   return (
-    <div {...overlayProps} {...modalProps}>
-      <div {...dialogProps} ref={ref}>
-        <h2 {...titleProps}>{title}</h2>
-        {children}
-      </div>
-    </div>
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="dialog-title"
+      onClose={onClose}
+    >
+      <h2 id="dialog-title">{title}</h2>
+      {children}
+      <button onClick={onClose}>Close</button>
+    </dialog>
   );
 }
 ```
@@ -788,12 +803,12 @@ Reviewers must verify:
 - [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) - Color contrast ratio calculator
 - [Who Can Use](https://whocanuse.com/) - Color contrast simulator for different vision types
 
-### Component Libraries
+### Component Libraries (Reference)
 
-- [React Aria (Adobe)](https://react-spectrum.adobe.com/react-aria/) - Accessible React hooks
+- [@dnd-kit](https://docs.dndkit.com/) - Accessible drag-and-drop (used in this project)
 - [Radix UI](https://www.radix-ui.com/) - Unstyled accessible components
 - [Headless UI](https://headlessui.com/) - Unstyled accessible components
-- [Chakra UI](https://chakra-ui.com/) - Full component library with accessibility
+- [React Aria (Adobe)](https://react-spectrum.adobe.com/react-aria/) - Accessible React hooks
 
 ### Screen Readers
 
@@ -812,9 +827,12 @@ Reviewers must verify:
 
 ## Document Changelog
 
-- **2026-01-03:** Updated with official library decisions (React Aria, Victory Charts)
-  - Added links to ADR-006 (React Aria) and ADR-007 (Victory Charts)
-  - Updated component library section with React Aria as official choice
+- **2026-01-14:** Updated component strategy to reflect actual implementation
+  - Replaced React Aria references with Semantic HTML + @dnd-kit approach
+  - Updated ADR-006 reference (now documents superseded decision)
+  - Added guidance on when to use manual ARIA attributes
+- **2026-01-03:** Updated with official library decisions (Victory Charts)
+  - Added link to ADR-007 (Victory Charts)
   - Updated charts section with Victory Charts implementation examples
 - **2026-01-03:** Initial inclusive design standards document created
   - Integrated HCD × WCAG strategic approach

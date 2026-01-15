@@ -95,70 +95,54 @@ export function WeatherCard({ data, className = '' }: WeatherCardProps) {
 
 ### Accessible Action Button
 
+Native `<button>` elements provide built-in keyboard support (Enter, Space) and accessibility. No library needed.
+
 ```typescript
 import React from 'react';
-import { useButton } from '@react-aria/button';
-import { useFocusRing } from '@react-aria/focus';
-import { mergeProps } from '@react-aria/utils';
 
 interface ActionButtonProps {
   /** Button text content */
   children: React.ReactNode;
   /** Click handler */
-  onPress: () => void;
+  onClick: () => void;
   /** Optional variant style */
   variant?: 'primary' | 'secondary' | 'danger';
   /** Whether button is disabled */
-  isDisabled?: boolean;
+  disabled?: boolean;
   /** Optional aria-label for screen readers */
   ariaLabel?: string;
+  /** Button type */
+  type?: 'button' | 'submit' | 'reset';
 }
 
 /**
- * Accessible button component with keyboard support.
+ * Accessible button using semantic HTML.
  *
- * Automatically handles:
+ * Native <button> provides:
  * - Keyboard navigation (Enter, Space)
  * - Focus management
  * - Disabled state
  *
  * @example
- * <ActionButton onPress={handleClick} variant="primary">
+ * <ActionButton onClick={handleClick} variant="primary">
  *   Refresh Data
  * </ActionButton>
  */
 export function ActionButton({
   children,
-  onPress,
+  onClick,
   variant = 'primary',
-  isDisabled = false,
-  ariaLabel
+  disabled = false,
+  ariaLabel,
+  type = 'button'
 }: ActionButtonProps) {
-  const ref = React.useRef<HTMLButtonElement>(null);
-
-  // React Aria hooks for accessibility
-  const { buttonProps, isPressed } = useButton(
-    {
-      onPress,
-      isDisabled,
-      'aria-label': ariaLabel
-    },
-    ref
-  );
-
-  const { isFocusVisible, focusProps } = useFocusRing();
-
   return (
     <button
-      {...mergeProps(buttonProps, focusProps)}
-      ref={ref}
-      className={`
-        btn
-        btn--${variant}
-        ${isPressed ? 'btn--pressed' : ''}
-        ${isFocusVisible ? 'btn--focus-visible' : ''}
-        ${isDisabled ? 'btn--disabled' : ''}
-      `.trim()}
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className={`btn btn--${variant}`}
     >
       {children}
     </button>
@@ -166,7 +150,7 @@ export function ActionButton({
 }
 ```
 
-**CSS for focus ring:**
+**CSS with :focus-visible:**
 ```css
 .btn {
   padding: var(--spacing-md);
@@ -177,9 +161,14 @@ export function ActionButton({
   transition: all 0.2s ease;
 }
 
-.btn--focus-visible {
+/* Focus ring only for keyboard navigation (native browser support) */
+.btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn--primary {
@@ -187,18 +176,18 @@ export function ActionButton({
   color: white;
 }
 
-.btn--disabled {
+.btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 ```
 
 **Key points:**
-- React Aria for keyboard support
-- Focus ring visible only for keyboard navigation
-- Pressed state for visual feedback
-- Disabled state properly handled
-- ARIA label support
+- Semantic `<button>` provides keyboard support automatically
+- `:focus-visible` CSS shows focus ring only for keyboard users
+- `:active` pseudo-class handles pressed state
+- Native `disabled` attribute handles disabled state
+- No JavaScript library needed for accessibility
 
 ---
 
@@ -206,11 +195,10 @@ export function ActionButton({
 
 ### Text Input with Label and Error
 
+Native `<input>` with `<label>` provides built-in accessibility. Use `htmlFor` to associate label with input.
+
 ```typescript
-import React from 'react';
-import { useTextField } from '@react-aria/textfield';
-import { useFocusRing } from '@react-aria/focus';
-import { mergeProps } from '@react-aria/utils';
+import React, { useId } from 'react';
 
 interface TextInputProps {
   /** Input label */
@@ -226,13 +214,13 @@ interface TextInputProps {
   /** Input type */
   type?: 'text' | 'email' | 'password' | 'number';
   /** Whether input is required */
-  isRequired?: boolean;
+  required?: boolean;
   /** Whether input is disabled */
-  isDisabled?: boolean;
+  disabled?: boolean;
 }
 
 /**
- * Accessible text input with label and error handling.
+ * Accessible text input using semantic HTML.
  *
  * @example
  * <TextInput
@@ -240,7 +228,7 @@ interface TextInputProps {
  *   value={stationId}
  *   onChange={setStationId}
  *   error={errors.stationId}
- *   isRequired
+ *   required
  * />
  */
 export function TextInput({
@@ -250,54 +238,38 @@ export function TextInput({
   error,
   placeholder,
   type = 'text',
-  isRequired = false,
-  isDisabled = false
+  required = false,
+  disabled = false
 }: TextInputProps) {
-  const ref = React.useRef<HTMLInputElement>(null);
-  const errorId = React.useId();
-
-  const { labelProps, inputProps, errorMessageProps } = useTextField(
-    {
-      label,
-      value,
-      onChange,
-      type,
-      placeholder,
-      isRequired,
-      isDisabled,
-      isInvalid: Boolean(error),
-      errorMessage: error,
-      'aria-errormessage': error ? errorId : undefined
-    },
-    ref
-  );
-
-  const { isFocusVisible, focusProps } = useFocusRing();
+  const inputId = useId();
+  const errorId = useId();
 
   return (
     <div className="text-input">
-      <label {...labelProps} className="text-input__label">
+      <label htmlFor={inputId} className="text-input__label">
         {label}
-        {isRequired && (
-          <span className="text-input__required" aria-label="required">
+        {required && (
+          <span className="text-input__required" aria-hidden="true">
             *
           </span>
         )}
       </label>
 
       <input
-        {...mergeProps(inputProps, focusProps)}
-        ref={ref}
-        className={`
-          text-input__field
-          ${error ? 'text-input__field--error' : ''}
-          ${isFocusVisible ? 'text-input__field--focus-visible' : ''}
-        `.trim()}
+        id={inputId}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={`text-input__field ${error ? 'text-input__field--error' : ''}`}
       />
 
       {error && (
         <div
-          {...errorMessageProps}
           id={errorId}
           className="text-input__error"
           role="alert"
@@ -310,12 +282,30 @@ export function TextInput({
 }
 ```
 
+**CSS:**
+```css
+.text-input__field:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.text-input__field--error {
+  border-color: var(--color-error);
+}
+
+.text-input__error {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-xs);
+}
+```
+
 **Key points:**
-- React Aria for accessibility
-- Proper label association
-- Error message with `role="alert"`
-- Required field indicator
-- Focus ring for keyboard users
+- Native `<label>` with `htmlFor` creates accessible association
+- `aria-invalid` and `aria-describedby` link error message
+- Error message with `role="alert"` announces to screen readers
+- `:focus-visible` CSS handles focus ring
+- No JavaScript library needed
 
 ---
 
@@ -323,9 +313,10 @@ export function TextInput({
 
 ### Sortable Weather Data Table
 
+Semantic `<table>` elements with `<button>` for sortable headers provide accessibility automatically.
+
 ```typescript
-import React, { useState } from 'react';
-import { useTable } from '@react-aria/table';
+import React, { useState, useMemo } from 'react';
 
 interface WeatherTableProps {
   /** Array of weather readings */
@@ -646,14 +637,17 @@ export function WeatherChart({
 
 ## Modal Dialog Component
 
-### Accessible Modal
+### Accessible Modal with Native `<dialog>`
+
+The native `<dialog>` element provides built-in accessibility:
+- Focus trapping (automatic)
+- Escape key closes (automatic)
+- Backdrop click closes (with small handler)
+- Focus restoration on close (automatic)
+- Proper ARIA roles (automatic)
 
 ```typescript
-import React from 'react';
-import { useDialog } from '@react-aria/dialog';
-import { useOverlay, useModal } from '@react-aria/overlays';
-import { FocusScope } from '@react-aria/focus';
-import { useButton } from '@react-aria/button';
+import React, { useEffect, useRef, useId } from 'react';
 
 interface ModalProps {
   /** Modal title */
@@ -669,13 +663,13 @@ interface ModalProps {
 }
 
 /**
- * Accessible modal dialog.
+ * Accessible modal using native <dialog> element.
  *
- * Features:
- * - Traps focus inside modal
+ * The browser provides:
+ * - Focus trapping inside modal
  * - Escape key closes
- * - Click outside closes
- * - Restores focus on close
+ * - Focus restoration on close
+ * - Proper ARIA roles
  *
  * @example
  * <Modal
@@ -693,72 +687,106 @@ export function Modal({
   onClose,
   footer
 }: ModalProps) {
-  const ref = React.useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
 
-  // React Aria hooks for overlay behavior
-  const { overlayProps, underlayProps } = useOverlay(
-    {
-      isOpen,
-      onClose,
-      isDismissable: true,
-      shouldCloseOnInteractOutside: () => true
-    },
-    ref
-  );
+  // Sync dialog open state with isOpen prop
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
 
-  const { modalProps } = useModal();
+    if (isOpen && !dialog.open) {
+      dialog.showModal();
+    } else if (!isOpen && dialog.open) {
+      dialog.close();
+    }
+  }, [isOpen]);
 
-  const { dialogProps, titleProps } = useDialog({}, ref);
+  // Handle backdrop click
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === dialogRef.current) {
+      onClose();
+    }
+  };
 
-  // Close button
-  const closeButtonRef = React.useRef<HTMLButtonElement>(null);
-  const { buttonProps: closeButtonProps } = useButton(
-    {
-      onPress: onClose,
-      'aria-label': 'Close dialog'
-    },
-    closeButtonRef
-  );
-
-  if (!isOpen) return null;
+  // Handle native close event (Escape key)
+  const handleClose = () => {
+    onClose();
+  };
 
   return (
-    <div className="modal-overlay" {...underlayProps}>
-      <FocusScope contain restoreFocus autoFocus>
-        <div
-          {...overlayProps}
-          {...dialogProps}
-          {...modalProps}
-          ref={ref}
-          className="modal"
-        >
-          <div className="modal__header">
-            <h2 {...titleProps} className="modal__title">
-              {title}
-            </h2>
-            <button
-              {...closeButtonProps}
-              ref={closeButtonRef}
-              className="modal__close"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-
-          <div className="modal__body">
-            {children}
-          </div>
-
-          {footer && (
-            <div className="modal__footer">
-              {footer}
-            </div>
-          )}
+    <dialog
+      ref={dialogRef}
+      className="modal"
+      aria-labelledby={titleId}
+      onClick={handleBackdropClick}
+      onClose={handleClose}
+    >
+      <div className="modal__container">
+        <div className="modal__header">
+          <h2 id={titleId} className="modal__title">
+            {title}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="modal__close"
+            aria-label="Close dialog"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
-      </FocusScope>
-    </div>
+
+        <div className="modal__body">
+          {children}
+        </div>
+
+        {footer && (
+          <div className="modal__footer">
+            {footer}
+          </div>
+        )}
+      </div>
+    </dialog>
   );
+}
+```
+
+**CSS for dialog:**
+```css
+.modal {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+}
+
+.modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal__container {
+  padding: var(--spacing-lg);
+}
+
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.modal__close:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.modal__footer {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-lg);
 }
 ```
 
@@ -774,7 +802,7 @@ function DeleteConfirmation() {
 
   return (
     <>
-      <ActionButton onPress={() => setIsOpen(true)} variant="danger">
+      <ActionButton onClick={() => setIsOpen(true)} variant="danger">
         Delete
       </ActionButton>
 
@@ -784,10 +812,10 @@ function DeleteConfirmation() {
         title="Confirm Delete"
         footer={
           <>
-            <ActionButton onPress={() => setIsOpen(false)} variant="secondary">
+            <ActionButton onClick={() => setIsOpen(false)} variant="secondary">
               Cancel
             </ActionButton>
-            <ActionButton onPress={handleDelete} variant="danger">
+            <ActionButton onClick={handleDelete} variant="danger">
               Delete
             </ActionButton>
           </>
@@ -804,11 +832,12 @@ function DeleteConfirmation() {
 ```
 
 **Key points:**
-- Focus trap (FocusScope)
-- Escape key closes
-- Click outside closes
-- Focus restored on close
-- Proper ARIA roles
+- Native `<dialog>` provides focus trapping automatically
+- Escape key closes via native `onClose` event
+- `::backdrop` pseudo-element for overlay styling
+- Click outside handled with simple click handler
+- Focus restoration is automatic
+- No JavaScript library needed
 
 ---
 
@@ -919,7 +948,7 @@ function WeatherDisplay({ stationId }: { stationId: string }) {
 
   return (
     <div>
-      <ActionButton onPress={refetch}>Refresh</ActionButton>
+      <ActionButton onClick={refetch}>Refresh</ActionButton>
       <WeatherTable data={data} />
     </div>
   );

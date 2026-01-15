@@ -33,7 +33,7 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 | **Frontend Framework** | React 19 + Vite | ✅ Phase 2 | Modern build tools, fast dev server |
 | **Charting** | Victory | ✅ Phase 3 | WCAG 2.2 AA accessible, React-native |
 | **Styling** | CSS Custom Properties | ✅ Phase 3 | Semantic design tokens, no framework |
-| **UI Components** | React Aria (Adobe) | ✅ Phase 3 | Accessibility-first, unstyled primitives |
+| **UI Components** | Semantic HTML + @dnd-kit | ✅ Phase 3 | Accessibility-first, native elements + D&D |
 | **CLI** | Click | ✅ Phase 1 | Elegant command-line interfaces |
 | **Validation** | Pydantic | ✅ Phase 1 | Runtime type validation |
 | **Deployment** | Docker Compose | ✅ Phase 2 | One-command orchestration |
@@ -48,7 +48,7 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 | Frontend | None (CLI only) | **React + TypeScript** | React + TypeScript |
 | Backend | Flask (planned) | **FastAPI** (OpenAPI) | FastAPI |
 | Charts | Plotly (planned) | Recharts (prototype) | **Victory** (accessible) |
-| UI Components | None | Utility CSS | **React Aria + CSS Tokens** |
+| UI Components | None | Utility CSS | **Semantic HTML + @dnd-kit** |
 | Deployment | Manual | **Docker Compose** | Docker Compose |
 
 ---
