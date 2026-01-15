@@ -80,7 +80,9 @@ temp/
 NEXT_STEPS.md
 
 # Internal development docs (not for public repo)
+docs/archive/
 docs/audits/
+docs/DOCUMENTATION-STRATEGY.md
 docs/release-notes/
 docs/testing/
 docs/troubleshooting/
