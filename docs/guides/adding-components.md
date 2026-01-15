@@ -275,17 +275,14 @@ return (
 
 **Keyboard navigation:**
 
+Native `<button>` elements automatically handle Enter and Space keypresses:
+
 ```typescript
-import { useButton } from '@react-aria/button';
-
-export function RefreshButton({ onPress }: { onPress: () => void }) {
-  const ref = React.useRef<HTMLButtonElement>(null);
-  const { buttonProps, isPressed } = useButton({ onPress }, ref);
-
+export function RefreshButton({ onClick }: { onClick: () => void }) {
   return (
     <button
-      {...buttonProps}
-      ref={ref}
+      type="button"
+      onClick={onClick}
       className={styles.refreshButton}
       aria-label="Refresh weather data"
     >
@@ -298,20 +295,14 @@ export function RefreshButton({ onPress }: { onPress: () => void }) {
 
 **Focus management:**
 
+Use `:focus-visible` CSS for keyboard-only focus indicators:
+
 ```typescript
-import { useFocusRing } from '@react-aria/focus';
-
 export function InteractiveCard({ onClick }: Props) {
-  const { isFocusVisible, focusProps } = useFocusRing();
-
   return (
     <div
-      {...focusProps}
       tabIndex={0}
-      className={`
-        ${styles.card}
-        ${isFocusVisible ? styles.focusVisible : ''}
-      `}
+      className={styles.card}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -324,6 +315,14 @@ export function InteractiveCard({ onClick }: Props) {
       {/* Content */}
     </div>
   );
+}
+```
+
+```css
+/* In your CSS module */
+.card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 ```
 

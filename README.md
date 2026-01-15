@@ -154,7 +154,7 @@ The Weather App is built with modern, production-ready technologies:
 - **React** - Modern UI framework with hooks
 - **TypeScript** - Type-safe JavaScript
 - **Victory Charts** - Accessible, theme-aware data visualization
-- **React Aria** - WCAG 2.2 AA accessible components
+- **@dnd-kit** - Accessible drag-and-drop for dashboard customization
 - **CSS Custom Properties** - Semantic design tokens
 - **Vite** - Fast build tool and dev server
 
@@ -346,7 +346,7 @@ Contributions, issues, and feature requests are welcome!
 - **FastAPI** - For making Python web APIs a joy to build
 - **DuckDB** - For blazing-fast analytics queries
 - **Victory Charts** - For accessible, beautiful data visualizations
-- **React Aria** - For accessible component patterns
+- **@dnd-kit** - For accessible drag-and-drop patterns
 
 ## 📧 Support
 

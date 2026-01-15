@@ -122,7 +122,7 @@ What are you working on?
 **MUST READ:** Before implementing any UI feature
 **Contains:**
 - WCAG 2.2 Level AA requirements
-- React Aria integration
+- Semantic HTML + manual ARIA patterns
 - Keyboard navigation patterns
 - Screen reader considerations
 - Color contrast requirements
@@ -203,7 +203,7 @@ Architecture Decision Records:
 - ADR-003: TypeScript Frontend
 - ADR-004: Docker Deployment
 - ADR-005: Retention Strategy
-- ADR-006: React Aria Components
+- ADR-006: React Aria Components *(Superseded - see actual implementation)*
 - ADR-007: Victory Charts
 
 ---

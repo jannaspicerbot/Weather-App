@@ -177,7 +177,7 @@ Tremor is pre-built dashboard charts, but:
 - **Opinionated design** - All charts look "Tremor-ish"
 - **Inherits Recharts limitations** - Built on Recharts, same accessibility gaps
 - **Limited flexibility** - Can't customize beyond Tremor's design system
-- **Conflicts with design goals** - We chose React Aria for flexibility, Tremor removes that
+- **Conflicts with design goals** - We chose semantic HTML with manual ARIA for flexibility, Tremor removes that
 
 ---
 
@@ -412,7 +412,7 @@ export function TemperatureChart({ data, width = 600, height = 400 }: Temperatur
 ### 2. Tremor
 - **Pros:** Fastest development, pre-built dashboard charts
 - **Cons:** Opinionated design, inherits Recharts accessibility gaps, limited flexibility
-- **Verdict:** Conflicts with React Aria decision (chose flexibility over speed)
+- **Verdict:** Conflicts with semantic HTML approach (chose flexibility over speed)
 
 ### 3. Chart.js (via react-chartjs-2)
 - **Pros:** Very popular, canvas-based (good performance)

@@ -64,7 +64,6 @@ web/src/
 
 ```typescript
 import React, { useState, useEffect } from 'react';
-import { useButton } from '@react-aria/button';
 
 /**
  * WeatherChart displays temperature data over time.
@@ -666,36 +665,69 @@ function Card({ children }: { children: React.ReactNode }) {
 
 ## Accessibility Integration
 
-### Using React Aria
+### Semantic HTML First
+
+Use native HTML elements whenever possible - they have built-in accessibility support:
 
 ```typescript
-import { useButton } from '@react-aria/button';
-import { useTextField } from '@react-aria/textfield';
+// ✅ GOOD - Semantic HTML with types
+interface AccessibleButtonProps {
+  onClick: () => void;
+  children: React.ReactNode;
+  ariaLabel?: string;
+  disabled?: boolean;
+}
 
-// Accessible button
-function AccessibleButton({ onPress, children }: Props) {
-  const ref = React.useRef(null);
-  const { buttonProps } = useButton({ onPress }, ref);
-
+function AccessibleButton({
+  onClick,
+  children,
+  ariaLabel,
+  disabled = false
+}: AccessibleButtonProps) {
   return (
-    <button {...buttonProps} ref={ref} className="btn">
+    <button
+      onClick={onClick}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      className="btn"
+    >
       {children}
     </button>
   );
 }
 
-// Accessible text input
-function AccessibleTextField({ label, value, onChange }: Props) {
-  const ref = React.useRef(null);
-  const { labelProps, inputProps } = useTextField(
-    { label, value, onChange },
-    ref
-  );
+// ✅ GOOD - Native label association
+interface AccessibleTextFieldProps {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}
 
+function AccessibleTextField({
+  id,
+  label,
+  value,
+  onChange,
+  error
+}: AccessibleTextFieldProps) {
   return (
-    <div>
-      <label {...labelProps}>{label}</label>
-      <input {...inputProps} ref={ref} />
+    <div className="form-field">
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${id}-error` : undefined}
+      />
+      {error && (
+        <span id={`${id}-error`} className="error" role="alert">
+          {error}
+        </span>
+      )}
     </div>
   );
 }

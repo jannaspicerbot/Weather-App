@@ -8,7 +8,8 @@ React + TypeScript dashboard for visualizing weather data from your Ambient Weat
 - **Language:** TypeScript 5+ (strict mode)
 - **Build Tool:** Vite 5 (fast HMR, optimized builds)
 - **Charts:** Victory Charts (accessible, theme-aware data visualization)
-- **Components:** React Aria (WCAG 2.2 AA accessible component hooks)
+- **Drag & Drop:** @dnd-kit (accessible dashboard customization)
+- **Components:** Semantic HTML + manual ARIA attributes
 - **Styling:** CSS Custom Properties (semantic design tokens)
 - **Routing:** React Router v6 (future)
 - **State:** React hooks (useState, useReducer, Context API)
@@ -196,22 +197,32 @@ The Weather App follows **WCAG 2.2 Level AA** accessibility standards.
 
 ### Accessible Components
 
-Use **React Aria** hooks for accessible component patterns:
+Use **semantic HTML** and **manual ARIA attributes** for accessible component patterns:
 
 ```typescript
-import { useButton } from 'react-aria'
+interface ButtonProps {
+  onClick: () => void;
+  children: React.ReactNode;
+  ariaLabel?: string;
+  disabled?: boolean;
+}
 
-function Button(props) {
-  const ref = useRef()
-  const { buttonProps } = useButton(props, ref)
-
+function Button({ onClick, children, ariaLabel, disabled }: ButtonProps) {
   return (
-    <button {...buttonProps} ref={ref} className="btn">
-      {props.children}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      className="btn"
+    >
+      {children}
     </button>
-  )
+  );
 }
 ```
+
+Native `<button>` elements provide keyboard support (Enter, Space) automatically.
 
 ### Accessibility Checklist
 
@@ -348,7 +359,7 @@ For complete documentation, see:
 When contributing to the frontend:
 
 1. **Follow the design system** - Use design tokens, not hard-coded values
-2. **Write accessible components** - Use React Aria hooks and ARIA attributes
+2. **Write accessible components** - Use semantic HTML and ARIA attributes
 3. **Type everything** - No `any` types, use strict TypeScript
 4. **Test your components** - Write unit and accessibility tests
 5. **Document complex logic** - Add JSDoc comments for exported functions
@@ -383,7 +394,7 @@ See [../docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md) for complete contribution
 
 - `react` & `react-dom` - UI framework
 - `victory` - Charting library
-- `react-aria` - Accessible component hooks
+- `@dnd-kit/core` - Accessible drag-and-drop
 
 ### Development Dependencies
 
@@ -402,7 +413,7 @@ See [package.json](package.json) for the complete list.
 - **TypeScript Documentation:** https://www.typescriptlang.org/docs/
 - **Vite Documentation:** https://vitejs.dev/
 - **Victory Charts:** https://commerce.nearform.com/open-source/victory/
-- **React Aria:** https://react-spectrum.adobe.com/react-aria/
+- **@dnd-kit:** https://docs.dndkit.com/
 - **CSS Custom Properties:** https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties
 
 ---
