@@ -43,15 +43,7 @@ docs/
 │   ├── adding-components.md           # Step-by-step UI guide
 │   ├── PERFORMANCE.md                 # Performance optimization
 │   └── test-data.md                   # Test data generation
-├── testing/                           # Test plans & checklists
-│   ├── linting-checklist.md           # Code quality checklist
-│   └── refactoring-test-plan.md       # Refactoring test plans
-├── troubleshooting/                   # Issue resolution guides
-│   ├── ambient-weather-debugging.md   # API debugging
-│   └── api-rate-limiting-resolution.md # Rate limiting fixes
-├── audits/                            # Documentation & code audits
-│   └── 2026-01-13-documentation-audit.md
-└── archive/                           # Historical docs (Phase 1-2)
+└── CONTRIBUTING.md                    # Contribution guidelines
 ```
 
 ---
@@ -244,25 +236,6 @@ docs/
 
 ---
 
-### 7. Testing & Troubleshooting
-
-**Purpose:** Test plans, checklists, and issue resolution
-
-**Testing Documentation** ([testing/](testing/))
-- [Linting Checklist](testing/linting-checklist.md) - Code quality verification
-- [Refactoring Test Plan](testing/refactoring-test-plan.md) - Test strategies for refactoring
-
-**Troubleshooting Guides** ([troubleshooting/](troubleshooting/))
-- [Ambient Weather Debugging](troubleshooting/ambient-weather-debugging.md) - API connection issues
-- [Rate Limiting Resolution](troubleshooting/api-rate-limiting-resolution.md) - Handling API limits
-
-**Audits** ([audits/](audits/))
-- [Documentation Audit](audits/2026-01-13-documentation-audit.md) - Documentation completeness review
-
-**When to read:** You're running tests, troubleshooting issues, or reviewing documentation quality
-
----
-
 ## 🎯 Use Cases
 
 ### "I want to install and run the Weather App"
@@ -343,7 +316,6 @@ docs/
 | **Adding UI Components** | [Adding Components Guide](guides/adding-components.md) |
 | **Performance** | [Performance Guide](guides/PERFORMANCE.md) |
 | **Test Data** | [Test Data Guide](guides/test-data.md) |
-| **Troubleshooting** | [Troubleshooting Guides](troubleshooting/) |
 
 ### By Role
 
@@ -452,16 +424,6 @@ What other options were evaluated?
 - **API Usage:** See [API Reference](technical/api-reference.md) Code Examples
 - **Architecture Decisions:** Read relevant [ADR](architecture/decisions/)
 - **Bug Reports:** GitHub Issues
-
----
-
-## 🗂️ Archive
-
-Historical documentation from Phase 1-2 is available in [archive/](archive/) for reference:
-- `requirements.md.old` - Original Phase 1 requirements
-- `specifications.md.old` - Detailed Phase 1-2 specifications
-- `architecture.md.old` - Comprehensive Phase 1-2 architecture doc
-- `peer-review.md` - Principal Architect review (Phase 2 guidance)
 
 ---
 
