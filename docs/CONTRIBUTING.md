@@ -1,212 +1,53 @@
 # Contributing to Weather App
 
-This guide explains how to contribute to the Weather App project, including documentation standards and development workflows.
+This guide explains how to contribute code and documentation to the Weather App project.
 
 ---
 
-## 📝 Documentation Strategy
+## 🚀 Quick Start for Contributors
 
-### Documentation Structure
+1. **Fork and clone** the repository
+2. **Install the pre-commit hook** (see [Security](#-security) below)
+3. **Create a feature branch** from `main`
+4. **Read the relevant standards** before coding (see [Documentation](#-documentation) below)
+5. **Submit a pull request** with your changes
 
-The project follows a **separation of concerns** approach for documentation:
+---
 
-```
-docs/
-├── README.md                      # Navigation guide
-├── product/                       # Business & user-focused docs
-│   └── requirements.md            # Product Requirements Document (PRD)
-├── architecture/                  # System design & decisions
-│   ├── overview.md                # High-level architecture
-│   └── decisions/                 # Architecture Decision Records (ADRs)
-│       ├── 001-fastapi-backend.md
-│       ├── 002-duckdb-migration.md
-│       ├── 003-typescript-frontend.md
-│       ├── 004-docker-deployment.md
-│       └── 005-retention-strategy.md
-├── technical/                     # Implementation guides
-│   ├── api-reference.md           # REST API documentation
-│   ├── cli-reference.md           # CLI command reference
-│   ├── database-schema.md         # DuckDB schema & queries
-│   └── deployment-guide.md        # Installation & setup
-└── archive/                       # Historical docs
-```
+## 📖 Documentation
 
-### Documentation Types
+### Finding What You Need
 
-#### 1. Product Documentation (docs/product/)
+| I want to... | Read this |
+|--------------|-----------|
+| Understand the system architecture | [architecture/overview.md](architecture/overview.md) |
+| Learn the documentation philosophy | [DOCUMENTATION-STRATEGY.md](DOCUMENTATION-STRATEGY.md) |
+| Follow API coding standards | [standards/API-STANDARDS.md](standards/API-STANDARDS.md) |
+| Follow React coding standards | [standards/REACT-STANDARDS.md](standards/REACT-STANDARDS.md) |
+| Ensure accessibility compliance | [standards/ACCESSIBILITY.md](standards/ACCESSIBILITY.md) |
+| Write tests | [standards/TESTING.md](standards/TESTING.md) |
+| See code examples | [examples/](examples/) |
+| Add a new API endpoint | [guides/adding-endpoints.md](guides/adding-endpoints.md) |
+| Add a new UI component | [guides/adding-components.md](guides/adding-components.md) |
 
-**Purpose:** Business context, user needs, project goals
+### Updating Documentation
 
-**Content:**
-- Executive summary
-- Problem statement & Jobs-to-be-Done (JTBD)
-- User personas
-- Functional & non-functional requirements
-- Success metrics & acceptance criteria
-- Out of scope items
-- Risk assessment
+When contributing, update documentation as needed:
 
-**Audience:** Product managers, stakeholders, business users
+| Change Type | Documentation Updates Required |
+|-------------|-------------------------------|
+| **New feature** | Update relevant technical guide, add examples |
+| **API change** | Update [technical/api-reference.md](technical/api-reference.md) |
+| **Breaking change** | Create ADR in [architecture/decisions/](architecture/decisions/), update migration guide |
+| **Bug fix** | Usually none, unless it changes documented behavior |
 
-**When to update:** Per phase (quarterly) or when requirements change
+For the ADR template and documentation best practices, see [DOCUMENTATION-STRATEGY.md](DOCUMENTATION-STRATEGY.md).
 
-#### 2. Architecture Documentation (docs/architecture/)
+---
 
-**Purpose:** System design, technology choices, trade-offs
+## 💻 Code Comments
 
-**Content:**
-
-**overview.md:**
-- Technology stack with status table
-- System diagrams (C4 model: Context → Container → Component)
-- Data flow diagrams
-- Database schema overview
-- API design patterns
-- Deployment architecture
-- Performance benchmarks
-
-**decisions/ (ADRs - Architecture Decision Records):**
-- Context: Why this decision is needed
-- Decision: What we're choosing
-- Rationale: Why this over alternatives (with comparisons)
-- Consequences: Positive, negative, neutral
-- Alternatives Considered: What else was evaluated
-- Validation: Success criteria & metrics
-
-**Audience:** Architects, senior developers, technical leads
-
-**When to update:**
-- overview.md: Per phase (quarterly)
-- ADRs: When making major technology decisions
-
-#### 3. Technical Documentation (docs/technical/)
-
-**Purpose:** Implementation details, usage guides, reference material
-
-**Content:**
-
-**api-reference.md:**
-- All REST endpoints with request/response schemas
-- Error codes and handling
-- Code examples (TypeScript, Python, curl)
-- OpenAPI schema reference
-
-**cli-reference.md:**
-- All CLI commands with arguments/options
-- Usage examples
-- Scheduling (cron, systemd, Task Scheduler)
-- Troubleshooting common issues
-
-**database-schema.md:**
-- Table structures with column definitions
-- Indexes and constraints
-- Common query patterns
-- Backup & restore procedures
-- Performance characteristics
-
-**deployment-guide.md:**
-- Installation steps (Docker Compose, native)
-- Configuration (environment variables)
-- Automated data collection setup
-- Monitoring & health checks
-- Updates & maintenance
-- Platform-specific notes
-
-**Audience:** Developers, DevOps engineers, end users
-
-**When to update:** Per release (monthly) or when implementation changes
-
-### ADR (Architecture Decision Record) Pattern
-
-**When to create an ADR:**
-- Choosing between major technologies (database, framework, language)
-- Significant architectural changes (data retention, deployment strategy)
-- Decisions that affect multiple teams or future development
-- Trade-offs that need to be documented for future reference
-
-**ADR Template:**
-
-```markdown
-# ADR-XXX: Title
-
-**Status:** 🟡 Proposed | ✅ Accepted | ❌ Rejected | ♻️ Superseded
-**Date:** YYYY-MM-DD
-**Deciders:** Names
-
-## Context
-What is the issue we're seeing that is motivating this decision?
-
-## Decision
-What is the change we're proposing?
-
-## Rationale
-Why this approach over alternatives?
-- Include comparison tables
-- Benchmarks where applicable
-- Peer review feedback
-
-## Consequences
-
-### Positive
-- ✅ Benefits of this decision
-
-### Negative
-- ⚠️ Drawbacks or limitations
-
-### Neutral
-- Other considerations
-
-## Alternatives Considered
-What other options were evaluated and why were they rejected?
-
-## Validation
-Success criteria and metrics to measure if this decision was correct.
-
-## References
-Links to relevant documentation, benchmarks, peer reviews.
-```
-
-**ADR Numbering:** Use sequential numbers (001, 002, 003...) in filename
-
-**ADR Status:**
-- 🟡 **Proposed:** Under discussion
-- ✅ **Accepted:** Implemented and in use
-- ❌ **Rejected:** Decided against
-- ♻️ **Superseded:** Replaced by newer ADR (link to replacement)
-
-### Documentation Best Practices
-
-#### Separation of Concerns
-- **DON'T** mix business requirements with technical implementation
-- **DON'T** duplicate content across multiple docs
-- **DO** link between related documents
-- **DO** keep each document focused on its purpose
-
-#### Writing Style
-- **Product docs:** User-focused, business language, outcomes
-- **Architecture docs:** Design-focused, trade-offs, diagrams
-- **Technical docs:** Implementation-focused, code examples, how-to
-
-#### Maintenance
-- **Add changelog** at bottom of each document
-- **Update version/date** when making changes
-- **Move outdated docs** to archive/ directory
-- **Keep archive/** for historical reference (never delete)
-
-#### Navigation
-- **docs/README.md** is the entry point
-- Organize by **topic** (Installation, API, CLI, Database)
-- Organize by **role** (End User, Developer, Architect)
-- Provide **use case-based paths** ("I want to...")
-
-### Code Comments
-
-In addition to documentation files, write clear code comments:
-
-- **Explain WHY**, not what (code shows what)
-- **Document complex logic**
-- **Add docstrings** to all functions
-- **Keep comments updated** when code changes
+Write clear code comments that explain **why**, not what:
 
 ```python
 # ✅ GOOD - Explains reasoning
@@ -216,108 +57,50 @@ def calculate_dew_point(temp_f: float, humidity: float) -> float:
 
     Uses the simplified Magnus formula which is accurate for
     typical weather conditions (temp: -40°F to 122°F, RH: 1-100%).
-
-    Args:
-        temp_f: Temperature in Fahrenheit
-        humidity: Relative humidity as percentage (0-100)
-
-    Returns:
-        Dew point temperature in Fahrenheit
     """
-    # Convert F to C for formula
-    temp_c = (temp_f - 32) * 5/9
-
-    # Magnus formula constants
+    # Magnus formula constants (empirically derived)
     a = 17.27
     b = 237.7
-
-    # Calculate dew point in Celsius
-    alpha = ((a * temp_c) / (b + temp_c)) + math.log(humidity / 100.0)
-    dew_point_c = (b * alpha) / (a - alpha)
-
-    # Convert back to Fahrenheit
-    return (dew_point_c * 9/5) + 32
+    ...
 
 # ❌ BAD - Just restates code
 def calc(t, h):
     # Convert to celsius
     tc = (t - 32) * 5/9
-    # Do calculation
-    result = some_formula(tc, h)
     # Return result
     return result
 ```
 
-### Documentation Workflow
-
-#### When Adding New Features
-1. **Update requirements.md** if feature changes business goals
-2. **Create ADR** if making architectural decision
-3. **Update architecture/overview.md** if changing system design
-4. **Update technical guides** (API, CLI, database) with new functionality
-5. **Add examples** showing how to use the new feature
-
-#### When Making Breaking Changes
-1. **Create ADR** documenting the change and rationale
-2. **Update all affected docs** (architecture, technical guides)
-3. **Add migration guide** if users need to take action
-4. **Archive old versions** to archive/ directory
-
-#### When Deprecating Features
-1. **Update docs** with deprecation notices
-2. **Document migration path** to replacement
-3. **Set timeline** for removal
-4. **Keep docs** until feature is fully removed
-
 ---
 
-## 🔒 Security Best Practices
+## 🔒 Security
 
-### Git Pre-Commit Hook Installation
+### Pre-Commit Hook Installation
 
-The repository includes a pre-commit hook that prevents accidentally committing sensitive files like `.env`. This provides an additional safety layer beyond `.gitignore`.
-
-**To install the pre-commit hook:**
-
-The hook source is version-controlled at `scripts/git-hooks/pre-commit`. To install it:
+Install the pre-commit hook to prevent accidentally committing sensitive files:
 
 **Linux/macOS:**
 ```bash
-# Copy the hook to your local .git/hooks directory
 cp scripts/git-hooks/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
 **Windows:**
 ```powershell
-# Copy the hook to your local .git/hooks directory
 Copy-Item scripts/git-hooks/pre-commit .git/hooks/pre-commit
 ```
 
-**What the hook does:**
-- ❌ **Blocks** commits containing `.env` files
-- ⚠️ **Warns** about other potential secret files (`secrets.py`, `*.pem`, `*.key`)
-- 📝 **Provides** clear error messages and remediation steps
-
-**Testing the hook:**
-```bash
-# This should be blocked by .gitignore, but the hook provides extra safety
-git add .env
-git commit -m "Test"
-# Hook will prevent the commit if .env somehow gets staged
-```
+The hook blocks commits containing `.env` files and warns about other potential secrets.
 
 ### Credential Management
 
-**NEVER commit credentials to version control:**
-- ✅ Use `.env` file for local development (already in `.gitignore`)
-- ✅ Use `.env.example` for documentation (safe to commit)
-- ✅ Rotate credentials before making repository public
+- ✅ Use `.env` file for local development (in `.gitignore`)
+- ✅ Use `.env.example` for documenting required variables
 - ❌ Never hardcode API keys in source code
 - ❌ Never commit `.env` files
 
-See [docs/technical/deployment-guide.md](technical/deployment-guide.md#credential-security) for complete credential rotation instructions.
+See [technical/deployment-guide.md](technical/deployment-guide.md#credential-security) for credential rotation instructions.
 
 ---
 
-**Last Updated:** January 6, 2026
+**Last Updated:** January 14, 2026

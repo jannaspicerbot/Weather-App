@@ -27,10 +27,10 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 
 | Component | Technology | Status | Rationale |
 |-----------|-----------|--------|-----------|
-| **Backend** | FastAPI (Python 3.11+) | ✅ Phase 1 | Auto-generated OpenAPI, async support |
+| **Backend** | FastAPI (Python 3.10+, 3.11 recommended) | ✅ Phase 1 | Auto-generated OpenAPI, async support |
 | **Database** | DuckDB 0.10+ | ✅ Phase 2 | **10-100x faster** than SQLite for analytics |
 | **Frontend Lang** | TypeScript | ✅ Phase 2 | Type safety, 96% industry adoption |
-| **Frontend Framework** | React 18 + Vite | ✅ Phase 2 | Modern build tools, fast dev server |
+| **Frontend Framework** | React 19 + Vite | ✅ Phase 2 | Modern build tools, fast dev server |
 | **Charting** | Victory | ✅ Phase 3 | WCAG 2.2 AA accessible, React-native |
 | **Styling** | CSS Custom Properties | ✅ Phase 3 | Semantic design tokens, no framework |
 | **UI Components** | React Aria (Adobe) | ✅ Phase 3 | Accessibility-first, unstyled primitives |
@@ -101,13 +101,13 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 │  │   Frontend          │  HTTP   │   Backend            │    │
 │  │   Container         │◄────────│   Container          │    │
 │  │                     │  JSON   │                      │    │
-│  │  • React 18         │         │  • FastAPI          │    │
+│  │  • React 19         │         │  • FastAPI          │    │
 │  │  • TypeScript       │         │  • Python 3.11+     │    │
 │  │  • Vite             │         │  • Uvicorn          │    │
 │  │  • Victory          │         │  • Pydantic         │    │
 │  │  • CSS Tokens       │         │                      │    │
 │  │                     │         │  Ports:             │    │
-│  │  Port: 3000 (dev)   │         │  • 8000 (HTTP)      │    │
+│  │  Port: 5173 (dev)   │         │  • 8000 (HTTP)      │    │
 │  │  Port: 80 (prod)    │         │                      │    │
 │  └─────────────────────┘         └──────────┬───────────┘    │
 │                                              │                 │
@@ -688,14 +688,14 @@ docker-compose down
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn weather_app.api.main:app --reload --port 8000
+uvicorn weather_app.web.app:create_app --factory --reload --port 8000
 ```
 
 **Frontend:**
 ```bash
 cd web
 npm install
-npm run dev  # Vite dev server on port 3000
+npm run dev  # Vite dev server on port 5173
 ```
 
 **CLI:**
