@@ -139,3 +139,17 @@ class DemoGenerationProgress(BaseModel):
     records: int | None = None
     size_mb: float | None = None
     message: str | None = None
+
+
+class GenerationStatusResponse(BaseModel):
+    """Response model for demo generation status polling endpoint"""
+
+    state: str  # 'idle', 'generating', 'completed', 'failed', 'cancelled'
+    current_day: int = 0
+    total_days: int = 0
+    percent: int = 0
+    records: int | None = None
+    size_mb: float | None = None
+    error: str | None = None
+    started_at: str | None = None
+    completed_at: str | None = None

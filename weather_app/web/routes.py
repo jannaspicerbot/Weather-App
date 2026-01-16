@@ -23,6 +23,7 @@ from weather_app.web.models import (
     DeviceInfo,
     DeviceListResponse,
     DeviceSelectionRequest,
+    GenerationStatusResponse,
     WeatherData,
 )
 
@@ -670,10 +671,53 @@ def register_routes(app: FastAPI):
             message=message,
         )
 
+    @app.get(
+        "/api/demo/generation/status",
+        response_model=GenerationStatusResponse,
+    )
+    def get_generation_status():
+        """
+        Poll demo database generation progress.
+
+        This endpoint provides an SSE fallback for clients that cannot maintain
+        a persistent SSE connection. Poll every 500ms during generation.
+
+        Returns current generation state, progress percentage, and final results
+        when complete.
+        """
+        from weather_app.demo.generation_service import get_generation_service
+
+        service = get_generation_service()
+        status = service.get_status()
+
+        return GenerationStatusResponse(**status)
+
+    @app.post("/api/demo/generation/cancel")
+    def cancel_generation():
+        """
+        Cancel ongoing demo database generation.
+
+        Requests cancellation of the current generation. The generator will
+        stop at the next checkpoint (approximately once per day of data).
+        Partial database files are automatically cleaned up.
+
+        Returns success status and message.
+        """
+        from weather_app.demo.generation_service import get_generation_service
+
+        service = get_generation_service()
+        success, message = service.cancel_generation()
+
+        return {"success": success, "message": message}
+
     @app.post("/api/demo/generate")
     async def generate_demo_database():
         """
         Generate demo database with progress updates via Server-Sent Events (SSE).
+
+        Uses the DemoGenerationService singleton to prevent concurrent generations.
+        If a generation is already in progress, returns an SSE stream that watches
+        the existing generation's progress.
 
         Streams progress events as the database is generated:
         - {"event": "progress", "current_day": 100, "total_days": 1095, "percent": 9}
@@ -681,16 +725,16 @@ def register_routes(app: FastAPI):
         - {"event": "error", "message": "..."}
 
         Client should use EventSource or fetch with streaming to receive updates.
+        For unreliable connections, use /api/demo/generation/status polling as fallback.
         """
         import asyncio
         import json
-        import threading
-        from queue import Empty, Queue
 
         from fastapi.responses import StreamingResponse
 
-        from weather_app.config import DEMO_DEFAULT_DAYS
-        from weather_app.demo import DemoService
+        from weather_app.demo.generation_service import get_generation_service
+
+        service = get_generation_service()
 
         # If database already exists, return immediately
         if DEMO_DB_PATH.exists():
@@ -707,91 +751,79 @@ def register_routes(app: FastAPI):
                 },
             )
 
-        # Create a queue for progress updates from the generator thread
-        progress_queue: Queue = Queue()
-        generation_complete = threading.Event()
-        generation_error: list = []
-        generation_result: list = []
+        # Check current status - may already be generating from another request
+        status = service.get_status()
 
-        def run_generation():
-            """Run generation in a separate thread to avoid blocking."""
-            try:
-                service = DemoService(DEMO_DB_PATH)
+        if status["state"] != "generating":
+            # Start new generation
+            success, message = service.start_generation()
+            if not success:
+                # Something unexpected - return error
+                async def generation_error():
+                    yield f"data: {json.dumps({'event': 'error', 'message': message})}\n\n"
 
-                def progress_callback(current_day: int, total_days: int) -> None:
-                    percent = int((current_day / total_days) * 100) if total_days > 0 else 0
-                    progress_queue.put({
-                        "event": "progress",
-                        "current_day": current_day,
-                        "total_days": total_days,
-                        "percent": percent,
-                    })
-
-                generated = service.generate_if_missing(
-                    days=DEMO_DEFAULT_DAYS,
-                    progress_callback=progress_callback,
+                return StreamingResponse(
+                    generation_error(),
+                    media_type="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                        "X-Accel-Buffering": "no",
+                    },
                 )
 
-                if generated:
-                    stats = service.get_stats()
-                    size_mb = DEMO_DB_PATH.stat().st_size / 1024 / 1024
-                    generation_result.append({
-                        "records": stats.get("total_records", 0),
-                        "size_mb": round(size_mb, 1),
-                    })
-                else:
-                    generation_result.append({
-                        "records": 0,
-                        "size_mb": 0,
-                        "message": "Database already exists",
-                    })
+        async def watch_generation_stream():
+            """SSE stream that watches generation service status."""
+            last_percent = -1
 
-            except Exception as e:
-                logger.error("demo_generation_failed", error=str(e))
-                generation_error.append(str(e))
-            finally:
-                generation_complete.set()
-
-        # Start generation in background thread
-        generation_thread = threading.Thread(target=run_generation, daemon=True)
-        generation_thread.start()
-
-        async def event_stream():
-            """Generate SSE events from the progress queue."""
             try:
-                while not generation_complete.is_set():
-                    # Check for progress updates
-                    try:
-                        progress = progress_queue.get_nowait()
-                        yield f"data: {json.dumps(progress)}\n\n"
-                    except Empty:
-                        pass
-
-                    # Small delay to prevent busy-waiting
-                    await asyncio.sleep(0.1)
-
-                # Drain any remaining progress updates
                 while True:
-                    try:
-                        progress = progress_queue.get_nowait()
-                        yield f"data: {json.dumps(progress)}\n\n"
-                    except Empty:
+                    status = service.get_status()
+
+                    # Only emit on progress change (to reduce network traffic)
+                    if status["percent"] != last_percent:
+                        last_percent = status["percent"]
+
+                        # Convert status to SSE event format
+                        if status["state"] == "generating":
+                            event_data = {
+                                "event": "progress",
+                                "current_day": status["current_day"],
+                                "total_days": status["total_days"],
+                                "percent": status["percent"],
+                            }
+                        elif status["state"] == "completed":
+                            event_data = {
+                                "event": "complete",
+                                "records": status["records"],
+                                "size_mb": status["size_mb"],
+                            }
+                        elif status["state"] in ("failed", "cancelled"):
+                            event_data = {
+                                "event": "error",
+                                "message": status["error"] or f"Generation {status['state']}",
+                            }
+                        else:
+                            # idle state - shouldn't happen during stream
+                            event_data = {
+                                "event": "error",
+                                "message": "Generation not started",
+                            }
+
+                        yield f"data: {json.dumps(event_data)}\n\n"
+
+                    # Exit loop when generation is no longer running
+                    if status["state"] != "generating":
                         break
 
-                # Send final result
-                if generation_error:
-                    yield f"data: {json.dumps({'event': 'error', 'message': generation_error[0]})}\n\n"
-                elif generation_result:
-                    result = generation_result[0]
-                    result["event"] = "complete"
-                    yield f"data: {json.dumps(result)}\n\n"
+                    await asyncio.sleep(0.1)
 
             except Exception as e:
                 logger.error("demo_generation_stream_error", error=str(e))
                 yield f"data: {json.dumps({'event': 'error', 'message': str(e)})}\n\n"
 
         return StreamingResponse(
-            event_stream(),
+            watch_generation_stream(),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",

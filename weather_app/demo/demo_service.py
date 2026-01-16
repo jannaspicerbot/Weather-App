@@ -236,8 +236,8 @@ class DemoService:
         query_start = self._unshift_date(start_date) if start_date else None
         query_end = self._unshift_date(end_date) if end_date else None
 
-        conditions = []
-        params = []
+        conditions: list[str] = []
+        params: list[str | int] = []
 
         if query_start:
             conditions.append("date >= ?")
@@ -310,7 +310,7 @@ class DemoService:
         # Sample evenly using row numbers
         sample_interval = total_count // target_count
 
-        query = f"""
+        query = """
             WITH numbered AS (
                 SELECT *, ROW_NUMBER() OVER (ORDER BY dateutc ASC) as rn
                 FROM weather_data
@@ -325,9 +325,6 @@ class DemoService:
         results = self._conn.execute(
             query, [query_start, query_end, sample_interval, target_count]
         ).fetchall()
-
-        # Get column names (excluding the rn column we added)
-        columns = [desc[0] for desc in self._conn.description if desc[0] != "rn"]
 
         readings = []
         for row in results:

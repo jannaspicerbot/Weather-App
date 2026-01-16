@@ -18,11 +18,31 @@ import random
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TypedDict
 
 import duckdb
 
+
+class GenerationCancelledError(Exception):
+    """Raised when generation is cancelled by user."""
+
+    pass
+
+
+class SeattleClimateData(TypedDict):
+    """Type definition for Seattle climate parameters."""
+
+    latitude: float
+    timezone: str
+    avg_temps: dict[int, int]
+    temp_ranges: dict[int, int]
+    rain_probability: dict[int, float]
+    avg_humidity: dict[int, int]
+    avg_wind: dict[int, int]
+
+
 # Seattle climate parameters
-SEATTLE_CLIMATE = {
+SEATTLE_CLIMATE: SeattleClimateData = {
     "latitude": 47.6,
     "timezone": "America/Los_Angeles",
     # Monthly average temperatures (°F)
@@ -66,7 +86,7 @@ class SeattleWeatherGenerator:
         # State for weather continuity
         self._in_rain_event = False
         self._rain_event_intensity = 0.0
-        self._rain_event_remaining_hours = 0
+        self._rain_event_remaining_hours = 0.0
         self._pressure_trend = 0.0  # Positive = rising, negative = falling
 
         # Accumulating totals
@@ -426,6 +446,7 @@ class SeattleWeatherGenerator:
         days: int = 1095,  # 3 years default
         interval_minutes: int = 5,
         progress_callback: Callable[[int, int], None] | None = None,
+        cancel_check: Callable[[], bool] | None = None,
         quiet: bool = False,
     ) -> int:
         """
@@ -436,10 +457,14 @@ class SeattleWeatherGenerator:
             days: Number of days to generate
             interval_minutes: Minutes between readings
             progress_callback: Optional callback(current_day, total_days) for progress updates
+            cancel_check: Optional callback() -> bool to check if generation should be cancelled
             quiet: If True, suppress print output (useful when using progress_callback)
 
         Returns:
             Number of records generated
+
+        Raises:
+            GenerationCancelledError: If cancel_check returns True during generation
         """
         if not quiet:
             print(f"Generating {days} days of Seattle weather data...")
@@ -477,6 +502,12 @@ class SeattleWeatherGenerator:
             if progress_callback and current_day != last_day_reported and current_day % 10 == 0:
                 progress_callback(current_day, days)
                 last_day_reported = current_day
+
+            # Check for cancellation every day (approx every 288 records at 5min interval)
+            if cancel_check and current_day != last_day_reported and cancel_check():
+                raise GenerationCancelledError(
+                    f"Generation cancelled at day {current_day}/{days}"
+                )
 
             if not quiet and records % 10000 == 0 and records > 0:
                 print(f"  Generated {records:,} records...")

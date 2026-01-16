@@ -1,17 +1,23 @@
 """
 Tests for Demo Mode functionality
 
-Tests the DemoService, data generator, and API endpoints for demo mode.
+Tests the DemoService, data generator, generation service, and API endpoints for demo mode.
 """
 
 import tempfile
+import threading
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
 
-from weather_app.demo.data_generator import SeattleWeatherGenerator
+from weather_app.demo.data_generator import (
+    GenerationCancelledError,
+    SeattleWeatherGenerator,
+)
 from weather_app.demo.demo_service import DemoService
+from weather_app.demo.generation_service import DemoGenerationService
 
 
 class TestDemoConfig:
@@ -151,6 +157,42 @@ class TestSeattleWeatherGenerator:
 
         captured = capsys.readouterr()
         assert captured.out == "", "No output should be printed in quiet mode"
+
+        generator.close()
+
+    def test_cancel_check_stops_generation(self, tmp_path: Path) -> None:
+        """Test that cancel_check callback can stop generation."""
+        db_path = tmp_path / "test_demo.duckdb"
+        generator = SeattleWeatherGenerator(db_path)
+
+        cancel_flag = threading.Event()
+        days_generated = []
+
+        def progress_callback(current_day: int, total_days: int) -> None:
+            days_generated.append(current_day)
+            # Cancel after a few days
+            if current_day >= 20:
+                cancel_flag.set()
+
+        def cancel_check() -> bool:
+            return cancel_flag.is_set()
+
+        start_date = datetime(2024, 1, 1)
+
+        with pytest.raises(GenerationCancelledError) as exc_info:
+            generator.generate(
+                start_date=start_date,
+                days=100,
+                progress_callback=progress_callback,
+                cancel_check=cancel_check,
+                quiet=True,
+            )
+
+        # Should have stopped before completing all 100 days
+        assert "cancelled" in str(exc_info.value).lower()
+        # Should have made progress but not completed
+        assert len(days_generated) > 0
+        assert days_generated[-1] < 100
 
         generator.close()
 
@@ -396,3 +438,197 @@ class TestDemoModeIntegration:
         success, message = disable_demo_mode()
         assert success
         assert not is_demo_mode()
+
+
+class TestDemoGenerationService:
+    """Tests for the DemoGenerationService singleton with concurrency control."""
+
+    @pytest.fixture(autouse=True)
+    def reset_service(self):
+        """Reset the singleton instance before and after each test."""
+        DemoGenerationService.reset_instance()
+        yield
+        DemoGenerationService.reset_instance()
+
+    def test_singleton_returns_same_instance(self) -> None:
+        """Test that get_instance returns the same singleton instance."""
+        service1 = DemoGenerationService.get_instance()
+        service2 = DemoGenerationService.get_instance()
+
+        assert service1 is service2
+
+    def test_initial_status_is_idle(self) -> None:
+        """Test that initial status is idle."""
+        service = DemoGenerationService.get_instance()
+        status = service.get_status()
+
+        assert status["state"] == "idle"
+        assert status["current_day"] == 0
+        assert status["total_days"] == 0
+        assert status["percent"] == 0
+
+    def test_prevents_concurrent_generation(self, tmp_path: Path, monkeypatch) -> None:
+        """Test that second generation request is rejected while one is in progress."""
+        # Use a temporary path for the demo database
+        test_db_path = tmp_path / "test_demo.duckdb"
+        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+
+        service = DemoGenerationService.get_instance()
+
+        # Start first generation with minimal days for speed
+        success1, message1 = service.start_generation(days=5)
+        assert success1, f"First generation should start: {message1}"
+
+        # Try to start second generation - should be rejected
+        success2, message2 = service.start_generation(days=5)
+        assert not success2, "Second generation should be rejected"
+        assert "already in progress" in message2.lower()
+
+        # Status should show generating
+        status = service.get_status()
+        assert status["state"] == "generating"
+
+        # Wait for completion (poll rather than fixed sleep)
+        timeout = 10
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            status = service.get_status()
+            if status["state"] != "generating":
+                break
+            time.sleep(0.2)
+
+        # Should have completed
+        assert status["state"] == "completed", f"Expected completed, got {status['state']}"
+
+    def test_cancellation_stops_generation(self, tmp_path: Path, monkeypatch) -> None:
+        """Test that cancellation request stops ongoing generation."""
+        test_db_path = tmp_path / "test_demo.duckdb"
+        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+
+        service = DemoGenerationService.get_instance()
+
+        # Start generation
+        success, _ = service.start_generation(days=100)  # Long enough to cancel
+        assert success
+
+        # Wait a moment for generation to start
+        time.sleep(0.5)
+
+        # Request cancellation
+        cancel_success, cancel_message = service.cancel_generation()
+        assert cancel_success, f"Cancellation should succeed: {cancel_message}"
+
+        # Wait for cancellation to take effect
+        timeout = 5
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            status = service.get_status()
+            if status["state"] != "generating":
+                break
+            time.sleep(0.1)
+
+        # Status should be cancelled or failed (not generating or completed)
+        status = service.get_status()
+        assert status["state"] in ("cancelled", "failed"), f"Expected cancelled or failed, got {status['state']}"
+
+        # Database should be cleaned up
+        assert not test_db_path.exists(), "Partial database should be cleaned up"
+
+    def test_cancel_without_generation_fails(self) -> None:
+        """Test that cancelling when no generation is running returns failure."""
+        service = DemoGenerationService.get_instance()
+
+        success, message = service.cancel_generation()
+        assert not success
+        assert "no generation in progress" in message.lower()
+
+    def test_status_updates_during_generation(self, tmp_path: Path, monkeypatch) -> None:
+        """Test that status updates as generation progresses."""
+        test_db_path = tmp_path / "test_demo.duckdb"
+        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+
+        service = DemoGenerationService.get_instance()
+
+        # Start generation with small number of days
+        service.start_generation(days=15)
+
+        # Poll status until complete (with timeout)
+        status_snapshots = []
+        timeout = 15
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            status = service.get_status()
+            status_snapshots.append(status)
+            if status["state"] != "generating":
+                break
+            time.sleep(0.2)
+
+        # Should have seen some progress updates
+        assert len(status_snapshots) > 1
+
+        # State should have been generating at some point
+        states = [s["state"] for s in status_snapshots]
+        assert "generating" in states or "completed" in states
+
+        # Final status should be completed (not still generating)
+        final_status = service.get_status()
+        assert final_status["state"] in ("completed", "cancelled", "failed"), \
+            f"Expected completed/cancelled/failed, got {final_status['state']}"
+
+    def test_cleanup_on_failure(self, tmp_path: Path, monkeypatch) -> None:
+        """Test that partial database is cleaned up on generation failure."""
+        test_db_path = tmp_path / "test_demo.duckdb"
+        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+
+        service = DemoGenerationService.get_instance()
+
+        # Start generation and cancel immediately to simulate failure
+        service.start_generation(days=100)
+        time.sleep(0.3)
+        service.cancel_generation()
+
+        # Wait for cleanup
+        timeout = 5
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            status = service.get_status()
+            if status["state"] != "generating":
+                break
+            time.sleep(0.1)
+
+        # Database should not exist (cleaned up)
+        assert not test_db_path.exists(), "Partial database should be cleaned up after cancellation"
+
+    def test_thread_safe_status_access(self, tmp_path: Path, monkeypatch) -> None:
+        """Test that status can be safely accessed from multiple threads."""
+        test_db_path = tmp_path / "test_demo.duckdb"
+        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+
+        service = DemoGenerationService.get_instance()
+        errors = []
+        status_reads = []
+
+        def read_status_repeatedly():
+            try:
+                for _ in range(50):
+                    status = service.get_status()
+                    status_reads.append(status)
+                    time.sleep(0.01)
+            except Exception as e:
+                errors.append(e)
+
+        # Start generation
+        service.start_generation(days=30)
+
+        # Spawn multiple threads to read status concurrently
+        threads = [threading.Thread(target=read_status_repeatedly) for _ in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # No errors should have occurred
+        assert len(errors) == 0, f"Thread safety errors: {errors}"
+
+        # Should have successfully read status multiple times
+        assert len(status_reads) > 0
