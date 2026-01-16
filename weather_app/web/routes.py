@@ -8,7 +8,7 @@ import time
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 
-from weather_app.config import get_db_info
+from weather_app.config import DEMO_DB_PATH, get_db_info, get_demo_info
 from weather_app.database import WeatherRepository
 from weather_app.logging_config import get_logger, log_api_request
 from weather_app.web.backfill_service import backfill_service
@@ -19,6 +19,7 @@ from weather_app.web.models import (
     CredentialValidationRequest,
     CredentialValidationResponse,
     DatabaseStats,
+    DemoStatusResponse,
     DeviceInfo,
     DeviceListResponse,
     DeviceSelectionRequest,
@@ -132,9 +133,22 @@ def register_routes(app: FastAPI):
         """
         Get the most recent weather data reading
         """
+        from weather_app.web.app import get_demo_service, is_demo_mode
+
         start_time = time.time()
         try:
-            result = WeatherRepository.get_latest_reading()
+            # Check for demo mode
+            if is_demo_mode():
+                demo_service = get_demo_service()
+                if demo_service and demo_service.is_available:
+                    result = demo_service.get_latest_reading()
+                else:
+                    raise HTTPException(
+                        status_code=503, detail="Demo service unavailable"
+                    )
+            else:
+                result = WeatherRepository.get_latest_reading()
+
             if result is None:
                 duration_ms = (time.time() - start_time) * 1000
                 log_api_request(
@@ -174,9 +188,21 @@ def register_routes(app: FastAPI):
         """
         Get statistics about the weather database
         """
+        from weather_app.web.app import get_demo_service, is_demo_mode
+
         start_time = time.time()
         try:
-            result = WeatherRepository.get_stats()
+            # Check for demo mode
+            if is_demo_mode():
+                demo_service = get_demo_service()
+                if demo_service and demo_service.is_available:
+                    result = demo_service.get_stats()
+                else:
+                    raise HTTPException(
+                        status_code=503, detail="Demo service unavailable"
+                    )
+            else:
+                result = WeatherRepository.get_stats()
 
             duration_ms = (time.time() - start_time) * 1000
             log_api_request(
@@ -220,7 +246,16 @@ def register_routes(app: FastAPI):
         """
         Get the latest weather readings (API route)
         """
+        from weather_app.web.app import get_demo_service, is_demo_mode
+
         try:
+            # Check for demo mode
+            if is_demo_mode():
+                demo_service = get_demo_service()
+                if demo_service and demo_service.is_available:
+                    return demo_service.get_all_readings(limit=limit, order="desc")
+                raise HTTPException(status_code=503, detail="Demo service unavailable")
+
             results = WeatherRepository.get_all_readings(limit=limit, order="desc")
             return results
         except RuntimeError as e:
@@ -238,7 +273,26 @@ def register_routes(app: FastAPI):
         For large date ranges, returns evenly sampled data distributed
         across the full range rather than just the most recent records.
         """
+        from weather_app.web.app import get_demo_service, is_demo_mode
+
         try:
+            # Check for demo mode
+            if is_demo_mode():
+                demo_service = get_demo_service()
+                if not demo_service or not demo_service.is_available:
+                    raise HTTPException(
+                        status_code=503, detail="Demo service unavailable"
+                    )
+
+                if start_date and end_date:
+                    return demo_service.get_sampled_readings(
+                        start_date=start_date,
+                        end_date=end_date,
+                        target_count=limit,
+                    )
+                else:
+                    return demo_service.get_all_readings(limit=limit, order="desc")
+
             if start_date and end_date:
                 # Use sampling for date range queries to ensure even distribution
                 return WeatherRepository.get_sampled_readings(
@@ -262,7 +316,16 @@ def register_routes(app: FastAPI):
         """
         Get database statistics (API route)
         """
+        from weather_app.web.app import get_demo_service, is_demo_mode
+
         try:
+            # Check for demo mode
+            if is_demo_mode():
+                demo_service = get_demo_service()
+                if demo_service and demo_service.is_available:
+                    return demo_service.get_stats()
+                raise HTTPException(status_code=503, detail="Demo service unavailable")
+
             return WeatherRepository.get_stats()
         except RuntimeError as e:
             raise HTTPException(status_code=500, detail=str(e))
@@ -290,7 +353,19 @@ def register_routes(app: FastAPI):
 
         Returns whether the .env file has API key and App key set.
         Used by frontend to determine if onboarding is needed.
+
+        In demo mode, credentials are always considered "configured".
         """
+        from weather_app.web.app import is_demo_mode
+
+        # In demo mode, pretend credentials are configured
+        if is_demo_mode():
+            return CredentialStatusResponse(
+                configured=True,
+                has_api_key=True,
+                has_app_key=True,
+            )
+
         status = backfill_service.get_credential_status()
         return CredentialStatusResponse(**status)
 
@@ -425,9 +500,23 @@ def register_routes(app: FastAPI):
         Returns the list of devices associated with the configured credentials
         and indicates which device is currently selected.
 
-        Requires valid API credentials to be configured.
+        In demo mode, returns the demo device.
+        Requires valid API credentials to be configured otherwise.
         """
         import os
+
+        from weather_app.web.app import get_demo_service, is_demo_mode
+
+        # In demo mode, return demo device
+        if is_demo_mode():
+            demo_service = get_demo_service()
+            if demo_service:
+                demo_devices = demo_service.get_devices()
+                return DeviceListResponse(
+                    devices=[DeviceInfo(**d) for d in demo_devices],
+                    selected_device_mac="DEMO:SEATTLE:01",
+                )
+            raise HTTPException(status_code=503, detail="Demo service unavailable")
 
         from weather_app.api.client import AmbientWeatherAPI
 
@@ -489,6 +578,227 @@ def register_routes(app: FastAPI):
             raise HTTPException(status_code=500, detail=message)
 
         return {"success": True, "message": message, "device_mac": request.device_mac}
+
+    # ===========================================
+    # Demo Mode Endpoints
+    # ===========================================
+
+    @app.get("/api/demo/status", response_model=DemoStatusResponse)
+    def get_demo_status():
+        """
+        Get current demo mode status.
+
+        Returns whether demo mode is enabled, available, and database info.
+        """
+        from weather_app.web.app import get_demo_service, is_demo_mode
+
+        demo_info = get_demo_info()
+        demo_service = get_demo_service() if is_demo_mode() else None
+
+        stats = None
+        if demo_service and demo_service.is_available:
+            stats = demo_service.get_stats()
+
+        return DemoStatusResponse(
+            enabled=is_demo_mode(),
+            available=demo_info["demo_db_exists"],
+            message="Demo mode active" if is_demo_mode() else "Demo mode inactive",
+            database_path=str(DEMO_DB_PATH) if demo_info["demo_db_exists"] else None,
+            total_records=stats["total_records"] if stats else None,
+            date_range_days=stats["date_range_days"] if stats else None,
+        )
+
+    @app.post("/api/demo/enable", response_model=DemoStatusResponse)
+    def enable_demo():
+        """
+        Enable demo mode.
+
+        Switches the application to use the pre-populated demo database
+        with Seattle weather data. No credentials required.
+
+        If the demo database doesn't exist, returns 202 Accepted with
+        generation_required=True. Client should then call /api/demo/generate
+        to create the database, then retry this endpoint.
+        """
+        from weather_app.web.app import enable_demo_mode, get_demo_service
+
+        # Check if demo database exists first
+        if not DEMO_DB_PATH.exists():
+            # Return 202 Accepted - generation required
+            return JSONResponse(
+                status_code=202,
+                content=DemoStatusResponse(
+                    enabled=False,
+                    available=False,
+                    message="Demo database not found. Generation required.",
+                    generation_required=True,
+                    estimated_generation_minutes=10,
+                ).model_dump(),
+            )
+
+        success, message = enable_demo_mode()
+
+        if not success:
+            raise HTTPException(status_code=400, detail=message)
+
+        demo_service = get_demo_service()
+        stats = demo_service.get_stats() if demo_service else None
+
+        return DemoStatusResponse(
+            enabled=True,
+            available=True,
+            message=message,
+            database_path=str(DEMO_DB_PATH),
+            total_records=stats["total_records"] if stats else None,
+            date_range_days=stats["date_range_days"] if stats else None,
+        )
+
+    @app.post("/api/demo/disable", response_model=DemoStatusResponse)
+    def disable_demo():
+        """
+        Disable demo mode.
+
+        Returns the application to normal mode requiring credentials.
+        """
+        from weather_app.web.app import disable_demo_mode
+
+        success, message = disable_demo_mode()
+
+        return DemoStatusResponse(
+            enabled=False,
+            available=DEMO_DB_PATH.exists(),
+            message=message,
+        )
+
+    @app.post("/api/demo/generate")
+    async def generate_demo_database():
+        """
+        Generate demo database with progress updates via Server-Sent Events (SSE).
+
+        Streams progress events as the database is generated:
+        - {"event": "progress", "current_day": 100, "total_days": 1095, "percent": 9}
+        - {"event": "complete", "records": 315324, "size_mb": 140.5}
+        - {"event": "error", "message": "..."}
+
+        Client should use EventSource or fetch with streaming to receive updates.
+        """
+        import asyncio
+        import json
+        import threading
+        from queue import Empty, Queue
+
+        from fastapi.responses import StreamingResponse
+
+        from weather_app.config import DEMO_DEFAULT_DAYS
+        from weather_app.demo import DemoService
+
+        # If database already exists, return immediately
+        if DEMO_DB_PATH.exists():
+            async def already_exists():
+                yield f"data: {json.dumps({'event': 'complete', 'records': 0, 'size_mb': 0, 'message': 'Database already exists'})}\n\n"
+
+            return StreamingResponse(
+                already_exists(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",
+                },
+            )
+
+        # Create a queue for progress updates from the generator thread
+        progress_queue: Queue = Queue()
+        generation_complete = threading.Event()
+        generation_error: list = []
+        generation_result: list = []
+
+        def run_generation():
+            """Run generation in a separate thread to avoid blocking."""
+            try:
+                service = DemoService(DEMO_DB_PATH)
+
+                def progress_callback(current_day: int, total_days: int) -> None:
+                    percent = int((current_day / total_days) * 100) if total_days > 0 else 0
+                    progress_queue.put({
+                        "event": "progress",
+                        "current_day": current_day,
+                        "total_days": total_days,
+                        "percent": percent,
+                    })
+
+                generated = service.generate_if_missing(
+                    days=DEMO_DEFAULT_DAYS,
+                    progress_callback=progress_callback,
+                )
+
+                if generated:
+                    stats = service.get_stats()
+                    size_mb = DEMO_DB_PATH.stat().st_size / 1024 / 1024
+                    generation_result.append({
+                        "records": stats.get("total_records", 0),
+                        "size_mb": round(size_mb, 1),
+                    })
+                else:
+                    generation_result.append({
+                        "records": 0,
+                        "size_mb": 0,
+                        "message": "Database already exists",
+                    })
+
+            except Exception as e:
+                logger.error("demo_generation_failed", error=str(e))
+                generation_error.append(str(e))
+            finally:
+                generation_complete.set()
+
+        # Start generation in background thread
+        generation_thread = threading.Thread(target=run_generation, daemon=True)
+        generation_thread.start()
+
+        async def event_stream():
+            """Generate SSE events from the progress queue."""
+            try:
+                while not generation_complete.is_set():
+                    # Check for progress updates
+                    try:
+                        progress = progress_queue.get_nowait()
+                        yield f"data: {json.dumps(progress)}\n\n"
+                    except Empty:
+                        pass
+
+                    # Small delay to prevent busy-waiting
+                    await asyncio.sleep(0.1)
+
+                # Drain any remaining progress updates
+                while True:
+                    try:
+                        progress = progress_queue.get_nowait()
+                        yield f"data: {json.dumps(progress)}\n\n"
+                    except Empty:
+                        break
+
+                # Send final result
+                if generation_error:
+                    yield f"data: {json.dumps({'event': 'error', 'message': generation_error[0]})}\n\n"
+                elif generation_result:
+                    result = generation_result[0]
+                    result["event"] = "complete"
+                    yield f"data: {json.dumps(result)}\n\n"
+
+            except Exception as e:
+                logger.error("demo_generation_stream_error", error=str(e))
+                yield f"data: {json.dumps({'event': 'error', 'message': str(e)})}\n\n"
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
 
     # ===========================================
     # Error Handlers

@@ -21,6 +21,27 @@ export interface CredentialStatus {
   has_app_key: boolean;
 }
 
+export interface DemoStatus {
+  enabled: boolean;
+  available: boolean;
+  message: string;
+  database_path: string | null;
+  total_records: number | null;
+  date_range_days: number | null;
+  generation_required?: boolean;
+  estimated_generation_minutes?: number;
+}
+
+export interface DemoGenerationProgress {
+  event: 'progress' | 'complete' | 'error';
+  current_day?: number;
+  total_days?: number;
+  percent?: number;
+  records?: number;
+  size_mb?: number;
+  message?: string;
+}
+
 export interface CredentialValidationResponse {
   valid: boolean;
   message: string;
@@ -221,4 +242,128 @@ export function formatTimeRemaining(seconds: number | null): string {
   } else {
     return `${secs}s remaining`;
   }
+}
+
+// ===========================================
+// Demo Mode API Functions
+// ===========================================
+
+/**
+ * Get current demo mode status
+ */
+export async function getDemoStatus(): Promise<DemoStatus> {
+  const response = await fetch(`${API_BASE_URL}/api/demo/status`);
+  if (!response.ok) {
+    throw new Error('Failed to get demo status');
+  }
+  return response.json();
+}
+
+/**
+ * Enable demo mode
+ *
+ * Returns DemoStatus with generation_required=true if the database doesn't exist.
+ * In that case, call generateDemoDatabase() first, then retry this function.
+ */
+export async function enableDemoMode(): Promise<DemoStatus> {
+  const response = await fetch(`${API_BASE_URL}/api/demo/enable`, {
+    method: 'POST',
+  });
+
+  // 202 Accepted means generation is required
+  if (response.status === 202) {
+    return response.json();
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || 'Failed to enable demo mode');
+  }
+
+  return response.json();
+}
+
+/**
+ * Generate demo database with progress updates via SSE
+ *
+ * @param onProgress - Callback for progress updates
+ * @param abortSignal - Optional AbortSignal for cancellation
+ * @returns Promise that resolves when generation is complete
+ */
+export async function generateDemoDatabase(
+  onProgress: (progress: DemoGenerationProgress) => void,
+  abortSignal?: AbortSignal
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/demo/generate`, {
+    method: 'POST',
+    signal: abortSignal,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || 'Failed to start demo generation');
+  }
+
+  if (!response.body) {
+    throw new Error('No response body for SSE stream');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete SSE messages
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6)) as DemoGenerationProgress;
+            onProgress(data);
+
+            // If error event, throw
+            if (data.event === 'error') {
+              throw new Error(data.message || 'Generation failed');
+            }
+          } catch (e) {
+            // Ignore JSON parse errors for malformed messages
+            if (e instanceof SyntaxError) {
+              console.warn('Failed to parse SSE message:', line);
+            } else {
+              throw e;
+            }
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Disable demo mode
+ */
+export async function disableDemoMode(): Promise<DemoStatus> {
+  const response = await fetch(`${API_BASE_URL}/api/demo/disable`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || 'Failed to disable demo mode');
+  }
+
+  return response.json();
 }

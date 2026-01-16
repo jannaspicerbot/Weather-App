@@ -2,11 +2,13 @@
 Pydantic models for API responses
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class WeatherData(BaseModel):
     """Response model for weather data records"""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     dateutc: int
@@ -33,9 +35,6 @@ class WeatherData(BaseModel):
     battout: int | None = None
     battin: int | None = None
     raw_json: str | None = None
-
-    class Config:
-        from_attributes = True
 
 
 class DatabaseStats(BaseModel):
@@ -115,3 +114,28 @@ class DeviceListResponse(BaseModel):
 
     devices: list[DeviceInfo]
     selected_device_mac: str | None = None
+
+
+class DemoStatusResponse(BaseModel):
+    """Response model for demo mode status"""
+
+    enabled: bool
+    available: bool
+    message: str
+    database_path: str | None = None
+    total_records: int | None = None
+    date_range_days: int | None = None
+    generation_required: bool = False
+    estimated_generation_minutes: int | None = None
+
+
+class DemoGenerationProgress(BaseModel):
+    """Response model for demo generation progress (SSE events)"""
+
+    event: str  # 'progress', 'complete', 'error'
+    current_day: int = 0
+    total_days: int = 0
+    percent: int = 0
+    records: int | None = None
+    size_mb: float | None = None
+    message: str | None = None
