@@ -42,6 +42,28 @@ export interface DemoGenerationProgress {
   message?: string;
 }
 
+export interface GenerationStatus {
+  state: 'idle' | 'generating' | 'completed' | 'failed' | 'cancelled';
+  current_day: number;
+  total_days: number;
+  percent: number;
+  records: number | null;
+  size_mb: number | null;
+  error: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+/**
+ * Custom error for SSE connection failures
+ */
+export class SSEConnectionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SSEConnectionError';
+  }
+}
+
 export interface CredentialValidationResponse {
   valid: boolean;
   message: string;
@@ -284,7 +306,38 @@ export async function enableDemoMode(): Promise<DemoStatus> {
 }
 
 /**
- * Generate demo database with progress updates via SSE
+ * Get current demo generation status (polling endpoint)
+ */
+export async function getGenerationStatus(): Promise<GenerationStatus> {
+  const response = await fetch(`${API_BASE_URL}/api/demo/generation/status`);
+  if (!response.ok) {
+    throw new Error('Failed to get generation status');
+  }
+  return response.json();
+}
+
+/**
+ * Cancel ongoing demo generation
+ */
+export async function cancelGeneration(): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/api/demo/generation/cancel`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to cancel generation');
+  }
+  return response.json();
+}
+
+/**
+ * Helper to sleep for a given number of milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Generate demo database with SSE progress updates via SSE, with automatic polling fallback
  *
  * @param onProgress - Callback for progress updates
  * @param abortSignal - Optional AbortSignal for cancellation
@@ -294,10 +347,41 @@ export async function generateDemoDatabase(
   onProgress: (progress: DemoGenerationProgress) => void,
   abortSignal?: AbortSignal
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/demo/generate`, {
-    method: 'POST',
-    signal: abortSignal,
-  });
+  try {
+    // Try SSE first
+    await generateWithSSE(onProgress, abortSignal);
+  } catch (error) {
+    // If SSE fails (timeout, network error), fall back to polling
+    if (error instanceof SSEConnectionError) {
+      console.warn('SSE connection failed, falling back to polling:', error.message);
+      await generateWithPolling(onProgress, abortSignal);
+    } else {
+      throw error;
+    }
+  }
+}
+
+/**
+ * Generate demo database using SSE streaming
+ */
+async function generateWithSSE(
+  onProgress: (progress: DemoGenerationProgress) => void,
+  abortSignal?: AbortSignal
+): Promise<void> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}/api/demo/generate`, {
+      method: 'POST',
+      signal: abortSignal,
+    });
+  } catch (error) {
+    // Network errors during fetch should trigger polling fallback
+    if (error instanceof TypeError) {
+      throw new SSEConnectionError(`Network error: ${error.message}`);
+    }
+    throw error;
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
@@ -305,21 +389,30 @@ export async function generateDemoDatabase(
   }
 
   if (!response.body) {
-    throw new Error('No response body for SSE stream');
+    throw new SSEConnectionError('No response body for SSE stream');
   }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let lastProgressTime = Date.now();
+  const SSE_TIMEOUT_MS = 30000; // 30 second timeout for no progress
 
   try {
     while (true) {
+      // Check for SSE timeout (no data received for too long)
+      const timeSinceLastProgress = Date.now() - lastProgressTime;
+      if (timeSinceLastProgress > SSE_TIMEOUT_MS) {
+        throw new SSEConnectionError(`SSE timeout: no data received for ${SSE_TIMEOUT_MS / 1000}s`);
+      }
+
       const { done, value } = await reader.read();
 
       if (done) {
         break;
       }
 
+      lastProgressTime = Date.now();
       buffer += decoder.decode(value, { stream: true });
 
       // Process complete SSE messages
@@ -349,6 +442,75 @@ export async function generateDemoDatabase(
     }
   } finally {
     reader.releaseLock();
+  }
+}
+
+/**
+ * Generate demo database using polling fallback
+ */
+async function generateWithPolling(
+  onProgress: (progress: DemoGenerationProgress) => void,
+  abortSignal?: AbortSignal
+): Promise<void> {
+  // Check current status - generation may already be running from SSE attempt
+  let status = await getGenerationStatus();
+
+  // If not already generating, start generation
+  if (status.state !== 'generating') {
+    const response = await fetch(`${API_BASE_URL}/api/demo/generate`, {
+      method: 'POST',
+      signal: abortSignal,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      throw new Error(error.detail || 'Failed to start demo generation');
+    }
+  }
+
+  // Poll every 500ms until complete
+  while (true) {
+    // Check for user cancellation
+    if (abortSignal?.aborted) {
+      await cancelGeneration();
+      throw new DOMException('Generation cancelled', 'AbortError');
+    }
+
+    status = await getGenerationStatus();
+
+    // Convert status to progress event
+    const progressEvent: DemoGenerationProgress = {
+      event:
+        status.state === 'completed'
+          ? 'complete'
+          : status.state === 'failed' || status.state === 'cancelled'
+            ? 'error'
+            : 'progress',
+      current_day: status.current_day,
+      total_days: status.total_days,
+      percent: status.percent,
+      records: status.records ?? undefined,
+      size_mb: status.size_mb ?? undefined,
+      message: status.error ?? undefined,
+    };
+
+    onProgress(progressEvent);
+
+    // Check for terminal states
+    if (status.state === 'completed') {
+      return;
+    }
+
+    if (status.state === 'failed') {
+      throw new Error(status.error || 'Generation failed');
+    }
+
+    if (status.state === 'cancelled') {
+      throw new DOMException('Generation cancelled', 'AbortError');
+    }
+
+    // Wait before next poll
+    await sleep(500);
   }
 }
 

@@ -181,6 +181,30 @@ def register_frontend(app: FastAPI) -> None:
         )
 
 
+def _check_demo_generation_cleanup() -> None:
+    """
+    Check for incomplete demo database generation on startup.
+
+    If a previous process crashed mid-generation, the status would still show
+    "generating" but no thread would be running. Clean up the partial database
+    and reset status in this case.
+    """
+    from weather_app.demo.generation_service import DemoGenerationService
+
+    service = DemoGenerationService.get_instance()
+    status = service.get_status()
+
+    if status["state"] == "generating":
+        # Previous process crashed mid-generation - no thread running
+        logger.warning(
+            "demo_generation_incomplete_detected",
+            message="Detected incomplete demo generation from previous process, cleaning up",
+            started_at=status["started_at"],
+        )
+        service._cleanup_partial_database()
+        service.reset_status()
+
+
 def create_app() -> FastAPI:
     """
     Application factory function that creates and configures FastAPI app
@@ -192,6 +216,9 @@ def create_app() -> FastAPI:
 
     # Check demo mode from environment variable (read fresh, not from cached config)
     _demo_mode_enabled = _get_initial_demo_mode()
+
+    # Check for incomplete demo generation from previous process crash
+    _check_demo_generation_cleanup()
 
     app = FastAPI(
         title=API_TITLE,

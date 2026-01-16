@@ -26,6 +26,8 @@ vi.mock('../services/onboardingApi', () => ({
   getBackfillProgress: vi.fn(),
   getDevices: vi.fn(),
   selectDevice: vi.fn(),
+  getDemoStatus: vi.fn().mockResolvedValue({ available: true, generation_required: false }),
+  cancelGeneration: vi.fn().mockResolvedValue({ success: true, message: 'Cancelled' }),
 }));
 
 // Import mocks after vi.mock

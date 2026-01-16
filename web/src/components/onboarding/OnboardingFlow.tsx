@@ -16,6 +16,7 @@ import {
   enableDemoMode,
   generateDemoDatabase,
   getDemoStatus,
+  cancelGeneration,
   type DeviceInfo,
   type DemoGenerationProgress,
 } from '../../services/onboardingApi';
@@ -117,11 +118,20 @@ export default function OnboardingFlow({ onComplete, onDemoModeEnabled }: Onboar
     }
   };
 
-  const handleCancelGeneration = () => {
+  const handleCancelGeneration = async () => {
+    // Abort the local request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
+
+    // Also cancel on the backend to stop actual generation
+    try {
+      await cancelGeneration();
+    } catch {
+      // Ignore cancellation errors - generation may already be stopped
+    }
+
     setStep('credentials');
     setGenerationProgress(null);
   };
