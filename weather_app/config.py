@@ -109,12 +109,37 @@ SCHEDULER_FETCH_INTERVAL_MINUTES = int(os.getenv("SCHEDULER_FETCH_INTERVAL_MINUT
 # Logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
+# Demo Mode Configuration
+# DEMO_MODE: Enable demo mode with pre-populated Seattle weather data
+# Can be enabled via environment variable or runtime API call
+DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 
-def get_db_info():
-    """Get information about the current database configuration"""
+# Path to demo database (stored in user data directory to survive package updates)
+# Previous location was inside the package directory, which got overwritten on updates
+DEMO_DB_FILENAME = "demo_weather.duckdb"
+DEMO_DB_PATH = BASE_DIR / DEMO_DB_FILENAME
+
+# Demo update interval (simulated live updates)
+DEMO_UPDATE_INTERVAL_SECONDS = 300  # 5 minutes
+
+# Demo generation settings
+DEMO_DEFAULT_DAYS = 1095  # 3 years of data
+
+
+def get_db_info() -> dict[str, str | bool]:
+    """Get information about the current database configuration."""
     return {
         "using_test_db": USE_TEST_DB,
         "database_path": DB_PATH,
         "database_engine": DB_ENGINE,
         "mode": "TEST" if USE_TEST_DB else "PRODUCTION",
+    }
+
+
+def get_demo_info() -> dict[str, str | bool]:
+    """Get information about demo mode configuration."""
+    return {
+        "demo_mode": DEMO_MODE,
+        "demo_db_path": str(DEMO_DB_PATH),
+        "demo_db_exists": DEMO_DB_PATH.exists(),
     }

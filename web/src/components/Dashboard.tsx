@@ -14,8 +14,9 @@ import { useMetricsLayout } from '../hooks/useMetricsLayout';
 import { InstallPrompt } from './InstallPrompt';
 import { OnboardingFlow } from './onboarding';
 import BackfillStatusBanner from './BackfillStatusBanner';
+import DemoBanner from './DemoBanner';
 import DeviceManager from './DeviceManager';
-import { getCredentialStatus, getBackfillProgress } from '../services/onboardingApi';
+import { getCredentialStatus, getBackfillProgress, getDemoStatus } from '../services/onboardingApi';
 
 export default function Dashboard() {
   const [latestWeather, setLatestWeather] = useState<WeatherData | null>(null);
@@ -34,6 +35,7 @@ export default function Dashboard() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingCredentials, setCheckingCredentials] = useState(true);
   const [isBackfilling, setIsBackfilling] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Reset both chart and metrics layouts
   const handleResetAllLayouts = () => {
@@ -41,10 +43,18 @@ export default function Dashboard() {
     resetMetricsLayout();
   };
 
-  // Check credentials and backfill status on mount
+  // Check credentials, demo status, and backfill status on mount
   useEffect(() => {
     const checkSetup = async () => {
       try {
+        // Check if demo mode is active first
+        const demoStatus = await getDemoStatus();
+        if (demoStatus.enabled) {
+          setIsDemoMode(true);
+          setCheckingCredentials(false);
+          return;
+        }
+
         // Check if credentials are configured
         const credStatus = await getCredentialStatus();
 
@@ -81,6 +91,24 @@ export default function Dashboard() {
     // Trigger data fetch
     fetchLatestData();
     fetchHistoricalData();
+  }, []);
+
+  // Handle demo mode enabled from onboarding
+  const handleDemoModeEnabled = useCallback(() => {
+    setShowOnboarding(false);
+    setIsDemoMode(true);
+    // Trigger data fetch with demo data
+    fetchLatestData();
+    fetchHistoricalData();
+  }, []);
+
+  // Handle exiting demo mode
+  const handleExitDemoMode = useCallback(() => {
+    setIsDemoMode(false);
+    setShowOnboarding(true);
+    setLatestWeather(null);
+    setHistoricalData([]);
+    setStats(null);
   }, []);
 
   useEffect(() => {
@@ -242,7 +270,10 @@ export default function Dashboard() {
   if (showOnboarding) {
     return (
       <div className="dashboard__loading" style={{ padding: 'var(--spacing-4)' }}>
-        <OnboardingFlow onComplete={handleOnboardingComplete} />
+        <OnboardingFlow
+          onComplete={handleOnboardingComplete}
+          onDemoModeEnabled={handleDemoModeEnabled}
+        />
       </div>
     );
   }
@@ -265,6 +296,9 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
+      {/* Demo Mode Banner */}
+      {isDemoMode && <DemoBanner onExitDemo={handleExitDemoMode} />}
+
       {/* Header */}
       <header className="dashboard__header">
         <div className="dashboard__header-content">

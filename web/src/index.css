@@ -725,6 +725,236 @@ button:focus-visible {
   background-color: var(--color-interactive);
 }
 
+/* Demo Mode Section */
+.onboarding__demo-section {
+  margin-top: var(--spacing-6);
+  text-align: center;
+}
+
+.onboarding__demo-divider {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.onboarding__demo-divider::before,
+.onboarding__demo-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-border);
+}
+
+.onboarding__demo-divider span {
+  padding: 0 var(--spacing-4);
+  color: var(--color-text-tertiary);
+  font-size: 0.875rem;
+}
+
+.onboarding__demo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-6);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.onboarding__demo-button:hover:not(:disabled) {
+  border-color: var(--color-interactive);
+  color: var(--color-interactive);
+  background-color: var(--color-water-10);
+}
+
+.onboarding__demo-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.onboarding__demo-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.onboarding__demo-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-interactive);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.onboarding__demo-description {
+  margin-top: var(--spacing-2);
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+}
+
+/* Demo Generation Progress */
+.onboarding__demo-generation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-6);
+}
+
+.onboarding__demo-generation-content {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.onboarding__demo-generation-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+.onboarding__demo-generation-description {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-6);
+}
+
+.onboarding__demo-progress {
+  margin-bottom: var(--spacing-6);
+}
+
+.onboarding__demo-progress-bar {
+  height: 8px;
+  background-color: var(--color-surface-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-3);
+}
+
+.onboarding__demo-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-water), var(--color-interactive));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.onboarding__demo-progress-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.onboarding__demo-progress-percent {
+  font-weight: 600;
+  color: var(--color-interactive);
+}
+
+.onboarding__demo-progress-days {
+  color: var(--color-text-tertiary);
+}
+
+.onboarding__demo-progress-starting {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.onboarding__demo-cancel-button {
+  padding: var(--spacing-2) var(--spacing-4);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.onboarding__demo-cancel-button:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
+}
+
+/* ============================================
+   DEMO BANNER COMPONENT
+   ============================================ */
+
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: linear-gradient(135deg, var(--color-water-10), var(--color-water-15));
+  border-bottom: 1px solid var(--color-water);
+}
+
+.demo-banner__content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.demo-banner__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-water);
+  flex-shrink: 0;
+}
+
+.demo-banner__text {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.demo-banner__text strong {
+  color: var(--color-water);
+  font-weight: 600;
+}
+
+.demo-banner__button {
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: transparent;
+  border: 1px solid var(--color-water);
+  border-radius: 6px;
+  color: var(--color-water);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.demo-banner__button:hover:not(:disabled) {
+  background-color: var(--color-water);
+  color: var(--color-text-on-primary);
+}
+
+.demo-banner__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .demo-banner {
+    flex-direction: column;
+    gap: var(--spacing-2);
+    text-align: center;
+  }
+
+  .demo-banner__content {
+    justify-content: center;
+  }
+}
+
 /* ============================================
    CREDENTIAL INPUT COMPONENT
    ============================================ */

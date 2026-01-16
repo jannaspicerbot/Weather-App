@@ -76,12 +76,17 @@ htmlcov/
 nul
 temp/
 
+# Frontend build artifacts
+web/dev-dist/
+
 # Development tracking files
 NEXT_STEPS.md
 
 # Internal development docs (not for public repo)
+docs/agents/
 docs/archive/
 docs/audits/
+docs/demo/
 docs/DOCUMENTATION-STRATEGY.md
 docs/release-notes/
 docs/testing/
