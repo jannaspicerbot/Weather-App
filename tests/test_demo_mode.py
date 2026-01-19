@@ -410,8 +410,8 @@ class TestDemoModeIntegration:
         self, demo_db: Path, monkeypatch
     ) -> None:
         """Test that demo service integrates with app module functions."""
-        # Patch the DEMO_DB_PATH to use our test database
-        monkeypatch.setattr("weather_app.config.DEMO_DB_PATH", demo_db)
+        # Patch the DEMO_DB_PATH in the app module where it's imported and used
+        monkeypatch.setattr("weather_app.web.app.DEMO_DB_PATH", demo_db)
 
         from weather_app.web.app import (
             disable_demo_mode,
