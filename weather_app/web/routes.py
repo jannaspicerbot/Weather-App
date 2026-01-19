@@ -602,7 +602,7 @@ def register_routes(app: FastAPI):
 
         return DemoStatusResponse(
             enabled=is_demo_mode(),
-            available=demo_info["demo_db_exists"],
+            available=bool(demo_info["demo_db_exists"]),
             message="Demo mode active" if is_demo_mode() else "Demo mode inactive",
             database_path=str(DEMO_DB_PATH) if demo_info["demo_db_exists"] else None,
             total_records=stats["total_records"] if stats else None,

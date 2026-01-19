@@ -4,7 +4,6 @@ Tests for Demo Mode functionality
 Tests the DemoService, data generator, generation service, and API endpoints for demo mode.
 """
 
-import tempfile
 import threading
 import time
 from datetime import datetime, timedelta
