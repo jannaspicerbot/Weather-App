@@ -565,8 +565,9 @@ class TestDemoGenerationService:
         service.start_generation(days=15)
 
         # Poll status until complete (with timeout)
+        # Use longer timeout for Windows CI which has slower I/O
         status_snapshots = []
-        timeout = 15
+        timeout = 30
         start_time = time.time()
         while time.time() - start_time < timeout:
             status = service.get_status()

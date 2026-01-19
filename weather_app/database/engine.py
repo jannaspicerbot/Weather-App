@@ -69,8 +69,7 @@ class WeatherDatabase:
 
         # Create weather_data table
         # DuckDB uses BIGINT for large integers, DOUBLE for floats, INTEGER for smaller ints
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS weather_data (
                 id INTEGER PRIMARY KEY DEFAULT nextval('weather_data_id_seq'),
                 dateutc BIGINT UNIQUE NOT NULL,
@@ -100,8 +99,7 @@ class WeatherDatabase:
                 tz VARCHAR,
                 raw_json VARCHAR
             )
-        """
-        )
+        """)
 
         # Create indexes for common queries
         conn.execute("CREATE INDEX IF NOT EXISTS idx_dateutc ON weather_data(dateutc)")
@@ -111,8 +109,7 @@ class WeatherDatabase:
         conn.execute("CREATE SEQUENCE IF NOT EXISTS backfill_progress_id_seq START 1")
 
         # Create backfill_progress table to track backfill operations
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS backfill_progress (
                 id INTEGER PRIMARY KEY DEFAULT nextval('backfill_progress_id_seq'),
                 start_date VARCHAR NOT NULL,
@@ -124,8 +121,7 @@ class WeatherDatabase:
                 created_at VARCHAR NOT NULL,
                 updated_at VARCHAR NOT NULL
             )
-        """
-        )
+        """)
 
     def insert_data(self, data: dict | list[dict]) -> tuple[int, int]:
         """

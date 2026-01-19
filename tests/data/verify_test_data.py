@@ -19,23 +19,20 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
     # Basic stats
     print("1. Basic Statistics")
     print("-" * 70)
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT
             COUNT(*) as total_records,
             MIN(date) as min_date,
             MAX(date) as max_date
         FROM weather_data
-    """
-    ).fetchone()
+    """).fetchone()
     print(f"   Total records: {result[0]:,}")
     print(f"   Date range: {result[1]} to {result[2]}")
 
     # Temperature stats
     print("\n2. Temperature Statistics")
     print("-" * 70)
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT
             ROUND(AVG(tempf), 1) as avg_temp,
             ROUND(MIN(tempf), 1) as min_temp,
@@ -43,8 +40,7 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
             ROUND(STDDEV(tempf), 1) as std_dev
         FROM weather_data
         WHERE tempf IS NOT NULL
-    """
-    ).fetchone()
+    """).fetchone()
     print(f"   Average: {result[0]}°F")
     print(f"   Min: {result[1]}°F")
     print(f"   Max: {result[2]}°F")
@@ -53,8 +49,7 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
     # Check for seasonal variation (compare winter vs summer)
     print("\n3. Seasonal Variation (Temperature)")
     print("-" * 70)
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT
             CASE
                 WHEN MONTH(date::DATE) IN (12, 1, 2) THEN 'Winter'
@@ -75,8 +70,7 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
                 WHEN 'Summer' THEN 3
                 WHEN 'Fall' THEN 4
             END
-    """
-    ).fetchall()
+    """).fetchall()
 
     for row in result:
         print(
@@ -86,16 +80,14 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
     # Humidity stats
     print("\n4. Humidity Statistics")
     print("-" * 70)
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT
             ROUND(AVG(humidity), 1) as avg_humidity,
             MIN(humidity) as min_humidity,
             MAX(humidity) as max_humidity
         FROM weather_data
         WHERE humidity IS NOT NULL
-    """
-    ).fetchone()
+    """).fetchone()
     print(f"   Average: {result[0]}%")
     print(f"   Min: {result[1]}%")
     print(f"   Max: {result[2]}%")
@@ -103,8 +95,7 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
     # Wind stats
     print("\n5. Wind Statistics")
     print("-" * 70)
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT
             ROUND(AVG(windspeedmph), 1) as avg_wind,
             ROUND(MIN(windspeedmph), 1) as min_wind,
@@ -113,8 +104,7 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
             ROUND(MAX(windgustmph), 1) as max_gust
         FROM weather_data
         WHERE windspeedmph IS NOT NULL
-    """
-    ).fetchone()
+    """).fetchone()
     print(f"   Average Speed: {result[0]} mph")
     print(f"   Min Speed: {result[1]} mph")
     print(f"   Max Speed: {result[2]} mph")
@@ -124,16 +114,14 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
     # Rain stats
     print("\n6. Rain Statistics")
     print("-" * 70)
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT
             COUNT(*) as total_records,
             SUM(CASE WHEN hourlyrainin > 0 THEN 1 ELSE 0 END) as rainy_records,
             ROUND(SUM(hourlyrainin), 2) as total_rain,
             ROUND(MAX(hourlyrainin), 2) as max_hourly_rain
         FROM weather_data
-    """
-    ).fetchone()
+    """).fetchone()
     rainy_percentage = (result[1] / result[0] * 100) if result[0] > 0 else 0
     print(f"   Total records: {result[0]:,}")
     print(f"   Rainy records: {result[1]:,} ({rainy_percentage:.1f}%)")
@@ -143,15 +131,13 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
     # Solar radiation check (should be 0 at night)
     print("\n7. Solar Radiation Verification")
     print("-" * 70)
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT
             COUNT(*) as night_records,
             SUM(CASE WHEN solarradiation > 0 THEN 1 ELSE 0 END) as night_solar_errors
         FROM weather_data
         WHERE HOUR(date::TIMESTAMP) < 6 OR HOUR(date::TIMESTAMP) > 20
-    """
-    ).fetchone()
+    """).fetchone()
     print(f"   Night records (6pm-6am): {result[0]:,}")
     print(f"   Night records with solar > 0: {result[1]:,}")
     if result[1] == 0:
@@ -162,8 +148,7 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
     # Daily temperature variation
     print("\n8. Daily Temperature Variation")
     print("-" * 70)
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT
             DATE(date::TIMESTAMP) as day,
             ROUND(MAX(tempf) - MIN(tempf), 1) as temp_range
@@ -172,8 +157,7 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
         GROUP BY day
         ORDER BY day
         LIMIT 5
-    """
-    ).fetchall()
+    """).fetchall()
     print("   Sample days (first 5):")
     for row in result:
         print(f"   {row[0]}: {row[1]}°F daily range")
@@ -181,8 +165,7 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
     # Check for data continuity (5-minute intervals)
     print("\n9. Data Continuity Check")
     print("-" * 70)
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT COUNT(*) as gaps
         FROM (
             SELECT
@@ -192,8 +175,7 @@ def verify_data(db_path="ambient_weather_test.duckdb"):
             FROM weather_data
         ) gaps
         WHERE minutes_gap > 6
-    """
-    ).fetchone()
+    """).fetchone()
     print(f"   Data gaps > 6 minutes: {result[0]}")
     if result[0] == 0:
         print("   [OK] No gaps in data - continuous 5-minute intervals")
