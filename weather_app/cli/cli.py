@@ -465,7 +465,9 @@ def info():
 @cli.command()
 @click.option("--host", default="0.0.0.0", help="Host to bind to (default: 0.0.0.0)")
 @click.option("--port", default=8000, type=int, help="Port to bind to (default: 8000)")
-@click.option("--demo", is_flag=True, help="Start in demo mode with sample Seattle data")
+@click.option(
+    "--demo", is_flag=True, help="Start in demo mode with sample Seattle data"
+)
 @click.option("--reload", is_flag=True, help="Enable auto-reload for development")
 def serve(host, port, demo, reload):
     """Start the Weather Dashboard web server"""

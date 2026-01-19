@@ -738,6 +738,7 @@ def register_routes(app: FastAPI):
 
         # If database already exists, return immediately
         if DEMO_DB_PATH.exists():
+
             async def already_exists():
                 yield f"data: {json.dumps({'event': 'complete', 'records': 0, 'size_mb': 0, 'message': 'Database already exists'})}\n\n"
 
@@ -801,7 +802,8 @@ def register_routes(app: FastAPI):
                         elif status["state"] in ("failed", "cancelled"):
                             event_data = {
                                 "event": "error",
-                                "message": status["error"] or f"Generation {status['state']}",
+                                "message": status["error"]
+                                or f"Generation {status['state']}",
                             }
                         else:
                             # idle state - shouldn't happen during stream

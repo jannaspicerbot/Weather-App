@@ -80,9 +80,7 @@ class DemoService:
         if not self._conn:
             return timedelta(0)
 
-        result = self._conn.execute(
-            "SELECT MAX(dateutc) FROM weather_data"
-        ).fetchone()
+        result = self._conn.execute("SELECT MAX(dateutc) FROM weather_data").fetchone()
 
         if result and result[0]:
             latest_demo_ms = result[0]
@@ -385,12 +383,8 @@ class DemoService:
             date_range_days = None
             if shifted_min and shifted_max:
                 try:
-                    min_dt = datetime.fromisoformat(
-                        shifted_min.replace("Z", "+00:00")
-                    )
-                    max_dt = datetime.fromisoformat(
-                        shifted_max.replace("Z", "+00:00")
-                    )
+                    min_dt = datetime.fromisoformat(shifted_min.replace("Z", "+00:00"))
+                    max_dt = datetime.fromisoformat(shifted_max.replace("Z", "+00:00"))
                     date_range_days = (max_dt - min_dt).days
                 except (ValueError, TypeError):
                     pass

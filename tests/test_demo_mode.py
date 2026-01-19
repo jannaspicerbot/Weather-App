@@ -470,7 +470,9 @@ class TestDemoGenerationService:
         """Test that second generation request is rejected while one is in progress."""
         # Use a temporary path for the demo database
         test_db_path = tmp_path / "test_demo.duckdb"
-        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+        monkeypatch.setattr(
+            "weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path
+        )
 
         service = DemoGenerationService.get_instance()
 
@@ -497,12 +499,16 @@ class TestDemoGenerationService:
             time.sleep(0.2)
 
         # Should have completed
-        assert status["state"] == "completed", f"Expected completed, got {status['state']}"
+        assert (
+            status["state"] == "completed"
+        ), f"Expected completed, got {status['state']}"
 
     def test_cancellation_stops_generation(self, tmp_path: Path, monkeypatch) -> None:
         """Test that cancellation request stops ongoing generation."""
         test_db_path = tmp_path / "test_demo.duckdb"
-        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+        monkeypatch.setattr(
+            "weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path
+        )
 
         service = DemoGenerationService.get_instance()
 
@@ -528,7 +534,10 @@ class TestDemoGenerationService:
 
         # Status should be cancelled or failed (not generating or completed)
         status = service.get_status()
-        assert status["state"] in ("cancelled", "failed"), f"Expected cancelled or failed, got {status['state']}"
+        assert status["state"] in (
+            "cancelled",
+            "failed",
+        ), f"Expected cancelled or failed, got {status['state']}"
 
         # Database should be cleaned up
         assert not test_db_path.exists(), "Partial database should be cleaned up"
@@ -541,10 +550,14 @@ class TestDemoGenerationService:
         assert not success
         assert "no generation in progress" in message.lower()
 
-    def test_status_updates_during_generation(self, tmp_path: Path, monkeypatch) -> None:
+    def test_status_updates_during_generation(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
         """Test that status updates as generation progresses."""
         test_db_path = tmp_path / "test_demo.duckdb"
-        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+        monkeypatch.setattr(
+            "weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path
+        )
 
         service = DemoGenerationService.get_instance()
 
@@ -571,13 +584,18 @@ class TestDemoGenerationService:
 
         # Final status should be completed (not still generating)
         final_status = service.get_status()
-        assert final_status["state"] in ("completed", "cancelled", "failed"), \
-            f"Expected completed/cancelled/failed, got {final_status['state']}"
+        assert final_status["state"] in (
+            "completed",
+            "cancelled",
+            "failed",
+        ), f"Expected completed/cancelled/failed, got {final_status['state']}"
 
     def test_cleanup_on_failure(self, tmp_path: Path, monkeypatch) -> None:
         """Test that partial database is cleaned up on generation failure."""
         test_db_path = tmp_path / "test_demo.duckdb"
-        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+        monkeypatch.setattr(
+            "weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path
+        )
 
         service = DemoGenerationService.get_instance()
 
@@ -596,12 +614,16 @@ class TestDemoGenerationService:
             time.sleep(0.1)
 
         # Database should not exist (cleaned up)
-        assert not test_db_path.exists(), "Partial database should be cleaned up after cancellation"
+        assert (
+            not test_db_path.exists()
+        ), "Partial database should be cleaned up after cancellation"
 
     def test_thread_safe_status_access(self, tmp_path: Path, monkeypatch) -> None:
         """Test that status can be safely accessed from multiple threads."""
         test_db_path = tmp_path / "test_demo.duckdb"
-        monkeypatch.setattr("weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path)
+        monkeypatch.setattr(
+            "weather_app.demo.generation_service.DEMO_DB_PATH", test_db_path
+        )
 
         service = DemoGenerationService.get_instance()
         errors = []

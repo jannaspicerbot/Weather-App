@@ -47,28 +47,78 @@ SEATTLE_CLIMATE: SeattleClimateData = {
     "timezone": "America/Los_Angeles",
     # Monthly average temperatures (°F)
     "avg_temps": {
-        1: 42, 2: 44, 3: 48, 4: 52, 5: 58, 6: 64,
-        7: 68, 8: 69, 9: 63, 10: 54, 11: 46, 12: 41
+        1: 42,
+        2: 44,
+        3: 48,
+        4: 52,
+        5: 58,
+        6: 64,
+        7: 68,
+        8: 69,
+        9: 63,
+        10: 54,
+        11: 46,
+        12: 41,
     },
     # Monthly temperature ranges (daily high - low)
     "temp_ranges": {
-        1: 8, 2: 10, 3: 12, 4: 14, 5: 16, 6: 16,
-        7: 18, 8: 18, 9: 16, 10: 12, 11: 8, 12: 7
+        1: 8,
+        2: 10,
+        3: 12,
+        4: 14,
+        5: 16,
+        6: 16,
+        7: 18,
+        8: 18,
+        9: 16,
+        10: 12,
+        11: 8,
+        12: 7,
     },
     # Monthly rain probability (chance per 5-min interval during rain event)
     "rain_probability": {
-        1: 0.45, 2: 0.40, 3: 0.38, 4: 0.32, 5: 0.25, 6: 0.18,
-        7: 0.10, 8: 0.12, 9: 0.20, 10: 0.32, 11: 0.42, 12: 0.47
+        1: 0.45,
+        2: 0.40,
+        3: 0.38,
+        4: 0.32,
+        5: 0.25,
+        6: 0.18,
+        7: 0.10,
+        8: 0.12,
+        9: 0.20,
+        10: 0.32,
+        11: 0.42,
+        12: 0.47,
     },
     # Monthly average humidity
     "avg_humidity": {
-        1: 82, 2: 78, 3: 74, 4: 68, 5: 64, 6: 62,
-        7: 58, 8: 60, 9: 68, 10: 76, 11: 82, 12: 84
+        1: 82,
+        2: 78,
+        3: 74,
+        4: 68,
+        5: 64,
+        6: 62,
+        7: 58,
+        8: 60,
+        9: 68,
+        10: 76,
+        11: 82,
+        12: 84,
     },
     # Monthly average wind speed (mph)
     "avg_wind": {
-        1: 10, 2: 9, 3: 9, 4: 8, 5: 7, 6: 7,
-        7: 7, 8: 7, 9: 7, 10: 8, 11: 10, 12: 10
+        1: 10,
+        2: 9,
+        3: 9,
+        4: 8,
+        5: 7,
+        6: 7,
+        7: 7,
+        8: 7,
+        9: 7,
+        10: 8,
+        11: 10,
+        12: 10,
     },
 }
 
@@ -109,7 +159,8 @@ class SeattleWeatherGenerator:
         """Create the weather_data table with same schema as production."""
         self.conn.execute("CREATE SEQUENCE IF NOT EXISTS weather_data_id_seq START 1")
 
-        self.conn.execute("""
+        self.conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS weather_data (
                 id INTEGER PRIMARY KEY DEFAULT nextval('weather_data_id_seq'),
                 dateutc BIGINT UNIQUE NOT NULL,
@@ -139,14 +190,13 @@ class SeattleWeatherGenerator:
                 tz VARCHAR,
                 raw_json VARCHAR
             )
-        """)
+        """
+        )
 
         self.conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_dateutc ON weather_data(dateutc)"
         )
-        self.conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_date ON weather_data(date)"
-        )
+        self.conn.execute("CREATE INDEX IF NOT EXISTS idx_date ON weather_data(date)")
 
     def _get_seasonal_temp(self, dt: datetime) -> float:
         """Calculate temperature based on season and time of day."""
@@ -199,9 +249,7 @@ class SeattleWeatherGenerator:
 
         return baromrelin, baromabsin
 
-    def _update_rain(
-        self, dt: datetime, pressure: float
-    ) -> tuple[float, float, float]:
+    def _update_rain(self, dt: datetime, pressure: float) -> tuple[float, float, float]:
         """
         Update rain state and return hourly, event, and daily rain amounts.
 
@@ -231,12 +279,14 @@ class SeattleWeatherGenerator:
                 # Seattle rain events typically last 2-12 hours
                 self._rain_event_remaining_hours = random.uniform(2, 12)
                 # Most Seattle rain is light (drizzle)
-                self._rain_event_intensity = random.choice([
-                    random.uniform(0.01, 0.05),  # Light drizzle (most common)
-                    random.uniform(0.01, 0.05),
-                    random.uniform(0.05, 0.15),  # Moderate rain
-                    random.uniform(0.15, 0.40),  # Heavy rain (rare)
-                ])
+                self._rain_event_intensity = random.choice(
+                    [
+                        random.uniform(0.01, 0.05),  # Light drizzle (most common)
+                        random.uniform(0.01, 0.05),
+                        random.uniform(0.05, 0.15),  # Moderate rain
+                        random.uniform(0.15, 0.40),  # Heavy rain (rare)
+                    ]
+                )
 
         hourly_rain = 0.0
 
@@ -499,7 +549,11 @@ class SeattleWeatherGenerator:
 
             # Report progress every 10 days or every 10000 records
             current_day = (current - start_date).days
-            if progress_callback and current_day != last_day_reported and current_day % 10 == 0:
+            if (
+                progress_callback
+                and current_day != last_day_reported
+                and current_day % 10 == 0
+            ):
                 progress_callback(current_day, days)
                 last_day_reported = current_day
 
