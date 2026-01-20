@@ -462,5 +462,249 @@ def info():
     click.echo("=" * 60)
 
 
+@cli.command()
+@click.option("--host", default="0.0.0.0", help="Host to bind to (default: 0.0.0.0)")
+@click.option("--port", default=8000, type=int, help="Port to bind to (default: 8000)")
+@click.option(
+    "--demo", is_flag=True, help="Start in demo mode with sample Seattle data"
+)
+@click.option("--reload", is_flag=True, help="Enable auto-reload for development")
+def serve(host, port, demo, reload):
+    """Start the Weather Dashboard web server"""
+    import uvicorn
+
+    logger.info(
+        "serve_started",
+        host=host,
+        port=port,
+        demo_mode=demo,
+        reload=reload,
+    )
+
+    if demo:
+        # Set demo mode environment variable
+        os.environ["DEMO_MODE"] = "true"
+        click.echo("Starting in demo mode...")
+
+        # Check if demo database exists, auto-generate if missing
+        from weather_app.config import DEMO_DB_PATH, DEMO_DEFAULT_DAYS
+        from weather_app.demo import DemoService
+
+        if not DEMO_DB_PATH.exists():
+            click.echo(f"Demo database not found at {DEMO_DB_PATH}")
+            click.echo("Generating demo data (this will take a few minutes)...")
+            click.echo()
+
+            service = DemoService(DEMO_DB_PATH)
+
+            # Use click's progress bar for CLI feedback
+            with click.progressbar(
+                length=DEMO_DEFAULT_DAYS,
+                label="Generating Seattle weather data",
+                show_percent=True,
+                show_pos=True,
+            ) as bar:
+                last_pos = 0
+
+                def progress_callback(current_day: int, total_days: int) -> None:
+                    nonlocal last_pos
+                    bar.update(current_day - last_pos)
+                    last_pos = current_day
+
+                service.generate_if_missing(
+                    days=DEMO_DEFAULT_DAYS,
+                    progress_callback=progress_callback,
+                )
+
+            click.echo()
+            click.echo("✅ Demo database generated successfully!")
+            click.echo()
+
+        click.echo(f"Using demo database: {DEMO_DB_PATH}")
+    else:
+        click.echo("Starting Weather Dashboard server...")
+
+    click.echo(f"Server: http://{host}:{port}")
+    click.echo("Press Ctrl+C to stop\n")
+
+    # Use factory pattern to ensure config is loaded fresh with current env vars
+    uvicorn.run(
+        "weather_app.web.app:create_app",
+        host=host,
+        port=port,
+        reload=reload,
+        factory=True,
+    )
+
+
+@cli.group()
+def demo():
+    """Demo mode commands"""
+    pass
+
+
+@demo.command("generate")
+@click.option(
+    "--days",
+    default=1095,
+    type=int,
+    help="Days of data to generate (default: 1095 = 3 years)",
+)
+@click.option(
+    "--output",
+    type=click.Path(),
+    default=None,
+    help="Output database path (default: user data directory)",
+)
+@click.option(
+    "--start-date",
+    type=str,
+    default=None,
+    help="Start date YYYY-MM-DD (default: N days ago from today)",
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Regenerate database even if it already exists",
+)
+def demo_generate(days, output, start_date, force):
+    """Generate Seattle weather data for demo mode"""
+    from datetime import timedelta
+
+    from weather_app.config import DEMO_DB_PATH
+    from weather_app.demo.data_generator import SeattleWeatherGenerator
+
+    # Determine output path
+    if output:
+        db_path = Path(output)
+    else:
+        db_path = DEMO_DB_PATH
+
+    # Determine start date
+    if start_date:
+        try:
+            start = datetime.fromisoformat(start_date)
+        except ValueError:
+            click.echo(f"❌ Invalid date format: {start_date}")
+            click.echo("Use YYYY-MM-DD format")
+            sys.exit(1)
+    else:
+        # Default: start from N days ago so data ends "today"
+        start = datetime.now() - timedelta(days=days)
+
+    click.echo("=" * 60)
+    click.echo("Seattle Demo Weather Data Generator")
+    click.echo("=" * 60)
+    click.echo(f"Database: {db_path}")
+    click.echo(f"Start date: {start.strftime('%Y-%m-%d')}")
+    click.echo(f"End date: {(start + timedelta(days=days)).strftime('%Y-%m-%d')}")
+    click.echo(f"Days: {days}")
+    click.echo(f"Estimated records: {days * 288:,}")
+    click.echo()
+
+    # Check if database exists
+    if db_path.exists():
+        if not force:
+            click.echo(f"Demo database already exists at {db_path}")
+            click.echo("Use --force to regenerate")
+            sys.exit(0)
+        click.echo("Removing existing demo database...")
+        db_path.unlink()
+
+    # Ensure parent directory exists
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Generate data with progress bar
+    logger.info(
+        "demo_generate_started",
+        db_path=str(db_path),
+        days=days,
+        start_date=start.isoformat(),
+    )
+
+    generator = SeattleWeatherGenerator(db_path)
+
+    # Use click's progress bar for CLI feedback
+    with click.progressbar(
+        length=days,
+        label="Generating weather data",
+        show_percent=True,
+        show_pos=True,
+    ) as bar:
+        last_pos = 0
+
+        def progress_callback(current_day: int, total_days: int) -> None:
+            nonlocal last_pos
+            bar.update(current_day - last_pos)
+            last_pos = current_day
+
+        records = generator.generate(
+            start_date=start,
+            days=days,
+            progress_callback=progress_callback,
+            quiet=True,
+        )
+
+    stats = generator.get_stats()
+    generator.close()
+
+    logger.info(
+        "demo_generate_completed",
+        records=records,
+        db_size_mb=db_path.stat().st_size / 1024 / 1024,
+    )
+
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("Generation Complete!")
+    click.echo("=" * 60)
+    click.echo(f"Total records: {stats['count']:,}")
+    click.echo(f"Date range: {stats['min_date']} to {stats['max_date']}")
+    click.echo(f"Database size: {db_path.stat().st_size / 1024 / 1024:.1f} MB")
+    click.echo()
+    click.echo("✅ Demo database created successfully!")
+    click.echo()
+    click.echo("To start in demo mode:")
+    click.echo("  weather-app serve --demo")
+
+
+@demo.command("status")
+def demo_status():
+    """Check demo mode status and database"""
+    from weather_app.config import DEMO_DB_PATH, get_demo_info
+
+    info = get_demo_info()
+
+    click.echo("=" * 60)
+    click.echo("Demo Mode Status")
+    click.echo("=" * 60)
+    click.echo(f"Demo mode enabled: {info['demo_mode']}")
+    click.echo(f"Demo database path: {info['demo_db_path']}")
+    click.echo(f"Demo database exists: {info['demo_db_exists']}")
+
+    if info["demo_db_exists"]:
+        # Get database stats
+        from weather_app.demo import DemoService
+
+        service = DemoService(DEMO_DB_PATH)
+        if service.is_available:
+            stats = service.get_stats()
+            click.echo(f"Total records: {stats['total_records']:,}")
+            if stats["date_range_days"]:
+                click.echo(f"Date range: {stats['date_range_days']} days")
+            click.echo(
+                f"Database size: {DEMO_DB_PATH.stat().st_size / 1024 / 1024:.1f} MB"
+            )
+            service.close()
+        else:
+            click.echo("⚠️  Demo database exists but could not be read")
+    else:
+        click.echo()
+        click.echo("To create demo database:")
+        click.echo("  weather-app demo generate")
+
+    click.echo("=" * 60)
+
+
 if __name__ == "__main__":
     cli()

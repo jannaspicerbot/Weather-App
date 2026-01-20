@@ -15,6 +15,10 @@ vi.mock('../../services/onboardingApi', () => ({
   validateCredentials: vi.fn(),
   saveCredentials: vi.fn(),
   startBackfill: vi.fn(),
+  enableDemoMode: vi.fn(),
+  generateDemoDatabase: vi.fn(),
+  getDemoStatus: vi.fn().mockResolvedValue({ available: true, generation_required: false }),
+  cancelGeneration: vi.fn().mockResolvedValue({ success: true, message: 'Cancelled' }),
 }));
 
 const defaultProps = {

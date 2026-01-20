@@ -21,14 +21,11 @@ class WeatherDataGenerator:
     def create_tables(self):
         """Create the weather_data table (same schema as production DuckDB)"""
         # DuckDB schema - id column will be auto-generated as a sequence
-        self.conn.execute(
-            """
+        self.conn.execute("""
             CREATE SEQUENCE IF NOT EXISTS weather_data_id_seq START 1
-        """
-        )
+        """)
 
-        self.conn.execute(
-            """
+        self.conn.execute("""
             CREATE TABLE IF NOT EXISTS weather_data (
                 id INTEGER PRIMARY KEY DEFAULT nextval('weather_data_id_seq'),
                 dateutc BIGINT UNIQUE NOT NULL,
@@ -58,8 +55,7 @@ class WeatherDataGenerator:
                 tz VARCHAR,
                 raw_json VARCHAR
             )
-        """
-        )
+        """)
 
         self.conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_dateutc ON weather_data(dateutc)"

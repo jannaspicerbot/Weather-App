@@ -85,21 +85,33 @@ def populated_db_path(temp_db_path):
 
 
 @pytest.fixture
-def client(temp_db_path):
-    """Create a test client with an empty database."""
+def client(temp_db_path, tmp_path):
+    """Create a test client with an empty database (demo mode disabled)."""
+    # Use a non-existent demo path to ensure demo mode is disabled
+    fake_demo_path = tmp_path / "nonexistent_demo.duckdb"
+
     with patch("weather_app.database.repository.DB_PATH", temp_db_path):
         with patch("weather_app.config.DB_PATH", temp_db_path):
-            app = create_app()
-            yield TestClient(app)
+            with patch("weather_app.config.DEMO_DB_PATH", fake_demo_path):
+                with patch("weather_app.web.app.DEMO_DB_PATH", fake_demo_path):
+                    with patch.dict("os.environ", {"DEMO_MODE": "false"}, clear=False):
+                        app = create_app()
+                        yield TestClient(app)
 
 
 @pytest.fixture
-def client_with_data(populated_db_path):
-    """Create a test client with populated database."""
+def client_with_data(populated_db_path, tmp_path):
+    """Create a test client with populated database (demo mode disabled)."""
+    # Use a non-existent demo path to ensure demo mode is disabled
+    fake_demo_path = tmp_path / "nonexistent_demo.duckdb"
+
     with patch("weather_app.database.repository.DB_PATH", populated_db_path):
         with patch("weather_app.config.DB_PATH", populated_db_path):
-            app = create_app()
-            yield TestClient(app)
+            with patch("weather_app.config.DEMO_DB_PATH", fake_demo_path):
+                with patch("weather_app.web.app.DEMO_DB_PATH", fake_demo_path):
+                    with patch.dict("os.environ", {"DEMO_MODE": "false"}, clear=False):
+                        app = create_app()
+                        yield TestClient(app)
 
 
 # =============================================================================
@@ -358,7 +370,7 @@ class TestApiWeatherEndpoints:
         assert len(data) == 3
 
     @pytest.mark.unit
-    def test_api_weather_range_uses_sampling(self, temp_db_path):
+    def test_api_weather_range_uses_sampling(self, temp_db_path, tmp_path):
         """GET /api/weather/range should use sampling for date range queries."""
         # Create a database with many records
         sample_records = []
@@ -381,15 +393,23 @@ class TestApiWeatherEndpoints:
         with WeatherDatabase(temp_db_path) as db:
             db.insert_data(sample_records)
 
+        # Use non-existent demo path to ensure demo mode is disabled
+        fake_demo_path = tmp_path / "nonexistent_demo.duckdb"
+
         with patch("weather_app.database.repository.DB_PATH", temp_db_path):
             with patch("weather_app.config.DB_PATH", temp_db_path):
-                app = create_app()
-                client = TestClient(app)
+                with patch("weather_app.config.DEMO_DB_PATH", fake_demo_path):
+                    with patch("weather_app.web.app.DEMO_DB_PATH", fake_demo_path):
+                        with patch.dict(
+                            "os.environ", {"DEMO_MODE": "false"}, clear=False
+                        ):
+                            app = create_app()
+                            client = TestClient(app)
 
-                # Request with limit lower than total records
-                response = client.get(
-                    "/api/weather/range?start_date=2024-01-01&end_date=2024-01-03&limit=10"
-                )
+                            # Request with limit lower than total records
+                            response = client.get(
+                                "/api/weather/range?start_date=2024-01-01&end_date=2024-01-03&limit=10"
+                            )
 
         assert response.status_code == 200
         data = response.json()
@@ -409,7 +429,9 @@ class TestApiWeatherEndpoints:
         assert data[0]["date"] == "2024-01-01T13:00:00"
 
     @pytest.mark.unit
-    def test_api_weather_range_sampled_data_is_distributed(self, temp_db_path):
+    def test_api_weather_range_sampled_data_is_distributed(
+        self, temp_db_path, tmp_path
+    ):
         """Verify /api/weather/range returns evenly distributed samples."""
         # Create records spanning 10 days
         sample_records = []
@@ -433,14 +455,22 @@ class TestApiWeatherEndpoints:
         with WeatherDatabase(temp_db_path) as db:
             db.insert_data(sample_records)
 
+        # Use non-existent demo path to ensure demo mode is disabled
+        fake_demo_path = tmp_path / "nonexistent_demo.duckdb"
+
         with patch("weather_app.database.repository.DB_PATH", temp_db_path):
             with patch("weather_app.config.DB_PATH", temp_db_path):
-                app = create_app()
-                client = TestClient(app)
+                with patch("weather_app.config.DEMO_DB_PATH", fake_demo_path):
+                    with patch("weather_app.web.app.DEMO_DB_PATH", fake_demo_path):
+                        with patch.dict(
+                            "os.environ", {"DEMO_MODE": "false"}, clear=False
+                        ):
+                            app = create_app()
+                            client = TestClient(app)
 
-                response = client.get(
-                    "/api/weather/range?start_date=2024-01-01&end_date=2024-01-11&limit=20"
-                )
+                            response = client.get(
+                                "/api/weather/range?start_date=2024-01-01&end_date=2024-01-11&limit=20"
+                            )
 
         assert response.status_code == 200
         data = response.json()
@@ -1098,3 +1128,586 @@ class TestRouteErrorHandling:
             response = client.get("/api/weather/stats")
 
         assert response.status_code == 500
+
+
+# =============================================================================
+# DEMO MODE ENDPOINT TESTS
+# =============================================================================
+
+
+class TestDemoStatusEndpoint:
+    """Tests for the /api/demo/status endpoint."""
+
+    @pytest.mark.unit
+    def test_demo_status_disabled(self, client):
+        """GET /api/demo/status when demo mode is disabled."""
+        with patch("weather_app.web.app.is_demo_mode", return_value=False):
+            with patch(
+                "weather_app.config.get_demo_info",
+                return_value={"demo_db_exists": False},
+            ):
+                response = client.get("/api/demo/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["enabled"] is False
+        assert "Demo mode inactive" in data["message"]
+
+    @pytest.mark.unit
+    def test_demo_status_enabled(self, client, tmp_path):
+        """GET /api/demo/status when demo mode is enabled."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.is_available = True
+        mock_demo_service.get_stats.return_value = {
+            "total_records": 288,
+            "date_range_days": 1,
+        }
+
+        demo_db_path = tmp_path / "demo.duckdb"
+        demo_db_path.touch()
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch(
+                "weather_app.web.app.get_demo_service",
+                return_value=mock_demo_service,
+            ):
+                with patch(
+                    "weather_app.config.get_demo_info",
+                    return_value={"demo_db_exists": True},
+                ):
+                    with patch("weather_app.config.DEMO_DB_PATH", demo_db_path):
+                        response = client.get("/api/demo/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["enabled"] is True
+        assert data["available"] is True
+        assert data["total_records"] == 288
+
+    @pytest.mark.unit
+    def test_demo_status_available_but_disabled(self, client, tmp_path):
+        """GET /api/demo/status when database exists but mode disabled."""
+        demo_db_path = tmp_path / "demo.duckdb"
+        demo_db_path.touch()
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=False):
+            with patch(
+                "weather_app.config.get_demo_info",
+                return_value={"demo_db_exists": True},
+            ):
+                with patch("weather_app.config.DEMO_DB_PATH", demo_db_path):
+                    response = client.get("/api/demo/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["enabled"] is False
+        assert data["available"] is True
+
+
+class TestDemoEnableEndpoint:
+    """Tests for the /api/demo/enable endpoint."""
+
+    @pytest.mark.unit
+    def test_enable_demo_success(self, tmp_path):
+        """POST /api/demo/enable when database exists."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.get_stats.return_value = {
+            "total_records": 288,
+            "date_range_days": 1,
+        }
+
+        demo_db_path = tmp_path / "demo.duckdb"
+        demo_db_path.touch()
+        db_path = tmp_path / "app.duckdb"
+
+        # Initialize the database
+        with WeatherDatabase(str(db_path)) as db:
+            pass
+
+        with patch("weather_app.database.repository.DB_PATH", str(db_path)):
+            with patch("weather_app.config.DB_PATH", str(db_path)):
+                with patch("weather_app.config.DEMO_DB_PATH", demo_db_path):
+                    with patch("weather_app.web.routes.DEMO_DB_PATH", demo_db_path):
+                        with patch(
+                            "weather_app.web.app.enable_demo_mode",
+                            return_value=(True, "Enabled"),
+                        ):
+                            with patch(
+                                "weather_app.web.app.get_demo_service",
+                                return_value=mock_demo_service,
+                            ):
+                                with patch.dict(
+                                    "os.environ", {"DEMO_MODE": "false"}, clear=False
+                                ):
+                                    app = create_app()
+                                    client = TestClient(app)
+                                    response = client.post("/api/demo/enable")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["enabled"] is True
+
+    @pytest.mark.unit
+    def test_enable_demo_database_missing(self, tmp_path):
+        """POST /api/demo/enable when database doesn't exist."""
+        demo_db_path = tmp_path / "nonexistent.duckdb"
+        db_path = tmp_path / "app.duckdb"
+
+        # Initialize the database
+        with WeatherDatabase(str(db_path)) as db:
+            pass
+
+        # Need to patch at routes module level where it's imported
+        with patch("weather_app.database.repository.DB_PATH", str(db_path)):
+            with patch("weather_app.config.DB_PATH", str(db_path)):
+                with patch("weather_app.config.DEMO_DB_PATH", demo_db_path):
+                    with patch("weather_app.web.routes.DEMO_DB_PATH", demo_db_path):
+                        with patch.dict(
+                            "os.environ", {"DEMO_MODE": "false"}, clear=False
+                        ):
+                            app = create_app()
+                            client = TestClient(app)
+                            response = client.post("/api/demo/enable")
+
+        assert response.status_code == 202
+        data = response.json()
+        assert data["enabled"] is False
+        assert data["generation_required"] is True
+
+    @pytest.mark.unit
+    def test_enable_demo_failure(self, tmp_path):
+        """POST /api/demo/enable when enable fails."""
+        demo_db_path = tmp_path / "demo.duckdb"
+        demo_db_path.touch()
+        db_path = tmp_path / "app.duckdb"
+
+        # Initialize the database
+        with WeatherDatabase(str(db_path)) as db:
+            pass
+
+        with patch("weather_app.database.repository.DB_PATH", str(db_path)):
+            with patch("weather_app.config.DB_PATH", str(db_path)):
+                with patch("weather_app.config.DEMO_DB_PATH", demo_db_path):
+                    with patch("weather_app.web.routes.DEMO_DB_PATH", demo_db_path):
+                        with patch(
+                            "weather_app.web.app.enable_demo_mode",
+                            return_value=(False, "Failed to initialize"),
+                        ):
+                            with patch.dict(
+                                "os.environ", {"DEMO_MODE": "false"}, clear=False
+                            ):
+                                app = create_app()
+                                client = TestClient(app)
+                                response = client.post("/api/demo/enable")
+
+        assert response.status_code == 400
+
+
+class TestDemoDisableEndpoint:
+    """Tests for the /api/demo/disable endpoint."""
+
+    @pytest.mark.unit
+    def test_disable_demo_success(self, client, tmp_path):
+        """POST /api/demo/disable successfully disables demo mode."""
+        demo_db_path = tmp_path / "demo.duckdb"
+        demo_db_path.touch()
+
+        with patch(
+            "weather_app.web.app.disable_demo_mode", return_value=(True, "Disabled")
+        ):
+            with patch("weather_app.config.DEMO_DB_PATH", demo_db_path):
+                response = client.post("/api/demo/disable")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["enabled"] is False
+
+
+class TestDemoGenerationEndpoints:
+    """Tests for demo generation endpoints."""
+
+    @pytest.mark.unit
+    def test_generation_status_idle(self, client):
+        """GET /api/demo/generation/status when idle."""
+        from unittest.mock import MagicMock
+
+        mock_service = MagicMock()
+        mock_service.get_status.return_value = {
+            "state": "idle",
+            "current_day": 0,
+            "total_days": 0,
+            "percent": 0,
+            "records": 0,
+            "size_mb": 0,
+            "error": None,
+        }
+
+        with patch(
+            "weather_app.demo.generation_service.get_generation_service",
+            return_value=mock_service,
+        ):
+            response = client.get("/api/demo/generation/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["state"] == "idle"
+
+    @pytest.mark.unit
+    def test_generation_status_generating(self, client):
+        """GET /api/demo/generation/status during generation."""
+        from unittest.mock import MagicMock
+
+        mock_service = MagicMock()
+        mock_service.get_status.return_value = {
+            "state": "generating",
+            "current_day": 50,
+            "total_days": 100,
+            "percent": 50,
+            "records": 14400,
+            "size_mb": 0,
+            "error": None,
+        }
+
+        with patch(
+            "weather_app.demo.generation_service.get_generation_service",
+            return_value=mock_service,
+        ):
+            response = client.get("/api/demo/generation/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["state"] == "generating"
+        assert data["percent"] == 50
+        assert data["current_day"] == 50
+
+    @pytest.mark.unit
+    def test_generation_status_completed(self, client):
+        """GET /api/demo/generation/status when completed."""
+        from unittest.mock import MagicMock
+
+        mock_service = MagicMock()
+        mock_service.get_status.return_value = {
+            "state": "completed",
+            "current_day": 100,
+            "total_days": 100,
+            "percent": 100,
+            "records": 28800,
+            "size_mb": 12.5,
+            "error": None,
+        }
+
+        with patch(
+            "weather_app.demo.generation_service.get_generation_service",
+            return_value=mock_service,
+        ):
+            response = client.get("/api/demo/generation/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["state"] == "completed"
+        assert data["percent"] == 100
+        assert data["records"] == 28800
+
+    @pytest.mark.unit
+    def test_cancel_generation_success(self, client):
+        """POST /api/demo/generation/cancel when generation is running."""
+        from unittest.mock import MagicMock
+
+        mock_service = MagicMock()
+        mock_service.cancel_generation.return_value = (
+            True,
+            "Generation cancelled",
+        )
+
+        with patch(
+            "weather_app.demo.generation_service.get_generation_service",
+            return_value=mock_service,
+        ):
+            response = client.post("/api/demo/generation/cancel")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+
+    @pytest.mark.unit
+    def test_cancel_generation_not_running(self, client):
+        """POST /api/demo/generation/cancel when no generation running."""
+        from unittest.mock import MagicMock
+
+        mock_service = MagicMock()
+        mock_service.cancel_generation.return_value = (
+            False,
+            "No generation in progress",
+        )
+
+        with patch(
+            "weather_app.demo.generation_service.get_generation_service",
+            return_value=mock_service,
+        ):
+            response = client.post("/api/demo/generation/cancel")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is False
+
+    @pytest.mark.unit
+    def test_generate_demo_database_already_exists(self, client, tmp_path):
+        """POST /api/demo/generate when database already exists."""
+        demo_db_path = tmp_path / "demo.duckdb"
+        demo_db_path.touch()
+
+        with patch("weather_app.config.DEMO_DB_PATH", demo_db_path):
+            response = client.post("/api/demo/generate")
+
+        assert response.status_code == 200
+        # Should return SSE stream indicating already exists
+
+
+# =============================================================================
+# DEMO MODE WEATHER ENDPOINT TESTS
+# =============================================================================
+
+
+class TestDemoModeWeatherEndpoints:
+    """Tests for weather endpoints when in demo mode."""
+
+    @pytest.mark.unit
+    def test_weather_latest_demo_mode(self, client):
+        """GET /weather/latest returns demo data in demo mode."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.is_available = True
+        mock_demo_service.get_latest_reading.return_value = {
+            "id": 1,
+            "dateutc": 1704110400000,
+            "date": "2024-01-01T12:00:00",
+            "tempf": 72.5,
+            "humidity": 45,
+        }
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch(
+                "weather_app.web.app.get_demo_service",
+                return_value=mock_demo_service,
+            ):
+                response = client.get("/weather/latest")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["tempf"] == 72.5
+
+    @pytest.mark.unit
+    def test_weather_latest_demo_service_unavailable(self, client):
+        """GET /weather/latest returns 503 if demo service unavailable."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.is_available = False
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch(
+                "weather_app.web.app.get_demo_service",
+                return_value=mock_demo_service,
+            ):
+                response = client.get("/weather/latest")
+
+        assert response.status_code == 503
+        assert "unavailable" in response.json()["detail"].lower()
+
+    @pytest.mark.unit
+    def test_weather_stats_demo_mode(self, client):
+        """GET /weather/stats returns demo stats in demo mode."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.is_available = True
+        mock_demo_service.get_stats.return_value = {
+            "total_records": 288,
+            "min_date": "2024-01-01T00:00:00",
+            "max_date": "2024-01-01T23:55:00",
+            "date_range_days": 1,
+        }
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch(
+                "weather_app.web.app.get_demo_service",
+                return_value=mock_demo_service,
+            ):
+                response = client.get("/weather/stats")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_records"] == 288
+
+    @pytest.mark.unit
+    def test_weather_stats_demo_service_unavailable(self, client):
+        """GET /weather/stats returns 503 if demo service unavailable."""
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch("weather_app.web.app.get_demo_service", return_value=None):
+                response = client.get("/weather/stats")
+
+        assert response.status_code == 503
+
+    @pytest.mark.unit
+    def test_api_weather_latest_demo_mode(self, client):
+        """GET /api/weather/latest returns demo data in demo mode."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.is_available = True
+        mock_demo_service.get_all_readings.return_value = [
+            {
+                "dateutc": 1704110400000,
+                "date": "2024-01-01T12:00:00",
+                "tempf": 72.5,
+            }
+        ]
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch(
+                "weather_app.web.app.get_demo_service",
+                return_value=mock_demo_service,
+            ):
+                response = client.get("/api/weather/latest")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+
+    @pytest.mark.unit
+    def test_api_weather_range_demo_mode(self, client):
+        """GET /api/weather/range returns demo data in demo mode."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.is_available = True
+        mock_demo_service.get_sampled_readings.return_value = [
+            {"date": "2024-01-01T00:00:00", "tempf": 70.0},
+            {"date": "2024-01-01T12:00:00", "tempf": 75.0},
+        ]
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch(
+                "weather_app.web.app.get_demo_service",
+                return_value=mock_demo_service,
+            ):
+                response = client.get(
+                    "/api/weather/range?start_date=2024-01-01&end_date=2024-01-02"
+                )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+
+    @pytest.mark.unit
+    def test_api_weather_range_demo_mode_no_dates(self, client):
+        """GET /api/weather/range without dates in demo mode."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.is_available = True
+        mock_demo_service.get_all_readings.return_value = [
+            {"date": "2024-01-01T12:00:00", "tempf": 75.0}
+        ]
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch(
+                "weather_app.web.app.get_demo_service",
+                return_value=mock_demo_service,
+            ):
+                response = client.get("/api/weather/range?limit=10")
+
+        assert response.status_code == 200
+
+    @pytest.mark.unit
+    def test_api_weather_stats_demo_mode(self, client):
+        """GET /api/weather/stats returns demo stats in demo mode."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.is_available = True
+        mock_demo_service.get_stats.return_value = {
+            "total_records": 288,
+            "min_date": "2024-01-01T00:00:00",
+            "max_date": "2024-01-01T23:55:00",
+        }
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch(
+                "weather_app.web.app.get_demo_service",
+                return_value=mock_demo_service,
+            ):
+                response = client.get("/api/weather/stats")
+
+        assert response.status_code == 200
+
+
+# =============================================================================
+# DEMO MODE CREDENTIAL ENDPOINT TESTS
+# =============================================================================
+
+
+class TestDemoModeCredentialEndpoints:
+    """Tests for credential endpoints when in demo mode."""
+
+    @pytest.mark.unit
+    def test_credentials_status_demo_mode(self, client):
+        """GET /api/credentials/status returns configured in demo mode."""
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            response = client.get("/api/credentials/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["configured"] is True
+        assert data["has_api_key"] is True
+        assert data["has_app_key"] is True
+
+
+# =============================================================================
+# DEMO MODE DEVICE ENDPOINT TESTS
+# =============================================================================
+
+
+class TestDemoModeDeviceEndpoints:
+    """Tests for device endpoints when in demo mode."""
+
+    @pytest.mark.unit
+    def test_get_devices_demo_mode(self, client):
+        """GET /api/devices returns demo device in demo mode."""
+        from unittest.mock import MagicMock
+
+        mock_demo_service = MagicMock()
+        mock_demo_service.get_devices.return_value = [
+            {
+                "mac_address": "DEMO:SEATTLE:01",
+                "name": "Seattle Demo Station",
+                "location": "Seattle, WA",
+            }
+        ]
+
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch(
+                "weather_app.web.app.get_demo_service",
+                return_value=mock_demo_service,
+            ):
+                response = client.get("/api/devices")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["devices"]) == 1
+        assert data["devices"][0]["mac_address"] == "DEMO:SEATTLE:01"
+        assert data["selected_device_mac"] == "DEMO:SEATTLE:01"
+
+    @pytest.mark.unit
+    def test_get_devices_demo_mode_service_unavailable(self, client):
+        """GET /api/devices returns 503 if demo service unavailable."""
+        with patch("weather_app.web.app.is_demo_mode", return_value=True):
+            with patch("weather_app.web.app.get_demo_service", return_value=None):
+                response = client.get("/api/devices")
+
+        assert response.status_code == 503
