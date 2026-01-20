@@ -159,8 +159,7 @@ class SeattleWeatherGenerator:
         """Create the weather_data table with same schema as production."""
         self.conn.execute("CREATE SEQUENCE IF NOT EXISTS weather_data_id_seq START 1")
 
-        self.conn.execute(
-            """
+        self.conn.execute("""
             CREATE TABLE IF NOT EXISTS weather_data (
                 id INTEGER PRIMARY KEY DEFAULT nextval('weather_data_id_seq'),
                 dateutc BIGINT UNIQUE NOT NULL,
@@ -190,8 +189,7 @@ class SeattleWeatherGenerator:
                 tz VARCHAR,
                 raw_json VARCHAR
             )
-        """
-        )
+        """)
 
         self.conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_dateutc ON weather_data(dateutc)"
