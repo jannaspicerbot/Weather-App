@@ -640,7 +640,7 @@ def test_get_weather_statistics_invalid_days(client):
 
 #### 6. Test in Swagger UI
 
-1. Start server: `uvicorn weather_app.api.main:app --reload`
+1. Start server: `python -m uvicorn weather_app.api.main:app --reload`
 2. Navigate to: http://localhost:8000/docs
 3. Find endpoint: `GET /api/weather/stats/{station_id}`
 4. Click "Try it out"

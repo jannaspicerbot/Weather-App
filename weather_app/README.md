@@ -93,7 +93,7 @@ APScheduler-based background job runner:
 
 ```bash
 # Development mode with auto-reload
-uvicorn weather_app.web.app:create_app --factory --reload --port 8000
+python -m uvicorn weather_app.web.app:create_app --factory --reload --port 8000
 
 # Visit http://localhost:8000/docs for Swagger UI
 ```

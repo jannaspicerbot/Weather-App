@@ -2,7 +2,7 @@
 
 **Command:** `weather-app`
 **Framework:** Click
-**Python Version:** 3.11+
+**Python Version:** 3.13+
 
 ---
 

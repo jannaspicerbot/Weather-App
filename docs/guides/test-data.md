@@ -40,7 +40,7 @@ USE_TEST_DB=true python server.py
 PowerShell:
 ```powershell
 $env:USE_TEST_DB="true"
-uvicorn weather_app.web.app:create_app --factory --reload --port 8000
+python -m uvicorn weather_app.web.app:create_app --factory --reload --port 8000
 ```
 
 ### 3. Verify Test Database is Active

@@ -95,10 +95,9 @@ concurrency:
 |-----|---------|---------|-----------|----------|
 | `changes` | Ubuntu | Detect which files changed | Always | ~10 sec |
 | `backend-tests` | Ubuntu, Windows, macOS (matrix) | Multi-platform Python testing | Backend or deps changed | ~5-8 min |
-| `backend-lint` | Ubuntu only | Code quality (Ruff, Black, isort, mypy) | Backend changed | ~2-3 min |
+| `backend-lint` | Ubuntu only | Code quality (Ruff, Black, mypy) | Backend changed | ~2-3 min |
 | `frontend-tests` | Ubuntu only | React/TypeScript lint, type check, build | Frontend or deps changed | ~3-4 min |
 | `security-scan` | Ubuntu only | Safety + Bandit security scans | Backend or deps changed | ~2-3 min |
-| `api-integration` | Ubuntu only (after backend-tests) | FastAPI endpoint tests | Backend or deps changed | ~2-3 min |
 
 **Smart Change Detection:**
 ```yaml
@@ -127,13 +126,7 @@ changes:
 ```yaml
 matrix:
   os: [ubuntu-latest, windows-latest, macos-latest]
-  python-version: ['3.11']  # Primary version for all platforms
-  include:
-    # Additional Python versions tested on Ubuntu only
-    - os: ubuntu-latest
-      python-version: '3.10'
-    - os: ubuntu-latest
-      python-version: '3.12'
+  python-version: ['3.14']  # Primary version for all platforms
 ```
 
 **Execution:**
@@ -345,7 +338,6 @@ on:
 
 **Main CI:**
 - `security-scan` requires `backend-tests` to pass first
-- `api-integration` requires `backend-tests` to pass first
 - All other jobs run in parallel
 
 **Accessibility CI:**
@@ -592,7 +584,7 @@ needs: [backend-tests]  # From main-ci.yml
 Before a PR can be merged to `main`, it must:
 
 1. **Pass all CI workflows** ✅
-   - Main CI (all jobs: backend-tests, backend-lint, frontend-tests, security-scan, api-integration)
+   - Main CI (all jobs: backend-tests, backend-lint, frontend-tests, security-scan)
    - Accessibility CI (all jobs: a11y-lint, a11y-unit-tests, lighthouse)
    - Platform Builds (optional: windows-installer, macos-app)
    - Documentation CI (if docs changed)
@@ -624,7 +616,7 @@ Before pushing, run these commands locally to catch issues early:
 #### Backend Tests
 ```bash
 # Install dev dependencies
-pip install pytest pytest-cov pytest-asyncio ruff black isort mypy
+pip install pytest pytest-cov pytest-asyncio ruff black mypy
 
 # Run tests with coverage
 pytest tests/ -v --cov=weather_app -m "not requires_api_key"
@@ -632,12 +624,11 @@ pytest tests/ -v --cov=weather_app -m "not requires_api_key"
 # Run linting
 ruff check weather_app/ tests/ --exclude tests/archive
 black --check weather_app/ tests/ --exclude tests/archive
-isort --check-only weather_app/ tests/ --skip tests/archive
 mypy weather_app/
 
 # Auto-fix formatting
 black weather_app/ tests/ --exclude tests/archive
-isort weather_app/ tests/ --skip tests/archive
+ruff check weather_app/ tests/ --exclude tests/archive --fix
 ```
 
 #### Frontend Tests

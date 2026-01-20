@@ -152,7 +152,7 @@ Choose the right Claude model for your task:
 
 ```bash
 # Backend (Python)
-uvicorn weather_app.web.app:create_app --factory --reload  # Start dev server
+python -m uvicorn weather_app.web.app:create_app --factory --reload  # Start dev server
 pytest tests/ -v                              # Run tests
 black weather_app/                            # Format code
 ruff check --fix weather_app/                 # Lint and auto-fix
@@ -335,7 +335,7 @@ mypy weather_app/                # Run locally to see errors
 # Clear test cache
 pytest --cache-clear
 
-# Use same Python version as CI (3.11+)
+# Use same Python version as CI (3.14)
 python --version
 
 # Check for hardcoded paths or timing issues
