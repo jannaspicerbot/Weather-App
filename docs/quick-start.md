@@ -113,7 +113,7 @@ python server.py
 
 **For development with hot-reload:**
 ```bash
-uvicorn weather_app.web.app:create_app --factory --reload --port 8000
+python -m uvicorn weather_app.web.app:create_app --factory --reload --port 8000
 ```
 
 ### Step 5: Create Visualizations (Optional)

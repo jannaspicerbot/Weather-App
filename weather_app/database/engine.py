@@ -4,7 +4,7 @@ Provides context manager-based database access with high-performance analytics
 DuckDB is 10-100x faster than SQLite for analytical queries
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import duckdb
 from duckdb import DuckDBPyConnection
@@ -331,7 +331,7 @@ class WeatherDatabase:
             The ID of the created backfill_progress record
         """
         conn = self._get_conn()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         conn.execute(
             """
@@ -384,7 +384,7 @@ class WeatherDatabase:
             status: Status of the backfill ('in_progress', 'completed', 'failed')
         """
         conn = self._get_conn()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         conn.execute(
             """

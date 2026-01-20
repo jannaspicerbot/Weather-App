@@ -27,7 +27,7 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 
 | Component | Technology | Status | Rationale |
 |-----------|-----------|--------|-----------|
-| **Backend** | FastAPI (Python 3.10+, 3.11 recommended) | ✅ Phase 1 | Auto-generated OpenAPI, async support |
+| **Backend** | FastAPI (Python 3.13+, 3.14 recommended) | ✅ Phase 1 | Auto-generated OpenAPI, async support |
 | **Database** | DuckDB 0.10+ | ✅ Phase 2 | **10-100x faster** than SQLite for analytics |
 | **Frontend Lang** | TypeScript | ✅ Phase 2 | Type safety, 96% industry adoption |
 | **Frontend Framework** | React 19 + Vite | ✅ Phase 2 | Modern build tools, fast dev server |
@@ -102,7 +102,7 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 │  │   Container         │◄────────│   Container          │    │
 │  │                     │  JSON   │                      │    │
 │  │  • React 19         │         │  • FastAPI          │    │
-│  │  • TypeScript       │         │  • Python 3.11+     │    │
+│  │  • TypeScript       │         │  • Python 3.14      │    │
 │  │  • Vite             │         │  • Uvicorn          │    │
 │  │  • Victory          │         │  • Pydantic         │    │
 │  │  • CSS Tokens       │         │                      │    │
@@ -116,7 +116,7 @@ The Weather App is a local-first Python + TypeScript application that ingests we
 │  │   CLI Container     │         ┌──────────────────────┐    │
 │  │                     │  SQL    │   Database           │    │
 │  │  • Click framework  │────────►│   Container          │    │
-│  │  • Python 3.11+     │         │                      │    │
+│  │  • Python 3.14      │         │                      │    │
 │  │  • API client       │         │  • DuckDB 0.10+     │    │
 │  │  • Scheduling (ext) │         │  • Single file      │    │
 │  │                     │         │  • Columnar storage │    │
@@ -688,7 +688,7 @@ docker-compose down
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn weather_app.web.app:create_app --factory --reload --port 8000
+python -m uvicorn weather_app.web.app:create_app --factory --reload --port 8000
 ```
 
 **Frontend:**

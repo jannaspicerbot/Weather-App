@@ -24,7 +24,7 @@ A modern, full-stack web application for collecting, storing, and visualizing da
 
 1. An Ambient Weather account with a weather station
 2. API credentials from Ambient Weather ([Get them here](https://ambientweather.net/account))
-3. Docker + Docker Compose (recommended) OR Python 3.10+ and Node.js 18+
+3. Docker + Docker Compose (recommended) OR Python 3.13+ and Node.js 18+
 
 ## ⚠️ Important: API Credentials Security
 
@@ -91,7 +91,7 @@ weather-app init-db
 weather-app fetch --limit 288
 
 # 5. Start the backend API
-uvicorn weather_app.web.app:create_app --factory --reload
+python -m uvicorn weather_app.web.app:create_app --factory --reload
 
 # 6. In a new terminal, set up the frontend
 cd web

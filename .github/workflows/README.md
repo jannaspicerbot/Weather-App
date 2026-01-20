@@ -7,15 +7,14 @@
 - **Triggers**: Push/PR to `main`/`develop`
 - **Purpose**: Primary quality gate for all code changes
 - **Jobs**:
-  - `backend-tests` - Multi-platform Python testing (Ubuntu, Windows, macOS × Python 3.10/3.11/3.12)
-  - `backend-lint` - Code quality (Ruff, Black, isort, mypy)
+  - `backend-tests` - Multi-platform Python testing (Ubuntu, Windows, macOS × Python 3.14)
+  - `backend-lint` - Code quality (Ruff, Black, mypy)
   - `frontend-tests` - React/TypeScript linting, type check, build
   - `security-scan` - Dependency and code security (Safety, Bandit)
-  - `api-integration` - FastAPI endpoint tests
 - **Features**:
   - ✅ Path filtering (only runs if relevant files changed)
   - ✅ Parallel execution for speed
-  - ✅ Matrix testing (3 OS × 3 Python versions)
+  - ✅ Matrix testing (3 OS × Python 3.14)
   - ✅ Coverage reporting to Codecov
 
 ### Platform Builds (`platform-builds.yml`)

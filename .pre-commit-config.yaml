@@ -7,7 +7,7 @@
 #
 # This config combines:
 # 1. Security checks (prevent committing secrets) - previously in .git/hooks/pre-commit
-# 2. Python linting (ruff, black, isort) - to catch CI failures before push
+# 2. Python linting (ruff, black) - to catch CI failures before push
 # 3. Type checking (mypy) - ensures type annotations are correct
 
 repos:
@@ -40,7 +40,7 @@ repos:
   # PYTHON LINTING - Catch CI failures before push
   # =============================================================================
 
-  # Ruff - Fast Python linter (replaces flake8, isort checks)
+  # Ruff - Fast Python linter (replaces flake8, handles import sorting via 'I' rules)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.6
     hooks:
@@ -51,17 +51,9 @@ repos:
 
   # Black - Python code formatter
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 26.1.0
     hooks:
       - id: black
-        exclude: ^(tests/archive|installer/|tests/data/)
-
-  # isort - Import sorting (Black-compatible)
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: [--profile, black]
         exclude: ^(tests/archive|installer/|tests/data/)
 
   # Mypy - Static type checking

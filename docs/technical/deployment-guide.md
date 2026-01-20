@@ -14,7 +14,7 @@
 - **Network:** Internet access for pulling images and API calls
 
 ### Native Python Deployment
-- **Python:** 3.11 or higher
+- **Python:** 3.13 or higher
 - **Node.js:** 20 or higher (for frontend)
 - **pip:** Latest version
 - **npm:** Latest version
@@ -117,7 +117,7 @@ nano .env  # Add your API keys
 weather-app init-db
 
 # Start backend server
-uvicorn weather_app.api.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn weather_app.api.main:app --host 0.0.0.0 --port 8000
 ```
 
 ### 2. Frontend Setup (Separate Terminal)
@@ -596,7 +596,7 @@ A pre-commit hook has been installed at `.git/hooks/pre-commit` to prevent accid
    ```bash
    # Stop the running server (Ctrl+C)
    # Restart it:
-   uvicorn weather_app.web.app:create_app --factory --reload
+   python -m uvicorn weather_app.web.app:create_app --factory --reload
    ```
 
 4. **Verify New Credentials Work:**
