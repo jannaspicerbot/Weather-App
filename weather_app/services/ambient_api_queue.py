@@ -139,7 +139,7 @@ class AmbientAPIQueue:
         try:
             await asyncio.wait_for(self.queue.join(), timeout=timeout)
             logger.info("api_queue_drained")
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 "api_queue_drain_timeout",
                 remaining_requests=self.queue.qsize(),
@@ -245,7 +245,7 @@ class AmbientAPIQueue:
                 try:
                     # Get next request (with timeout to allow checking running flag)
                     request = await asyncio.wait_for(self.queue.get(), timeout=1.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
 
                 try:

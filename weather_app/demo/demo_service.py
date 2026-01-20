@@ -191,11 +191,13 @@ class DemoService:
         if not self._conn:
             return None
 
-        result = self._conn.execute("""
+        result = self._conn.execute(
+            """
             SELECT * FROM weather_data
             ORDER BY dateutc DESC
             LIMIT 1
-            """).fetchone()
+            """
+        ).fetchone()
 
         if result:
             columns = [desc[0] for desc in self._conn.description]
@@ -360,13 +362,15 @@ class DemoService:
                 "date_range_days": None,
             }
 
-        result = self._conn.execute("""
+        result = self._conn.execute(
+            """
             SELECT
                 COUNT(*) as total_records,
                 MIN(date) as min_date,
                 MAX(date) as max_date
             FROM weather_data
-            """).fetchone()
+            """
+        ).fetchone()
 
         if result:
             total_records, min_date, max_date = result

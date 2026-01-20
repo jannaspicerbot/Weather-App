@@ -220,11 +220,13 @@ class WeatherRepository:
         try:
             with WeatherDatabase(DB_PATH) as db:
                 conn = db._get_conn()
-                result = conn.execute("""
+                result = conn.execute(
+                    """
                     SELECT * FROM weather_data
                     ORDER BY dateutc DESC
                     LIMIT 1
-                """).fetchone()
+                """
+                ).fetchone()
 
                 record = None
                 if result:

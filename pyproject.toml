@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 88
-target-version = ['py313', 'py314']
+target-version = ['py313']  # Black 26.x doesn't support py314 yet; py313 is compatible
 include = '\.pyi?$'
 extend-exclude = '''
 /(
